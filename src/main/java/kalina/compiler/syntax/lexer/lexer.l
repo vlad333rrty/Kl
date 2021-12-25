@@ -76,13 +76,13 @@ NUMBER   {DIGIT}+
 FLOAT_NUMBER {DIGIT}+(f|\.{DIGIT}*f)
 DOUBLE_NUMBER {DIGIT}+(d|\.{DIGIT}*d?)
 LONG_NUMBER {DIGIT}+(l|L)
-STRING_LITERAL \".*\"
+STRING_LITERAL \".*\"|'.*'
 RETURN   ret
 
 %%
 
 [\n\t ]+
-
+"//".*
 =               {
                     yylval->ident=yytext;
                     return ASSIGN_TAG;
@@ -179,6 +179,14 @@ elif            {
 for             {
                     yylval->ident=yytext;
                     return FOR_TAG;
+                }
+do              {
+                    yylval->ident=yytext;
+                    return DO_TAG;
+                }
+while           {
+                    yylval->ident=yytext;
+                    return WHILE_TAG;
                 }
 main            {
                     yylval->ident=yytext;

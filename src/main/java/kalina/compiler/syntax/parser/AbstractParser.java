@@ -1,6 +1,5 @@
 package kalina.compiler.syntax.parser;
 
-import kalina.compiler.syntax.grammar.Terminal;
 import kalina.compiler.syntax.scanner.IScanner;
 import kalina.compiler.syntax.tokens.Token;
 
@@ -14,23 +13,15 @@ public abstract class AbstractParser implements IParser {
         this.scanner = scanner;
     }
 
-    public Token getNextToken() {
+    protected Token getNextToken() {
         return scanner.getNextToken();
     }
 
-    public Token peekNextToken() {
+    protected Token peekNextToken() {
         return scanner.peekNextToken();
     }
 
-    public boolean isEnd() {
+    protected boolean isEnd() {
         return getNextToken() == Token.endToken;
-    }
-
-    public String getTokenTag(Token token) {
-        return token.getTag().name();
-    }
-
-    public boolean areEqual(Terminal terminal, Token token) {
-        return terminal.getValue().equals(getTokenTag(token));
     }
 }

@@ -29,6 +29,7 @@ import kalina.compiler.expressions.operations.ArithmeticOperation;
 import kalina.compiler.expressions.operations.ComparisonOperation;
 import kalina.compiler.instructions.AssignInstruction;
 import kalina.compiler.instructions.DefaultConstructorInstruction;
+import kalina.compiler.instructions.DoInstruction;
 import kalina.compiler.instructions.ForInstruction;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.IfInstruction;
@@ -36,7 +37,6 @@ import kalina.compiler.instructions.InitInstruction;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.SimpleInstruction;
 import kalina.compiler.syntax.build.TokenTag;
-import kalina.compiler.syntax.grammar.IGrammar;
 import kalina.compiler.syntax.parser.data.FunctionInfo;
 import kalina.compiler.syntax.parser.data.FunctionTable;
 import kalina.compiler.syntax.parser.data.IFunctionTable;
@@ -65,7 +65,7 @@ public class RecursiveDescentParser extends AbstractParser {
     }
 
     @Override
-    public ParseResult parse(IGrammar grammar) throws ParseException {
+    public ParseResult parse() throws ParseException {
         Optional<ClassBasicBlock> bb = parseStart();
         return new ParseResult(bb, ParsingStatus.SUCCESS);
     }
@@ -410,7 +410,7 @@ public class RecursiveDescentParser extends AbstractParser {
             }
         }
         if (token.getTag() == TokenTag.IF_TAG) {
-            AbstractBasicBlock ifStmt = parseIfStmt(localVariableTable, returnType, functionTable, className);
+            AbstractBasicBlock ifStmt = parseBrStmt(localVariableTable, returnType, functionTable, className, TokenTag.IF_TAG);
             Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
             next.ifPresent(ifStmt::addAtTheEnd);
             return Optional.of(ifStmt);
@@ -420,6 +420,12 @@ public class RecursiveDescentParser extends AbstractParser {
             Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
             next.ifPresent(forStmt::addAtTheEnd);
             return Optional.of(forStmt);
+        }
+        if (token.getTag() == TokenTag.DO_TAG) {
+            AbstractBasicBlock doStmt = parseDoStmt(localVariableTable, returnType, functionTable, className);
+            Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
+            next.ifPresent(doStmt::addAtTheEnd);
+            return Optional.of(doStmt);
         }
         if (token.getTag() == TokenTag.NEW_TAG) {
             AbstractBasicBlock bb = parseNew(localVariableTable, functionTable);
@@ -432,10 +438,6 @@ public class RecursiveDescentParser extends AbstractParser {
             return Optional.of(onReturnDetected(localVariableTable, functionTable, returnType));
         }
         if (token.getTag() == TokenTag.RBRACE_TAG) {
-            if (returnType.isPresent() && returnType.get().getSort() != Type.VOID) {
-                logger.severe("No return expression found");
-                throw new ParseException("No return expression found");
-            }
             return Optional.of(new BasicBlock(new FunEndInstruction(Optional.empty())));
         }
 
@@ -488,7 +490,7 @@ public class RecursiveDescentParser extends AbstractParser {
             }
         }
         if (token.getTag() == TokenTag.IF_TAG) {
-            AbstractBasicBlock ifStmt = parseIfStmt(localVariableTable, returnType, functionTable, className);
+            AbstractBasicBlock ifStmt = parseBrStmt(localVariableTable, returnType, functionTable, className, TokenTag.IF_TAG);
             Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
             next.ifPresent(ifStmt::addAtTheEnd);
             return Optional.of(ifStmt);
@@ -498,6 +500,12 @@ public class RecursiveDescentParser extends AbstractParser {
             Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
             next.ifPresent(forStmt::addAtTheEnd);
             return Optional.of(forStmt);
+        }
+        if (token.getTag() == TokenTag.DO_TAG) {
+            AbstractBasicBlock doStmt = parseDoStmt(localVariableTable, returnType, functionTable, className);
+            Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
+            next.ifPresent(doStmt::addAtTheEnd);
+            return Optional.of(doStmt);
         }
         if (token.getTag() == TokenTag.NEW_TAG) {
             AbstractBasicBlock bb = parseNew(localVariableTable, functionTable);
@@ -589,7 +597,7 @@ public class RecursiveDescentParser extends AbstractParser {
 
     private VariableInfo getVariableInfo(ILocalVariableTable localVariableTable, String name) throws ParseException {
         Optional<TypeAndIndex> typeAndIndexO = localVariableTable.getTypeAndIndex(name);
-        if (!typeAndIndexO.isEmpty()) {
+        if (typeAndIndexO.isEmpty()) {
             throw new ParseException("Variable was not declared: " + name);
         }
         TypeAndIndex typeAndIndex = typeAndIndexO.get();
@@ -671,16 +679,15 @@ public class RecursiveDescentParser extends AbstractParser {
         return expressions;
     }
 
-    private AbstractBasicBlock parseIfStmt(
+    private AbstractBasicBlock parseBrStmt(
             ILocalVariableTable localVariableTable,
             Optional<Type> returnType,
             IFunctionTable functionTable,
-            String className) throws ParseException
+            String className,
+            TokenTag brTag) throws ParseException
     {
-        Assert.assertTag(getNextToken(), TokenTag.IF_TAG);
-        Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
+        Assert.assertTag(getNextToken(), brTag);
         CondExpression cond = parseCond(localVariableTable, functionTable);
-        Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
         Optional<AbstractBasicBlock> entry = parseScope(localVariableTable, returnType, functionTable, className);
         Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
@@ -690,6 +697,8 @@ public class RecursiveDescentParser extends AbstractParser {
             Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
             elseEntry = parseScope(localVariableTable, returnType, functionTable, className);
             Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
+        } else if (peekNextToken().getTag() == TokenTag.ELIF_TAG) {
+            elseEntry = Optional.of(parseBrStmt(localVariableTable, returnType, functionTable, className, TokenTag.ELIF_TAG));
         }
 
         return new BasicBlock(new IfInstruction(cond, entry, elseEntry));
@@ -723,6 +732,21 @@ public class RecursiveDescentParser extends AbstractParser {
         }
 
         return new CondExpression(expressions, operations);
+    }
+
+    private AbstractBasicBlock parseDoStmt(
+            ILocalVariableTable localVariableTable,
+            Optional<Type> returnType,
+            IFunctionTable functionTable,
+            String className) throws ParseException
+    {
+        Assert.assertTag(getNextToken(), TokenTag.DO_TAG);
+        Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
+        Optional<AbstractBasicBlock> entry = parseScope(localVariableTable, returnType, functionTable, className);
+        Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
+        Assert.assertTag(getNextToken(), TokenTag.WHILE_TAG);
+        CondExpression cond = parseCond(localVariableTable, functionTable);
+        return new BasicBlock(new DoInstruction(entry, cond));
     }
 
     private AbstractBasicBlock parseForStmt(

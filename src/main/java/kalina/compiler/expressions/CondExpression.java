@@ -33,7 +33,7 @@ public class CondExpression extends Expression {
     }
 
     public static CondExpression negate(CondExpression condExpression) {
-        return new CondExpression(condExpression.expressions, condExpression.operations, condExpression.label, !condExpression.invert);
+        return new CondExpression(condExpression.expressions, condExpression.operations, new Label(), !condExpression.invert);
     }
 
     @Override

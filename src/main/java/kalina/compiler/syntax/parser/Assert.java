@@ -12,7 +12,7 @@ class Assert {
 
     static void assertTag(Token token, TokenTag tag) {
         if (token.getTag() != tag) {
-            throw new IllegalStateException(UNEXPECTED_TOKEN);
+            throw new IllegalStateException(UNEXPECTED_TOKEN + " : "+ token.getTag());
         }
     }
 

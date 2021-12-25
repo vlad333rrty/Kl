@@ -29,26 +29,18 @@ public class IfInstruction extends Instruction {
             condition.translateToBytecode(methodVisitor);
             Label label = condition.getLabel();
             Label end = new Label();
-            translateBlock(ifBranch, mv, cw);
+            TranslationUtils.translateBlock(ifBranch, mv, cw);
             if (elseBranch.isPresent()) {
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, end);
             }
             methodVisitor.visitLabel(label);
-            translateBlock(elseBranch, mv, cw);
+            TranslationUtils.translateBlock(elseBranch, mv, cw);
             if (elseBranch.isPresent()) {
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, end);
                 methodVisitor.visitLabel(end);
             }
         } else {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private void translateBlock(Optional<AbstractBasicBlock> bb, Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
-        Optional<AbstractBasicBlock> current = bb;
-        while (current.isPresent()) {
-            current.get().getInstruction().translateToBytecode(mv, cw);
-            current = current.get().getNext();
         }
     }
 }

@@ -58,6 +58,8 @@
 #define STRING_LITERAL_TAG 55
 #define NOT_EQUAL_TAG 56
 #define BREAK_TAG 57
+#define DO_TAG 58
+#define WHILE_TAG 59
 
 #define END_TAG -1
 

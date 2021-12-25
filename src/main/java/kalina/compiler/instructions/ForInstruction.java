@@ -51,7 +51,7 @@ public class ForInstruction extends Instruction {
                 end = new Label();
             }
 
-            translateBlock(entry, mv, cw);
+            TranslationUtils.translateBlock(entry, mv, cw);
             action.ifPresent(a -> a.translateToBytecode(mv, cw));
             methodVisitor.visitJumpInsn(Opcodes.GOTO, start);
             // todo check for empty condition
@@ -60,14 +60,6 @@ public class ForInstruction extends Instruction {
             //declarations.ifPresent(initInstruction -> methodVisitor.visitLabel(initInstruction.getEnd()));
         } else {
             throw new IllegalArgumentException();
-        }
-    }
-
-    private void translateBlock(Optional<AbstractBasicBlock> bb, Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
-        Optional<AbstractBasicBlock> current = bb;
-        while (current.isPresent()) {
-            current.get().getInstruction().translateToBytecode(mv, cw);
-            current = current.get().getNext();
         }
     }
 }
