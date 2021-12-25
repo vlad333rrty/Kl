@@ -1,0 +1,8 @@
+class Hello {
+
+
+   begin {
+        println(x(1, 2, 3))
+   }
+}
+
