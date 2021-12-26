@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 #
 # Copyright 2015 the original author or authors.
@@ -176,18 +176,28 @@ loc=$(pwd)
 path_to_sources="$loc"/src/main/java
 path_to_kalina_compiler="$path_to_sources"/kalina/compiler
 path_to_lexer=$path_to_kalina_compiler/syntax/lexer
-path_to_grammar_lexer=$path_to_kalina_compiler/syntax/grammar/lexer
+
+ERROR_STATE=255
 
 run_lexer () {
   flex --outfile="$1"/lex.yy.c "$1"/"$2"
   gcc -o "$1"/a.out "$1"/lex.yy.c "$path_to_lexer"/logger/logger.c
   chmod +x "$1"/a.out
   "$1"/a.out "$3" "$4"
+  result=$?
   rm "$1"/a.out "$1"/lex.yy.c
 }
 
 # run program lexer
-run_lexer "$path_to_lexer" lexer.l "$loc/data/input.kl" "$loc/data/output.kl"
+run_lexer "$path_to_lexer" lexer.l "$loc/data/input.kl" "$loc/data/output.kl" result
+if [ "$result" == "$ERROR_STATE"  ]
+then
+  echo "An error occurred during lexical analyses, exit code: $result"
+  exit $result
+else
+  echo "Lexical analyses completed successfully. Lexer returned with exit code $result"
+fi
+
 
 token_generator_path="$path_to_lexer"/gen
 file_utils_path=$path_to_kalina_compiler/utils

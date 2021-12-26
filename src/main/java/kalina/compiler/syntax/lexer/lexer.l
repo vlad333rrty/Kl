@@ -6,7 +6,7 @@
 #include "TokenTag.h"
 #include "logger/logger.h"
 
-#define ERROR_STATE -2
+#define ERROR_STATE 255
 
 struct Position{
     int line, pos, index;
@@ -65,8 +65,6 @@ void init(char *program){
     yy_scan_string(program);
 }
 
-int state = 0;
-
 %}
 
 LETTER   [a-zA-Z]
@@ -78,6 +76,10 @@ DOUBLE_NUMBER {DIGIT}+(d|\.{DIGIT}*d?)
 LONG_NUMBER {DIGIT}+(l|L)
 STRING_LITERAL \".*\"|'.*'
 RETURN   ret
+SHORT	short|int16
+INT	int|int32
+LONG	long|int64
+
 
 %%
 
@@ -228,16 +230,16 @@ char            {
                         yylval->ident=yytext;
                         return CHAR_TAG;
                     }
-short               {
-                         yylval->ident=yytext;
+{SHORT}              {
+                         yylval->ident="short";
                          return SHORT_TAG;
                      }
-int                 {
-                       yylval->ident=yytext;
+{INT}                {
+                       yylval->ident="int";
                        return INT_TAG;
                    }
-long                {
-                        yylval->ident=yytext;
+{LONG}             {
+                        yylval->ident="long";
                         return LONG_TAG;
                     }
 float               {
@@ -326,8 +328,7 @@ begin		    {
 				char *buf = (char*)malloc(strlen(message) + strlen(yytext));
 				sprintf(buf, "%s %s", message, yytext);
 				logError(buf);
-				state = ERROR_STATE;
-				return 0;
+				return ERROR_STATE;
                         }
 %%
 
@@ -337,17 +338,17 @@ int main(int argc, char **argv){
     logInfo("Starting lexer\n");
     if (argc!=3) {
         logError("Input/output file names should be provided! Stopping lexer\n");
-        return 0;
+        return ERROR_STATE;
     }
     FILE *file=fopen(argv[1],"r");
     if (!file) {
         logError("Can not open the source file\n");
-        return 0;
+        return ERROR_STATE;
     }
     FILE* out = fopen(argv[2],"w");
     if (!out) {
         logError("Can not open the dest file\n");
-        return 0;
+        return ERROR_STATE;
     }
     char buf[SIZE];
     char c;
@@ -357,12 +358,12 @@ int main(int argc, char **argv){
     }
     if (i == SIZE) {
         logError("File is too long!\n");
-        return 1;
+        return ERROR_STATE;
     }
     buf[i]='\0';
     if (ferror(file)) {
         logError("An error occurred while reading a file\n");
-        return 0;
+        return ERROR_STATE;
     }
     fclose(file);
 
@@ -374,17 +375,13 @@ int main(int argc, char **argv){
 
     do {
     	tag = yylex(&value,&coords);
+    	if (tag == ERROR_STATE) {
+    		return ERROR_STATE;
+    	}
         if (tag > 0){
         	fprintf(out,"%d %s\n", tag - 1, value.ident);
         }
     } while(tag != 0);
-
-     if (state == ERROR_STATE) {
-     	fclose(out);
-     	out = fopen(argv[2],"w");
-     	fclose(out);
-     	return 0;
-     }
 
     fclose(out);
     logInfo("No errors. Stopping lexer\n");
