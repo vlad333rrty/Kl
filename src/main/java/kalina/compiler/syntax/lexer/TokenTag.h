@@ -60,6 +60,7 @@
 #define BREAK_TAG 57
 #define DO_TAG 58
 #define WHILE_TAG 59
+#define DOT_TAG 60
 
 #define END_TAG -1
 

@@ -9,8 +9,9 @@ import org.objectweb.asm.Type;
  */
 public final class NumberTypesComparator {
     private static final Map<String, Integer> typesScores = Map.of(
-            "int", 0,
-            "long", 1,
+            "short", 0,
+            "int", 1,
+            "long", 2,
             "float", 2,
             "double", 3
     );

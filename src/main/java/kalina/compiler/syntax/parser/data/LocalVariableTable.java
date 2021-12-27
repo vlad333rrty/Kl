@@ -29,7 +29,14 @@ public class LocalVariableTable implements ILocalVariableTable {
 
     @Override
     public Optional<TypeAndIndex> getTypeAndIndex(String name) {
-        return Optional.ofNullable(variableTable.get(name));
+        ILocalVariableTable current = this;
+        while (!current.hasVariable(name)) {
+            if (current.getParent() == null) {
+                return Optional.empty();
+            }
+            current = current.getParent();
+        }
+        return Optional.of(variableTable.get(name));
     }
 
     @Override
@@ -40,5 +47,10 @@ public class LocalVariableTable implements ILocalVariableTable {
     @Override
     public void setParent(ILocalVariableTable parent) {
         this.parent = parent;
+    }
+
+    @Override
+    public ILocalVariableTable getParent() {
+        return parent;
     }
 }

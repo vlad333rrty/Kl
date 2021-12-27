@@ -12,4 +12,5 @@ public interface ILocalVariableTable {
     Optional<TypeAndIndex> getTypeAndIndex(String name);
     boolean hasVariable(String name);
     void setParent(ILocalVariableTable parent);
+    ILocalVariableTable getParent();
 }

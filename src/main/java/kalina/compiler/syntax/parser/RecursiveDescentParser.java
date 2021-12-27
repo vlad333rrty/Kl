@@ -3,7 +3,9 @@ package kalina.compiler.syntax.parser;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -45,6 +47,7 @@ import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
 import kalina.compiler.syntax.parser.data.ITypeDictionary;
 import kalina.compiler.syntax.parser.data.KDKMapper;
 import kalina.compiler.syntax.parser.data.LocalVariableTableFactory;
+import kalina.compiler.syntax.parser.data.RuntimeConstantPool;
 import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser.data.TypeDictionary;
 import kalina.compiler.syntax.scanner.IScanner;
@@ -59,6 +62,7 @@ public class RecursiveDescentParser extends AbstractParser {
     private static final ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
     private static final ITypeDictionary typeDictionary = new TypeDictionary();
     private static final Logger logger = Logger.getLogger(RecursiveDescentParser.class.getName());
+    private final Map<String, RuntimeConstantPool> classInfo = new HashMap<>();
 
     public RecursiveDescentParser(IScanner scanner) {
         super(scanner);
@@ -206,7 +210,7 @@ public class RecursiveDescentParser extends AbstractParser {
                 if (info.getReturnType().isPresent()) {
                     Type retType = info.getReturnType().get();
                     if (retType.equals(Type.getType(String.class))) {
-                        return parseFunCallInt(localVariableTable, functionTable, getNextToken().getValue());
+                        return parseFunCallInt(localVariableTable, functionTable, getNextToken().getValue(), Optional.empty());
                     }
                     // если объект, то можно через точку ...
                 }
@@ -272,9 +276,26 @@ public class RecursiveDescentParser extends AbstractParser {
             return Factor.createFactor(new ValueExpression(ParseUtils.getTrueValue(token), Type.DOUBLE_TYPE));
         }
         if (token.getTag() == TokenTag.IDENT_TAG) {
+            String name = token.getValue();
             if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
-                FunCallExpression funCallExpression = parseFunCallInt(localVariableTable, functionTable, token.getValue());
+                FunCallExpression funCallExpression = parseFunCallInt(localVariableTable, functionTable, name, Optional.empty());
                 return Factor.createFactor(funCallExpression);
+            } else if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                getNextToken();
+                Token methodName = getNextToken();
+                Assert.assertTag(methodName, TokenTag.IDENT_TAG);
+                Optional<TypeAndIndex> typeAndIndexO = localVariableTable.getTypeAndIndex(token.getValue());
+                if (typeAndIndexO.isEmpty()) {
+                    throw new ParseException("No variable declaration found");
+                }
+                String className = typeAndIndexO.get().getType().getClassName();
+                RuntimeConstantPool pool = classInfo.get(className);
+                if (pool == null) {
+                    throw new ParseException("No variable declaration found");
+                }
+                IFunctionTable otherTable = pool.getFunctionTable();
+                Expression methodCall = parseMethodCallExpr(localVariableTable, functionTable, otherTable, methodName.getValue(), typeAndIndexO);
+                return Factor.createFactor(methodCall);
             }
             Optional<TypeAndIndex> typeAndIndexO = localVariableTable.getTypeAndIndex(token.getValue());
             if (typeAndIndexO.isEmpty()) {
@@ -376,6 +397,36 @@ public class RecursiveDescentParser extends AbstractParser {
         return typeAndNames;
     }
 
+    private AbstractBasicBlock parseStaticMethodCall(
+            ILocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            String ownerClassName) throws ParseException
+    {
+        return parseMethodCall(localVariableTable, functionTable, ownerClassName, Optional.empty());
+    }
+
+    private AbstractBasicBlock parseMethodCall(
+            ILocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            String className,
+            Optional<String> varName) throws ParseException
+    {
+        RuntimeConstantPool pool = classInfo.get(className);
+        if (pool == null) {
+            throw new ParseException("Unknown class references");
+        }
+        String methodName = getNextToken().getValue();
+        IFunctionTable otherFunctionTable = pool.getFunctionTable();
+        Optional<TypeAndIndex> typeAndIndexO = Optional.empty();
+        if (varName.isPresent()) {
+            typeAndIndexO = localVariableTable.getTypeAndIndex(varName.get());
+            if (typeAndIndexO.isEmpty()) {
+                throw new ParseException("No variable declaration found");
+            }
+        }
+        return parseMethodCallBB(localVariableTable, functionTable, otherFunctionTable, methodName, typeAndIndexO);
+    }
+
     private Optional<AbstractBasicBlock> parseFunEntry(
             ILocalVariableTable localVariableTable,
             Optional<Type> returnType,
@@ -384,6 +435,16 @@ public class RecursiveDescentParser extends AbstractParser {
     {
         Token token = peekNextToken();
         if (ParseUtils.isValidType(token, typeDictionary)) {
+//            getNextToken();
+//            if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+//                String ownerName = token.getValue();
+//                getNextToken();
+//                AbstractBasicBlock staticMethodCall = parseStaticMethodCall(localVariableTable, functionTable, ownerName);
+//                Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
+//                next.ifPresent(staticMethodCall::addAtTheEnd);
+//                return Optional.of(staticMethodCall);
+//            }
+
             BasicBlock varDecl = parseVarDecl(localVariableTable, functionTable, new Label(), new Label());
             Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
             next.ifPresent(varDecl::addAtTheEnd);
@@ -397,11 +458,18 @@ public class RecursiveDescentParser extends AbstractParser {
         }
         if (token.getTag() == TokenTag.IDENT_TAG) {
             getNextToken();
+            String identName = token.getValue();
             if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
-                AbstractBasicBlock funCallBlock = parseFunCall(localVariableTable, functionTable, token.getValue());
+                AbstractBasicBlock funCallBlock = parseFunCall(localVariableTable, functionTable, token.getValue(), Optional.empty());
                 Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
                 next.ifPresent(funCallBlock::addAtTheEnd);
                 return Optional.of(funCallBlock);
+            } else if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                getNextToken();
+                AbstractBasicBlock methodCallBlock = parseMethodCall(localVariableTable, functionTable, token.getValue(), Optional.of(identName));
+                Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
+                next.ifPresent(methodCallBlock::addAtTheEnd);
+                return Optional.of(methodCallBlock);
             } else {
                 AbstractBasicBlock assign = parseAssign(localVariableTable, functionTable, token.getValue());
                 Optional<AbstractBasicBlock> next = parseFunEntry(localVariableTable, returnType, functionTable, className);
@@ -444,13 +512,55 @@ public class RecursiveDescentParser extends AbstractParser {
         throw new IllegalArgumentException();
     }
 
+    private AbstractBasicBlock parseMethodCallBB(
+            ILocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            IFunctionTable otherFunctionTable,
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
+    {
+        return new BasicBlock(parseMethodCall(localVariableTable, functionTable, otherFunctionTable, funName, typeAndIndex));
+    }
+
+    private Instruction parseMethodCall(
+            ILocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            IFunctionTable otherFunctionTable,
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
+    {
+        if (otherFunctionTable.getFunctionInfo(funName).isPresent()) {
+            return new SimpleInstruction(parseMethodCallExpr(localVariableTable, functionTable, otherFunctionTable, funName, typeAndIndex));
+        }
+        logger.severe("No function definition found for fun " + funName);
+        throw new ParseException("No function definition found for fun " + funName);
+    }
+
+    private Expression parseMethodCallExpr(
+            ILocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            IFunctionTable otherFunctionTable,
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
+    {
+        Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
+        List<Expression> expressions = parseFunArgs(localVariableTable, functionTable);
+        Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
+        Optional<FunctionInfo> functionInfo = otherFunctionTable.getFunctionInfo(funName);
+        if (functionInfo.isEmpty()) {
+            throw new RuntimeException("No function definition found");
+        }
+
+        return new FunCallExpression(funName, expressions, functionInfo.get(), typeAndIndex.map(TypeAndIndex::getIndex));
+    }
+
     private Instruction parseAction(
             ILocalVariableTable localVariableTable,
             IFunctionTable functionTable) throws ParseException
     {
         String value = getNextToken().getValue();
         if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
-            return getFunCallInstruction(localVariableTable, functionTable, value);
+            return getFunCallInstruction(localVariableTable, functionTable, value, Optional.empty());
         } else {
             return getAssignInstruction(localVariableTable, functionTable, value);
         }
@@ -464,6 +574,15 @@ public class RecursiveDescentParser extends AbstractParser {
     {
         Token token = peekNextToken();
         if (ParseUtils.isValidType(token, typeDictionary)) {
+//            getNextToken();
+//            if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+//                String ownerName = token.getValue();
+//                getNextToken();
+//                AbstractBasicBlock staticMethodCall = parseStaticMethodCall(localVariableTable, functionTable, ownerName);
+//                Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
+//                next.ifPresent(staticMethodCall::addAtTheEnd);
+//                return Optional.of(staticMethodCall);
+//            }
             BasicBlock varDecl = parseVarDecl(localVariableTable, functionTable, new Label(), new Label());
             Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
             next.ifPresent(varDecl::addAtTheEnd);
@@ -478,7 +597,7 @@ public class RecursiveDescentParser extends AbstractParser {
         if (token.getTag() == TokenTag.IDENT_TAG) {
             getNextToken();
             if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
-                AbstractBasicBlock funCallBlock = parseFunCall(localVariableTable, functionTable, token.getValue());
+                AbstractBasicBlock funCallBlock = parseFunCall(localVariableTable, functionTable, token.getValue(), Optional.empty());
                 Optional<AbstractBasicBlock> next = parseScope(localVariableTable, returnType, functionTable, className);
                 next.ifPresent(funCallBlock::addAtTheEnd);
                 return Optional.of(funCallBlock);
@@ -558,6 +677,8 @@ public class RecursiveDescentParser extends AbstractParser {
 
         Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
         next.ifPresent(classBasicBlock::addAtTheEnd);
+        RuntimeConstantPool pool = new RuntimeConstantPool(name, functionTable);
+        classInfo.put(name, pool);
 
         return classBasicBlock;
     }
@@ -618,18 +739,20 @@ public class RecursiveDescentParser extends AbstractParser {
     private AbstractBasicBlock parseFunCall(
             ILocalVariableTable localVariableTable,
             IFunctionTable functionTable,
-            String funName) throws ParseException
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
     {
-        return new BasicBlock(getFunCallInstruction(localVariableTable, functionTable, funName));
+        return new BasicBlock(getFunCallInstruction(localVariableTable, functionTable, funName, typeAndIndex));
     }
 
     private Instruction getFunCallInstruction(
             ILocalVariableTable localVariableTable,
             IFunctionTable functionTable,
-            String funName) throws ParseException
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
     {
         if (functionTable.getFunctionInfo(funName).isPresent()) {
-            return new SimpleInstruction(parseFunCallInt(localVariableTable, functionTable, funName));
+            return new SimpleInstruction(parseFunCallInt(localVariableTable, functionTable, funName, typeAndIndex));
         } else {
             Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
             List<Expression> expressions = parseFunArgs(localVariableTable, functionTable);
@@ -649,7 +772,8 @@ public class RecursiveDescentParser extends AbstractParser {
     private FunCallExpression parseFunCallInt(
             ILocalVariableTable localVariableTable,
             IFunctionTable functionTable,
-            String funName) throws ParseException
+            String funName,
+            Optional<TypeAndIndex> typeAndIndex) throws ParseException
     {
         Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
         List<Expression> expressions = parseFunArgs(localVariableTable, functionTable);
@@ -658,8 +782,15 @@ public class RecursiveDescentParser extends AbstractParser {
         if (functionInfo.isEmpty()) {
             throw new RuntimeException("No function definition found");
         }
+        FunctionInfo info = functionInfo.get();
+        Optional<Integer> index = Optional.empty();
+        if (typeAndIndex.isPresent()) {
+            index = Optional.of(typeAndIndex.get().getIndex());
+        } else if (!info.isStatic()){
+            index = Optional.of(0);
+        }
 
-        return new FunCallExpression(funName, expressions, functionInfo.get());
+        return new FunCallExpression(funName, expressions, info, index);
     }
 
     private List<Expression> parseFunArgs(ILocalVariableTable localVariableTable, IFunctionTable functionTable)

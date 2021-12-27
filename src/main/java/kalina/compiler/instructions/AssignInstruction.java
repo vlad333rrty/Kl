@@ -2,6 +2,7 @@ package kalina.compiler.instructions;
 
 import java.util.Optional;
 
+import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.RHS;
 import kalina.compiler.expressions.VariableInfo;
@@ -25,8 +26,10 @@ public class AssignInstruction extends Instruction {
     public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
-            for (int i = 0; i < lhs.getVars().size(); i++) {
-                rhs.getExpressions().get(i).translateToBytecode(methodVisitor);
+            for (Expression expression : rhs.getExpressions()) {
+                expression.translateToBytecode(methodVisitor);
+            }
+            for (int i = lhs.getVars().size() - 1; i >= 0; i--) {
                 VariableInfo info = lhs.getVars().get(i);
                 methodVisitor.visitVarInsn(info.getType().getOpcode(Opcodes.ISTORE), info.getIndex());
             }

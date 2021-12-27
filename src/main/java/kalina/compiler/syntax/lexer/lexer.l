@@ -74,7 +74,7 @@ NUMBER   {DIGIT}+
 FLOAT_NUMBER {DIGIT}+(f|\.{DIGIT}*f)
 DOUBLE_NUMBER {DIGIT}+(d|\.{DIGIT}*d?)
 LONG_NUMBER {DIGIT}+(l|L)
-STRING_LITERAL \".*\"|'.*'
+STRING_LITERAL \"[^\"]*\"|'.*'
 RETURN   ret
 SHORT	short|int16
 INT	int|int32
@@ -166,6 +166,10 @@ LONG	long|int64
                     yylval->ident=yytext;
                     return NOT_EQUAL_TAG;
                 }
+\.		{
+                    yylval->ident=yytext;
+                    return DOT_TAG;
+		}
 if              {
                     yylval->ident=yytext;
                     return IF_TAG;
@@ -274,14 +278,6 @@ begin		    {
 			yylval->ident=yytext;
                         return BEGIN_TAG;
 		    }
-\`               {
-                    yylval->ident=yytext;
-                    return QUOTE_TAG;
-                }
-\"               {
-                    yylval->ident=yytext;
-                    return DOUBLE_QUOTE_TAG;
-                }
 \?              {
                     yylval->ident=yytext;
                     return QUESTION_MARK_TAG;
