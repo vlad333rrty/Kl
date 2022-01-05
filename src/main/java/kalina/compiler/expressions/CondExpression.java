@@ -2,6 +2,7 @@ package kalina.compiler.expressions;
 
 import java.util.List;
 
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ComparisonOperation;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -37,7 +38,7 @@ public class CondExpression extends Expression {
     }
 
     @Override
-    public void translateToBytecode(MethodVisitor mv) {
+    public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         for (int i = 0; i < expressions.size(); i++) {
             Expression expression = expressions.get(i);
             expression.translateToBytecode(mv);

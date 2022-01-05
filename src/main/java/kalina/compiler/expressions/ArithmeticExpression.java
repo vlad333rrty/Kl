@@ -2,7 +2,7 @@ package kalina.compiler.expressions;
 
 import java.util.List;
 
-import kalina.compiler.codegen.TypeCastOpcodesMapper;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ArithmeticOperation;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -28,12 +28,12 @@ public class ArithmeticExpression extends Expression {
     }
 
     @Override
-    public void translateToBytecode(MethodVisitor mv) {
+    public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         for (int i = 0; i < terms.size(); i++) {
             Term term = terms.get(i);
             term.translateToBytecode(mv);
-            if (type.getSort() != term.getType().getSort()) {
-                mv.visitInsn(TypeCastOpcodesMapper.getCastOpcode(term.getType(), type));
+            if (!type.equals(term.getType())) {
+                expressionCodeGen.cast(term.getType(), type, mv);
             }
             if (i > 0) {
                 switch (operations.get(i - 1)) {
@@ -53,13 +53,5 @@ public class ArithmeticExpression extends Expression {
     @Override
     public Type getType() {
         return type;
-    }
-
-    public List<Term> getTerms() {
-        return terms;
-    }
-
-    public List<ArithmeticOperation> getOperations() {
-        return operations;
     }
 }

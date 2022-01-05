@@ -2,6 +2,7 @@ package kalina.compiler.instructions;
 
 import java.util.Optional;
 
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
@@ -19,7 +20,7 @@ public class SimpleInstruction extends  Instruction{
     }
 
     @Override
-    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
+    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
             expression.translateToBytecode(mv.get());
         } else {

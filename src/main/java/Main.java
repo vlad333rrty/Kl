@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.util.List;
 
 import kalina.compiler.bb.ClassBasicBlock;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenerationManager;
 import kalina.compiler.codegen.CodeGenerationResult;
 import kalina.compiler.syntax.parser.AbstractParser;
@@ -15,7 +16,7 @@ import kalina.compiler.syntax.scanner.Scanner;
  * @author vlad333rrty
  */
 public class Main {
-    public static void main(String[] args) throws IOException, ParseException {
+    public static void main(String[] args) throws IOException, ParseException, CodeGenException {
         String filename = "/home/vlad333rrty/IdeaProjects/KalinaLang/data/output.kl";
         AbstractParser parser = new RecursiveDescentParser(new Scanner(filename));
         ParseResult result = parser.parse();
@@ -34,23 +35,6 @@ public class Main {
             fos.write(bytes);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void f(String s) {
-        switch (s) {
-            case "s":
-                System.out.println(2);
-                break;
-            case "":
-                break;
-            case "a":
-            case "b":
-                System.out.println(1);
-                break;
-            case "ws":
-                System.out.println("ws");
-            default: throw new RuntimeException();
         }
     }
 }

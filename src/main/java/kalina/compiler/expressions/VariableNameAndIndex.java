@@ -1,19 +1,15 @@
 package kalina.compiler.expressions;
 
-import org.objectweb.asm.Type;
-
 /**
  * @author vlad333rrty
  */
-public class VariableInfo {
+public class VariableNameAndIndex {
     private final String name;
     private final int index;
-    private final Type type;
 
-    public VariableInfo(String name, int index, Type type) {
+    public VariableNameAndIndex(String name, int index) {
         this.name = name;
         this.index = index;
-        this.type = type;
     }
 
     public String getName() {
@@ -22,9 +18,5 @@ public class VariableInfo {
 
     public int getIndex() {
         return index;
-    }
-
-    public Type getType() {
-        return type;
     }
 }

@@ -3,6 +3,7 @@ package kalina.compiler.codegen;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
@@ -34,4 +35,6 @@ public interface IExpressionCodeGen {
     void putValueOnStack(MethodVisitor mv, Object value);
 
     void createField(ClassWriter cw, String name, String descriptor, String signature, Object value);
+
+    void cast(Type from, Type to, MethodVisitor mv) throws CodeGenException;
 }

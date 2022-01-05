@@ -2,7 +2,7 @@ package kalina.compiler.instructions;
 
 import java.util.Optional;
 
-import kalina.compiler.codegen.TypeCastOpcodesMapper;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.ReturnValueInfo;
 import org.objectweb.asm.ClassWriter;
@@ -21,7 +21,7 @@ public class FunEndInstruction extends Instruction {
     }
 
     @Override
-    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
+    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
             if (returnValueInfo.isPresent()) {
@@ -29,8 +29,8 @@ public class FunEndInstruction extends Instruction {
                 Type type = info.getReturnType();
                 Expression value = info.getReturnValue();
                 value.translateToBytecode(methodVisitor);
-                if (type.getSort() != value.getType().getSort()) {
-                    methodVisitor.visitInsn(TypeCastOpcodesMapper.getCastOpcode(value.getType(), type));
+                if (!type.equals(value.getType())) {
+                    expressionCodeGen.cast(value.getType(), type, methodVisitor);
                 }
                 methodVisitor.visitInsn(type.getOpcode(Opcodes.IRETURN));
             } else {

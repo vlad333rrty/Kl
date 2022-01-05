@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -22,7 +23,7 @@ public class ObjectCreationExpression extends Expression {
     }
 
     @Override
-    public void translateToBytecode(MethodVisitor mv) {
+    public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         mv.visitTypeInsn(Opcodes.NEW, className);
         mv.visitInsn(Opcodes.DUP);
         for (Expression expression : arguments) {

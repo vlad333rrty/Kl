@@ -15,13 +15,13 @@ import org.objectweb.asm.MethodVisitor;
  * @author vlad333rrty
  */
 public class CodeGenerationManager {
-    public List<CodeGenerationResult> generateByteCode(ClassBasicBlock root) {
+    public List<CodeGenerationResult> generateByteCode(ClassBasicBlock root) throws CodeGenException {
         List<CodeGenerationResult> result = new ArrayList<>();
         generateByteCodeInt(root, result);
         return result;
     }
 
-    private void generateByteCodeInt(ClassBasicBlock root, List<CodeGenerationResult> result) {
+    private void generateByteCodeInt(ClassBasicBlock root, List<CodeGenerationResult> result) throws CodeGenException {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         root.getInstruction().translateToBytecode(Optional.empty(), Optional.of(cw));
         Optional<AbstractBasicBlock> bbO = root.getNext();

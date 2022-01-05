@@ -1,6 +1,7 @@
 package kalina.compiler.codegen;
 
 import java.util.Map;
+import java.util.Optional;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -16,8 +17,12 @@ public final class TypeCastOpcodesMapper {
             Type.DOUBLE, getD2Type()
     );
 
-    public static int getCastOpcode(Type from, Type to) {
-        return opcodes.get(from.getSort()).get(to.getSort());
+    public static Optional<Integer> getCastOpcode(Type from, Type to) {
+        return Optional.ofNullable(opcodes.get(from.getSort())).map(x -> x.get(to.getSort()));
+    }
+
+    public static boolean canCast(Type from, Type to) {
+        return getCastOpcode(from, to).isPresent();
     }
 
     private static Map<Integer, Integer> getI2Type() {

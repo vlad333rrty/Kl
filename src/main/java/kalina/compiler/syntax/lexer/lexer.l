@@ -234,6 +234,11 @@ char            {
                         yylval->ident=yytext;
                         return CHAR_TAG;
                     }
+
+{IDENT}\[\]          {
+                         yylval->ident=yytext;
+                         return ARRAY_TYPE_TAG;
+                     }
 {SHORT}              {
                          yylval->ident="short";
                          return SHORT_TAG;
@@ -262,13 +267,9 @@ string              {
                            yylval->ident=yytext;
                            return STRING_TAG;
                     }
-true                {
+true|false          {
                         yylval->ident=yytext;
-                        return TRUE_TAG;
-                    }
-false               {
-                        yylval->ident=yytext;
-                        return FALSE_TAG;
+                        return BOOL_VALUE_TAG;
                     }
 static		    {
                         yylval->ident=yytext;
@@ -322,7 +323,7 @@ begin		    {
 .			{
 				char *message = "Unexpected token: ";
 				char *buf = (char*)malloc(strlen(message) + strlen(yytext));
-				sprintf(buf, "%s %s", message, yytext);
+				sprintf(buf, "%s%s", message, yytext);
 				logError(buf);
 				return ERROR_STATE;
                         }

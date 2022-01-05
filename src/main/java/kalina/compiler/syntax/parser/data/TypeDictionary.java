@@ -1,6 +1,5 @@
 package kalina.compiler.syntax.parser.data;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,7 +8,7 @@ import java.util.Set;
  */
 public class TypeDictionary implements ITypeDictionary {
     private static final Set<String> primitiveTypes =
-            new HashSet<>(Arrays.asList("char", "short", "int", "long", "bool", "string", "float", "double", "void"));
+            Set.of("short", "int", "long", "bool", "string", "float", "double", "void");
     private static final Set<String> types = new HashSet<>();
 
     @Override

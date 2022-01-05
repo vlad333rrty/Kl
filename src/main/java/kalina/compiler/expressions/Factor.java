@@ -1,5 +1,6 @@
 package kalina.compiler.expressions;
 
+import kalina.compiler.codegen.CodeGenException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -25,13 +26,10 @@ public class Factor extends Expression {
     }
 
     @Override
-    public void translateToBytecode(MethodVisitor mv) {
-        if (shouldNegate) {
-            expressionCodeGen.putValueOnStack(mv, -1);
-        }
+    public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         expression.translateToBytecode(mv);
         if (shouldNegate) {
-            mv.visitInsn(expression.getType().getOpcode(Opcodes.IMUL));
+            mv.visitInsn(expression.getType().getOpcode(Opcodes.INEG));
         }
     }
 

@@ -14,6 +14,14 @@ public final class ParseUtils {
         return typeDictionary.hasType(token.getValue());
     }
 
+    public static boolean isValidDeclarationType(Token token, ITypeDictionary typeDictionary) {
+        return !token.getValue().equals("void") && isValidType(token, typeDictionary);
+    }
+
+    public static boolean isArrayType(Token token) {
+        return token.getValue().endsWith("[]");
+    }
+
     public static Object getTrueValue(Token token) {
         TokenTag tag = token.getTag();
         String value = token.getValue();
@@ -26,10 +34,8 @@ public final class ParseUtils {
                 return Float.parseFloat(value);
             case DOUBLE_NUMBER_TAG:
                 return Double.parseDouble(value);
-            case TRUE_TAG:
-                return true;
-            case FALSE_TAG:
-                return false;
+            case BOOL_VALUE_TAG:
+                return Boolean.parseBoolean(value);
             case STRING_LITERAL_TAG:
                 return value;
             default:
@@ -41,8 +47,6 @@ public final class ParseUtils {
         switch (type) {
             case "void":
                 return Type.VOID_TYPE;
-            case "char":
-                return Type.CHAR_TYPE;
             case "short":
                 return Type.SHORT_TYPE;
             case "int":

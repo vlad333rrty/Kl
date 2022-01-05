@@ -3,6 +3,7 @@ package kalina.compiler.instructions;
 import java.util.Optional;
 
 import kalina.compiler.bb.AbstractBasicBlock;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.CondExpression;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -31,7 +32,7 @@ public class ForInstruction extends Instruction {
     }
 
     @Override
-    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
+    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
             if (declarations.isPresent()) {
@@ -52,7 +53,9 @@ public class ForInstruction extends Instruction {
             }
 
             TranslationUtils.translateBlock(entry, mv, cw);
-            action.ifPresent(a -> a.translateToBytecode(mv, cw));
+            if (action.isPresent()) {
+                action.get().translateToBytecode(mv, cw);
+            }
             methodVisitor.visitJumpInsn(Opcodes.GOTO, start);
             // todo check for empty condition
 

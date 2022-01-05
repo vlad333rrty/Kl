@@ -24,7 +24,7 @@ public class LocalVariableTable implements ILocalVariableTable {
         if (hasVariable(name)) {
             throw new IllegalArgumentException("Variable is already present in the table: " + name);
         }
-        variableTable.put(name, new TypeAndIndex(type, indexGenerator.getNewIndex()));
+        variableTable.put(name, new TypeAndIndex(type, indexGenerator.getNewIndex(type)));
     }
 
     @Override

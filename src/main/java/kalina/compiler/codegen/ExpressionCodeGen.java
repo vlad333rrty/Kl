@@ -4,11 +4,19 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
+ *
+ * TODO use this class for every codegen process
  */
 public class ExpressionCodeGen implements IExpressionCodeGen {
+    private final ITypeCaster typeCaster;
+
+    public ExpressionCodeGen(ITypeCaster typeCaster) {
+        this.typeCaster = typeCaster;
+    }
 
     @Override
     public void add(MethodVisitor mv, int index1, int index2) {
@@ -70,5 +78,10 @@ public class ExpressionCodeGen implements IExpressionCodeGen {
     @Override
     public void createField(ClassWriter cw, String name, String descriptor, String signature, Object value) {
         cw.visitField(Opcodes.ACC_PUBLIC, name, descriptor, signature, value);
+    }
+
+    @Override
+    public void cast(Type from, Type to, MethodVisitor mv) throws CodeGenException {
+        typeCaster.cast(from, to, mv);
     }
 }

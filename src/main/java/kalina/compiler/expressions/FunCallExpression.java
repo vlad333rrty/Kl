@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import kalina.compiler.bb.TypeAndName;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
 import kalina.compiler.syntax.parser.data.FunctionInfo;
 import org.objectweb.asm.MethodVisitor;
@@ -28,7 +29,7 @@ public class FunCallExpression extends Expression {
     }
 
     @Override
-    public void translateToBytecode(MethodVisitor mv) {
+    public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         index.ifPresent(integer -> mv.visitVarInsn(Opcodes.ALOAD, integer));
         for (Expression expression : expressions) {
             expression.translateToBytecode(mv);

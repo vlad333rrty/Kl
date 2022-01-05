@@ -3,6 +3,7 @@ package kalina.compiler.instructions;
 import java.util.Optional;
 
 import kalina.compiler.bb.AbstractBasicBlock;
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.CondExpression;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -21,7 +22,7 @@ public class DoInstruction extends Instruction {
     }
 
     @Override
-    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) {
+    public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isEmpty()) {
             throw new IllegalArgumentException();
         }
