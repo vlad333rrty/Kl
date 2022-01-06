@@ -711,7 +711,7 @@ public class RecursiveDescentParser extends AbstractParser {
             Optional<Type> returnType) throws ParseException
     {
         if (returnType.isEmpty() || returnType.get().getSort() == Type.VOID) {
-            new BasicBlock(new FunEndInstruction(Optional.empty()));
+            return new BasicBlock(new FunEndInstruction(Optional.empty()));
         }
         Type type = returnType.get();
         Expression returnValue = parseExpression(localVariableTable, functionTable);
