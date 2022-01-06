@@ -47,8 +47,8 @@
 #define RIGHT_SQ_BR_TAG 44
 #define CLASS_TAG 45
 #define COLON_TAG 46
-#define TRUE_TAG 47 // dummy
-#define FALSE_TAG 48 // dummy
+#define TRUE_TAG 47
+#define FALSE_TAG 48
 #define ARROW_LEFT_TAG 49
 #define STATIC_TAG 50
 #define BEGIN_TAG 51
@@ -62,8 +62,12 @@
 #define WHILE_TAG 59
 #define DOT_TAG 60
 #define BOOL_VALUE_TAG 61
-// arrays
-#define ARRAY_TYPE_TAG 62
+
+#define BOOL_AND_TAG 62
+#define BOOL_OR_TAG 63
+#define XOR_TAG 64
+
+#define ARRAY_TYPE_TAG 99 // consider
 
 #define END_TAG -1
 

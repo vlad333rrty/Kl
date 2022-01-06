@@ -1,7 +1,5 @@
 package kalina.compiler.syntax.parser.data;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.objectweb.asm.Type;
@@ -9,14 +7,13 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class LocalVariableTable implements ILocalVariableTable {
-    private final Map<String, TypeAndIndex> variableTable;
-    private final IndexGenerator indexGenerator;
-    private ILocalVariableTable parent;
-
+public class LocalVariableTable extends AbstractLocalVariableTable {
     public LocalVariableTable(IndexGenerator indexGenerator) {
-        this.variableTable = new HashMap<>();
-        this.indexGenerator = indexGenerator;
+        super(indexGenerator);
+    }
+
+    public LocalVariableTable(AbstractLocalVariableTable parent) {
+        super(parent);
     }
 
     @Override
@@ -24,33 +21,23 @@ public class LocalVariableTable implements ILocalVariableTable {
         if (hasVariable(name)) {
             throw new IllegalArgumentException("Variable is already present in the table: " + name);
         }
-        variableTable.put(name, new TypeAndIndex(type, indexGenerator.getNewIndex(type)));
+        put(name, new TypeAndIndex(type, indexGenerator.getNewIndex(type)));
     }
 
     @Override
-    public Optional<TypeAndIndex> getTypeAndIndex(String name) {
-        ILocalVariableTable current = this;
+    public Optional<TypeAndIndex> findVariable(String name) {
+        AbstractLocalVariableTable current = this;
         while (!current.hasVariable(name)) {
-            if (current.getParent() == null) {
+            if (current.parent == current) {
                 return Optional.empty();
             }
-            current = current.getParent();
+            current = current.parent;
         }
-        return Optional.of(variableTable.get(name));
+        return Optional.of(current.get(name));
     }
 
     @Override
     public boolean hasVariable(String name) {
-        return variableTable.containsKey(name);
-    }
-
-    @Override
-    public void setParent(ILocalVariableTable parent) {
-        this.parent = parent;
-    }
-
-    @Override
-    public ILocalVariableTable getParent() {
-        return parent;
+        return get(name) != null;
     }
 }

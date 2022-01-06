@@ -1,5 +1,10 @@
 package kalina.compiler.syntax.parser;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import kalina.compiler.expressions.Expression;
+import kalina.compiler.expressions.operations.BoolOperation;
 import kalina.compiler.expressions.operations.ComparisonOperation;
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser.data.ITypeDictionary;
@@ -89,5 +94,28 @@ public final class ParseUtils {
         } else {
             throw new IllegalArgumentException("Unexpected token");
         }
+    }
+
+    public static boolean isBoolOperation(Token token) {
+        TokenTag tag = token.getTag();
+        return tag == TokenTag.BOOL_AND_TAG || tag == TokenTag.BOOL_OR_TAG || tag == TokenTag.XOR_TAG;
+    }
+
+    public static BoolOperation getBoolOperation(Token token) throws ParseException {
+        TokenTag tag = token.getTag();
+        switch (tag) {
+            case BOOL_AND_TAG:
+                return BoolOperation.AND;
+            case BOOL_OR_TAG:
+                return BoolOperation.OR;
+            case XOR_TAG:
+                return BoolOperation.XOR;
+            default:
+                throw new ParseException("Unknown bool operation: " + token.getValue());
+        }
+    }
+
+    public static List<Type> expressionsToTypes(List<Expression> expressions) {
+        return expressions.stream().map(Expression::getType).collect(Collectors.toList());
     }
 }

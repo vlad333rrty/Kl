@@ -5,12 +5,17 @@ package kalina.compiler.syntax.parser.data;
  */
 public class LocalVariableTableFactory implements ILocalVariableTableFactory {
     @Override
-    public ILocalVariableTable createLocalVariableTableForNonStatic() {
+    public AbstractLocalVariableTable createLocalVariableTableForNonStatic() {
         return new LocalVariableTable(new SimpleIndexGenerator(1));
     }
 
     @Override
-    public ILocalVariableTable createLocalVariableTableForStatic() {
+    public AbstractLocalVariableTable createLocalVariableTableForStatic() {
         return new LocalVariableTable(new SimpleIndexGenerator(0));
+    }
+
+    @Override
+    public AbstractLocalVariableTable createChildLocalVariableTable(AbstractLocalVariableTable parent) {
+        return new LocalVariableTable(parent);
     }
 }

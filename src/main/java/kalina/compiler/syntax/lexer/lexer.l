@@ -230,11 +230,18 @@ this            {
                     yylval->ident=yytext;
                     return THIS_TAG;
                 }
-char            {
-                        yylval->ident=yytext;
-                        return CHAR_TAG;
-                    }
-
+&&		{
+			yylval->ident = yytext;
+			return BOOL_AND_TAG;
+		}
+\|\|		{
+			yylval->ident = yytext;
+			return BOOL_OR_TAG;
+		}
+\^		{
+			yylval->ident = yytext;
+			return XOR_TAG;
+		}
 {IDENT}\[\]          {
                          yylval->ident=yytext;
                          return ARRAY_TYPE_TAG;

@@ -62,7 +62,9 @@ public enum TokenTag {
 	WHILE_TAG,
 	DOT_TAG,
 	BOOL_VALUE_TAG,
-	//,
+	BOOL_AND_TAG,
+	BOOL_OR_TAG,
+	XOR_TAG,
 	ARRAY_TYPE_TAG,
 	END_TAG,
 }

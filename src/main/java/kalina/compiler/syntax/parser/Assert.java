@@ -14,7 +14,7 @@ class Assert {
 
     static void assertTag(Token token, TokenTag tag) throws ParseException {
         if (token.getTag() != tag) {
-            throw new ParseException(UNEXPECTED_TOKEN + " : "+ token.getTag());
+            throw new ParseException(UNEXPECTED_TOKEN + ": "+ token.getValue());
         }
     }
 
@@ -32,7 +32,7 @@ class Assert {
 
     static void assertTypesCompatible(Type expected, Type actual) throws ParseException {
         if (!expected.equals(actual) && !TypeCastOpcodesMapper.canCast(actual, expected)) {
-            throw new ParseException("Incompatible types. Expected: " + expected.getClassName() + ", got: " + actual.getClassName());
+            throw new ParseException("Incompatible types. Cannot cast " + actual.getClassName() + " to " + expected.getClassName());
         }
     }
 }

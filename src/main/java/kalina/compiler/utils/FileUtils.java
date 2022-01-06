@@ -2,6 +2,7 @@ package kalina.compiler.utils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -24,6 +25,12 @@ public final class FileUtils {
     public static void writeToFile(String path, String data) throws IOException {
         try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write(data);
+        }
+    }
+
+    public static void writeToFile(String path, byte[] data) throws IOException {
+        try (FileOutputStream fos = new FileOutputStream(path)) {
+            fos.write(data);
         }
     }
 }

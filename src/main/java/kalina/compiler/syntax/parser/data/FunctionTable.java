@@ -1,17 +1,20 @@
 package kalina.compiler.syntax.parser.data;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import kalina.compiler.bb.TypeAndName;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
  */
 public class FunctionTable implements IFunctionTable {
-    private final Map<String, FunctionInfo> functionTable = new HashMap<>();
+    private final Map<String, List<FunctionInfo>> functionTable = new HashMap<>();
     private IFunctionTable parent;
 
     @Override
@@ -19,18 +22,21 @@ public class FunctionTable implements IFunctionTable {
         if (hasFunction(name, functionInfo)) {
             throw new IllegalArgumentException("Multiple function definition");
         }
-        functionTable.put(name, functionInfo);
+        functionTable.computeIfAbsent(name, k -> new ArrayList<>()).add(functionInfo);
     }
 
     @Override
-    public Optional<FunctionInfo> getFunctionInfo(String name) {
-        return Optional.ofNullable(functionTable.get(name));
+    public Optional<FunctionInfo> getFunctionInfo(String name, List<Type> signature) {
+        return functionTable.getOrDefault(name, List.of()).stream()
+                .filter(info -> retrieveTypes(info.getArguments()).equals(signature))
+                .findFirst();
     }
 
     @Override
     public boolean hasFunction(String name, FunctionInfo functionInfo) {
-        FunctionInfo presentInfo = functionTable.get(name);
-        return presentInfo != null && hasSimilarSignature(presentInfo.getArguments(), functionInfo.getArguments());
+        List<FunctionInfo> presentInfo = functionTable.getOrDefault(name, List.of());
+        return !presentInfo.isEmpty() && presentInfo.stream()
+                .anyMatch(info -> retrieveTypes(info.getArguments()).equals(retrieveTypes(functionInfo.getArguments())));
     }
 
     @Override
@@ -38,16 +44,7 @@ public class FunctionTable implements IFunctionTable {
         this.parent = parent;
     }
 
-    private boolean hasSimilarSignature(List<TypeAndName> args1, List<TypeAndName> args2) {
-        if (args1.size() != args2.size()) {
-            return false;
-        }
-        for (int i = 0; i < args1.size(); i++) {
-            if (args1.get(i).getType().getSort() != args2.get(i).getType().getSort()) {
-                return false;
-            }
-        }
-
-        return true;
+    private List<Type> retrieveTypes(List<TypeAndName> typeAndNames) {
+        return typeAndNames.stream().map(TypeAndName::getType).collect(Collectors.toList());
     }
 }

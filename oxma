@@ -5,8 +5,6 @@ path_to_sources="$loc"/src/main/java
 path_to_kalina_compiler="$path_to_sources"/kalina/compiler
 path_to_lexer=$path_to_kalina_compiler/syntax/lexer
 
-ERROR_STATE=255
-
 run_lexer () {
   flex --outfile="$1"/lex.yy.c "$1"/"$2"
   gcc -o "$1"/a.out "$1"/lex.yy.c "$path_to_lexer"/logger/logger.c
@@ -16,8 +14,13 @@ run_lexer () {
   rm "$1"/a.out "$1"/lex.yy.c
 }
 
+ERROR_STATE=255
+
+OUTPUT_FILE_NAME=output.kl
+OUTPUT_FILE_PATH="$loc/data/$OUTPUT_FILE_NAME"
+
 # run program lexer
-run_lexer "$path_to_lexer" lexer.l "$1" "$loc/data/output.kl" result
+run_lexer "$path_to_lexer" lexer.l "$1" "$OUTPUT_FILE_PATH" result
 if [ "$result" == "$ERROR_STATE"  ]
 then
   echo "An error occurred during lexical analyses, exit code: $result"
@@ -38,4 +41,4 @@ run_token_generator() {
 # run program token generator
 run_token_generator "$path_to_lexer"/TokenTag.h
 
-./gradlew run
+./gradlew run --args="$OUTPUT_FILE_PATH"
