@@ -273,6 +273,17 @@ public class RecursiveDescentParser extends AbstractParser {
         if (token.getTag() == TokenTag.DOUBLE_NUMBER_TAG) {
             return Factor.createFactor(new ValueExpression(ParseUtils.getTrueValue(token), Type.DOUBLE_TYPE));
         }
+        if (ParseUtils.isValidDeclarationType(token, typeDictionary)) {
+            String rawType = token.getValue();
+            Type convertedType = ParseUtils.convertRawType(rawType);
+            if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                if (convertedType.getSort() != Type.OBJECT) {
+                    throw new ParseException("Not an object. Cannot call static method on " + rawType);
+                }
+                getNextToken();
+                return Factor.createFactor(parseStaticMethodCallExpr(localVariableTable, functionTable, rawType));
+            }
+        }
         if (token.getTag() == TokenTag.IDENT_TAG) {
             String name = token.getValue();
             if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
@@ -402,7 +413,27 @@ public class RecursiveDescentParser extends AbstractParser {
         return parseMethodCall(localVariableTable, functionTable, ownerClassName, Optional.empty(), true);
     }
 
+    private Expression parseStaticMethodCallExpr(
+            AbstractLocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            String ownerClassName) throws ParseException
+    {
+        return parseMethodCallExpr(localVariableTable, functionTable, ownerClassName, Optional.empty(), true);
+    }
+
     private AbstractBasicBlock parseMethodCall(
+            AbstractLocalVariableTable localVariableTable,
+            IFunctionTable functionTable,
+            String className,
+            Optional<String> classRef,
+            boolean isStaticMethodCall) throws ParseException
+    {
+        Expression expression = parseMethodCallExpr(localVariableTable, functionTable, className, classRef, isStaticMethodCall);
+        SimpleInstruction instruction = new SimpleInstruction(expression);
+        return new BasicBlock(instruction);
+    }
+
+    private Expression parseMethodCallExpr(
             AbstractLocalVariableTable localVariableTable,
             IFunctionTable functionTable,
             String className,
@@ -422,7 +453,7 @@ public class RecursiveDescentParser extends AbstractParser {
                 throw new ParseException(String.format("%s: %s", UNDECLARED_VARIABLE_ERROR_MESSAGE, classRef.get()));
             }
         }
-        return parseMethodCallBB(localVariableTable, functionTable, otherFunctionTable, methodName, typeAndIndexO, isStaticMethodCall);
+        return parseMethodCall(localVariableTable, functionTable, otherFunctionTable, methodName, typeAndIndexO, isStaticMethodCall);
     }
 
     private AbstractBasicBlock onTypeDetected(
@@ -557,18 +588,7 @@ public class RecursiveDescentParser extends AbstractParser {
         return localVariableTable.findVariable(name).map(TypeAndIndex::getType);
     }
 
-    private AbstractBasicBlock parseMethodCallBB(
-            AbstractLocalVariableTable localVariableTable,
-            IFunctionTable functionTable,
-            IFunctionTable otherFunctionTable,
-            String funName,
-            Optional<TypeAndIndex> typeAndIndex,
-            boolean isStaticMethodCall) throws ParseException
-    {
-        return new BasicBlock(parseMethodCall(localVariableTable, functionTable, otherFunctionTable, funName, typeAndIndex, isStaticMethodCall));
-    }
-
-    private Instruction parseMethodCall(
+    private Expression parseMethodCall(
             AbstractLocalVariableTable localVariableTable,
             IFunctionTable functionTable,
             IFunctionTable otherFunctionTable,
@@ -587,9 +607,7 @@ public class RecursiveDescentParser extends AbstractParser {
                         String.format("Calling non static method %s of class %s in a static way", funName, functionInfo.getOwnerClass()));
             }
 
-            Expression funCallExpr =
-                    new FunCallExpression(funName, expressions, functionInfo, typeAndIndex.map(TypeAndIndex::getIndex));
-            return new SimpleInstruction(funCallExpr);
+            return new FunCallExpression(funName, expressions, functionInfo, typeAndIndex.map(TypeAndIndex::getIndex));
         }
         throw new ParseException("No function definition found for fun " + funName);
     }
