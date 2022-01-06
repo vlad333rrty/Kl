@@ -17,8 +17,10 @@ import kalina.compiler.utils.FileUtils;
  */
 public class Main {
     public static void main(String[] args) throws IOException, ParseException, CodeGenException {
-        String s = "/home/vlad333rrty/IdeaProjects/KalinaLang/data/output.kl";
-        AbstractParser parser = new RecursiveDescentParser(new Scanner(s));
+        if (args.length == 0) {
+            throw new IllegalArgumentException("No .kl file provided");
+        }
+        AbstractParser parser = new RecursiveDescentParser(new Scanner(args[0]));
         ParseResult result = parser.parse();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         if (result.getRoot().isPresent()) {
