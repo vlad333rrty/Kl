@@ -24,11 +24,13 @@ public abstract class AbstractLocalVariableTable {
         this.parent = parent;
     }
 
-    public abstract void addVariable(String name, Type type);
+    public abstract int addVariable(String name, Type type);
 
     public abstract Optional<TypeAndIndex> findVariable(String name);
 
     public abstract boolean hasVariable(String name);
+
+    public abstract boolean hasVariableGlobal(String name);
 
     protected TypeAndIndex get(String name) {
         return variableTable.get(name);
