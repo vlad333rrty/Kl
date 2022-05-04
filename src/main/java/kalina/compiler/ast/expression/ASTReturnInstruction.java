@@ -12,6 +12,10 @@ public class ASTReturnInstruction implements ASTExpression {
         this.returnExpression = returnExpression;
     }
 
+    public Optional<ASTExpression> getReturnExpression() {
+        return returnExpression;
+    }
+
     @Override
     public String toString() {
         return "ret " + (returnExpression.isPresent() ? returnExpression.get().toString() : "");

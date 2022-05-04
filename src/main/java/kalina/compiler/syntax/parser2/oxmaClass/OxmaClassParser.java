@@ -58,7 +58,8 @@ public class OxmaClassParser extends OxmaParserBase {
         }
         getNextToken();
         switch (token.getTag()) {
-            case FUN_TAG, BEGIN_TAG -> classNode.addChild(methodParser.parse(false, className));
+            case BEGIN_TAG -> classNode.addChild(methodParser.parseBegin(className));
+            case FUN_TAG -> classNode.addChild(methodParser.parse(false, className));
             case STATIC_TAG -> onStaticDetected(classNode, className);
         }
         parseClassEntry(classNode, className);

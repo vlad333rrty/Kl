@@ -4,13 +4,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import kalina.compiler.ast.ASTClassNode;
+import kalina.compiler.ast.ASTMethodEntryNode;
 import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.ast.expression.ASTAssignInstruction;
 import kalina.compiler.ast.expression.ASTExpression;
+import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTIfInstruction;
 import kalina.compiler.ast.expression.ASTInitInstruction;
+import kalina.compiler.ast.expression.ASTReturnInstruction;
 import kalina.compiler.bb.AbstractBasicBlock;
 import kalina.compiler.bb.BasicBlock;
 import kalina.compiler.bb.FunBasicBlock;
@@ -20,13 +24,23 @@ import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
+import kalina.compiler.expressions.ReturnValueInfo;
 import kalina.compiler.expressions.VariableNameAndIndex;
+import kalina.compiler.expressions.v2.FunCallExpression;
+import kalina.compiler.instructions.FunEndInstruction;
+import kalina.compiler.instructions.IfInstruction;
+import kalina.compiler.instructions.Instruction;
+import kalina.compiler.instructions.SimpleInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
+import kalina.compiler.odk.ClassAndSignature;
+import kalina.compiler.odk.ODKMapper;
 import kalina.compiler.syntax.parser.data.AbstractLocalVariableTable;
 import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
 import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser.data.VariableInfo;
+import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
+import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
@@ -61,7 +75,7 @@ public class ClassTraverser {
                     : localVariableTableFactory.createLocalVariableTableForNonStatic();
             node.getArgs().forEach(arg -> localVariableTable.addVariable(arg.getName(), arg.getType()));
             for (ASTExpression expression : node.getExpressions()) {
-                AbstractBasicBlock bb = convertExpression(expression, classNode, localVariableTable);
+                AbstractBasicBlock bb = convertExpression(expression, classNode.getOxmaFunctionTable(), localVariableTable, node.getReturnType());
                 funBasicBlock.addAtTheEnd(bb);
             }
             result.add(funBasicBlock);
@@ -70,38 +84,116 @@ public class ClassTraverser {
         return result;
     }
 
+    public Optional<AbstractBasicBlock> traverseScope(
+            ASTMethodEntryNode node,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable,
+            Type returnType) throws CFGConversionException
+    {
+        AbstractLocalVariableTable childTable = localVariableTableFactory.createChildLocalVariableTable(localVariableTable);
+        List<AbstractBasicBlock> result = new ArrayList<>();
+        for (ASTExpression expression : node.getExpressions()) {
+            AbstractBasicBlock bb = convertExpression(expression, functionTable, childTable, returnType);
+            result.add(bb);
+        }
+        if (result.isEmpty()) {
+            return Optional.empty();
+        }
+        AbstractBasicBlock bb = result.stream().findFirst().get();
+        IntStream.range(1, result.size()).mapToObj(result::get).forEach(bb::addAtTheEnd);
+        return Optional.of(bb);
+    }
+
     public AbstractBasicBlock convertExpression(
             ASTExpression expression,
-            ASTClassNode classNode,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable,
+            Type returnType) throws CFGConversionException
     {
         final AbstractBasicBlock bb;
         if (expression instanceof ASTInitInstruction initInstruction) {
-            bb = constructInitInstruction(initInstruction, classNode, localVariableTable);
+            bb = constructInitInstruction(initInstruction, functionTable, localVariableTable);
         } else if (expression instanceof ASTAssignInstruction assignInstruction) {
-            bb = constructAssignInstruction(assignInstruction, classNode, localVariableTable);
-        } else {
+            bb = constructAssignInstruction(assignInstruction, functionTable, localVariableTable);
+        } else if (expression instanceof ASTIfInstruction ifInstruction) {
+            bb = constructIfInstruction(ifInstruction, functionTable, localVariableTable, returnType);
+        } else if (expression instanceof ASTFunCallExpression funCallExpression) {
+            bb = constructFunCallInstruction(funCallExpression, functionTable, localVariableTable);
+        }
+
+        else if (expression instanceof ASTReturnInstruction returnInstruction) {
+            bb = constructFunEndInstruction(returnInstruction, functionTable, localVariableTable, returnType);
+        }
+        else {
             throw new UnsupportedOperationException();
         }
         return bb;
     }
 
-    private void constructIfInstruction(
-            ASTClassNode classNode,
-            AbstractBasicBlock parentBlock,
+    private AbstractBasicBlock constructFunCallInstruction(
+            ASTFunCallExpression funCallExpression,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+    {
+        List<Expression> funArgs = funCallExpression.arguments().stream()
+                .map(arg -> astExpressionConverter.convert(arg, localVariableTable, functionTable))
+                .toList();
+        List<Type> signature = funArgs.stream().map(Expression::getType).toList();
+        String funName = funCallExpression.funName();
+        Optional<OxmaFunctionInfo> functionInfo = functionTable.getFunctionInfo(funName, signature);
+
+        final Instruction instruction;
+        if (functionInfo.isEmpty()) {
+            Optional<ClassAndSignature> stdFun = ODKMapper.getO(funName);
+            if (stdFun.isEmpty()) {
+                logger.error("");
+                throw new CFGConversionException();
+            }
+            try {
+                instruction = stdFun.get().createInstruction(funArgs);
+            } catch (Exception e) {
+                throw new CFGConversionException();
+            }
+        } else {
+            FunCallExpression funCall = new FunCallExpression(funName, funArgs, functionInfo.get());
+            instruction = new SimpleInstruction(funCall);
+        }
+
+        return new BasicBlock(instruction);
+    }
+
+    private AbstractBasicBlock constructFunEndInstruction(
+            ASTReturnInstruction returnInstruction,
+            OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            ASTIfInstruction ifInstruction)
+            Type returnType)
+    {
+        Optional<Expression> expression = returnInstruction .getReturnExpression()
+                .map(astExpr -> astExpressionConverter.convert(astExpr, localVariableTable, functionTable));
+        Optional<ReturnValueInfo> returnValueInfo = expression.map(expr -> new ReturnValueInfo(returnType, expr));
+        return new BasicBlock(new FunEndInstruction(returnValueInfo));
+    }
+
+    private AbstractBasicBlock constructIfInstruction(
+            ASTIfInstruction ifInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable,
+            Type returnType) throws CFGConversionException
     {
         CondExpression condExpression = astExpressionConverter
-                .convertCondExpression(ifInstruction.condExpression(), localVariableTable, classNode.getOxmaFunctionTable());
-        List<Expression> thenBr = ifInstruction.thenBr().getExpressions().stream()
-                .map(expr -> astExpressionConverter.convert(expr, localVariableTable, classNode.getOxmaFunctionTable()))
-                .toList();
+                .convertCondExpression(ifInstruction.condExpression(), localVariableTable, functionTable);
+        Optional<AbstractBasicBlock> thenEntry = traverseScope(ifInstruction.thenBr(), functionTable, localVariableTable, returnType);
+        Optional<AbstractBasicBlock> elseEntry = ifInstruction.elseBr().isPresent()
+                ? traverseScope(ifInstruction.elseBr().get(), functionTable, localVariableTable, returnType)
+                : Optional.empty();
+
+        IfInstruction instruction = new IfInstruction(condExpression, thenEntry, elseEntry);
+        return new BasicBlock(instruction);
     }
 
     private AbstractBasicBlock constructAssignInstruction(
             ASTAssignInstruction assignInstruction,
-            ASTClassNode classNode,
+            OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable)
     {
         List<VariableInfo> variableInfos = assignInstruction.lhs().stream()
@@ -119,7 +211,7 @@ public class ClassTraverser {
         AssignInstruction instruction = new AssignInstruction(
                 variableInfos,
                 assignInstruction.rhs().stream()
-                        .map(expr -> astExpressionConverter.convert(expr, localVariableTable, classNode.getOxmaFunctionTable()))
+                        .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
                         .toList()
         );
         return new BasicBlock(instruction);
@@ -127,7 +219,7 @@ public class ClassTraverser {
 
     private AbstractBasicBlock constructInitInstruction(
             ASTInitInstruction initInstruction,
-            ASTClassNode classNode,
+            OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable) throws CFGConversionException
     {
         Type type = initInstruction.lhs().type();
@@ -146,7 +238,7 @@ public class ClassTraverser {
         });
         LHS lhs = new LHS(variableNameAndIndices, type);
         List<Expression> rhs = initInstruction.rhs().stream()
-                .map(expr -> astExpressionConverter.convert(expr, localVariableTable, classNode.getOxmaFunctionTable()))
+                .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
                 .toList();
         InitInstruction instruction = new InitInstruction(lhs, rhs);
         return new BasicBlock(instruction);

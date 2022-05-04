@@ -2,14 +2,10 @@ package kalina.compiler.bb;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
-
-import kalina.compiler.instructions.Instruction;
-
 /**
  * @author vlad333rrty
  */
-public class RootBasicBlock extends AbstractBasicBlock {
+public class RootBasicBlock {
     private final List<ClassBasicBlock> classBasicBlocks;
 
     public RootBasicBlock(List<ClassBasicBlock> classBasicBlocks) {
@@ -18,11 +14,5 @@ public class RootBasicBlock extends AbstractBasicBlock {
 
     public List<ClassBasicBlock> getClassBasicBlocks() {
         return classBasicBlocks;
-    }
-
-    @Override
-    @Nullable
-    public Instruction getInstruction() {
-        return null;
     }
 }

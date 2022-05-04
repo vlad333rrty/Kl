@@ -1,7 +1,9 @@
 import java.io.IOException;
 import java.util.List;
 
+import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.ClassBasicBlock;
+import kalina.compiler.bb.RootBasicBlock;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.traverse.ASTTraverser;
 import kalina.compiler.codegen.CodeGenException;
@@ -11,6 +13,7 @@ import kalina.compiler.syntax.parser.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParser;
 import kalina.compiler.syntax.scanner.Scanner;
 import kalina.compiler.utils.FileUtils;
+import kalina.internal.DotGraphConstructor;
 
 /**
  * @author vlad333rrty
@@ -18,10 +21,10 @@ import kalina.compiler.utils.FileUtils;
 public class Main2 {
     public static void main(String[] args) throws IOException, ParseException, CFGConversionException, CodeGenException {
         OxmaParser parser = new OxmaParser(new Scanner("data/output.kl"));
-        var result = parser.parse();
+        ASTRootNode result = parser.parse();
         ASTTraverser astTraverser = new ASTTraverser();
-        var rootBB = astTraverser.traverse(result);
-        System.out.println(result);
+        RootBasicBlock rootBB = astTraverser.traverse(result);
+        DotGraphConstructor.plotGraph(result);
         ClassBasicBlock bb = rootBB.getClassBasicBlocks().get(0);
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);

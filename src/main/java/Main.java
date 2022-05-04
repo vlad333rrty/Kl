@@ -16,11 +16,16 @@ import kalina.compiler.utils.FileUtils;
  * @author vlad333rrty
  */
 public class Main {
+    private static final String DEFAULT_PATH = "/home/vlad333rrty/IdeaProjects/KalinaLang/data/output.kl";
+
     public static void main(String[] args) throws IOException, ParseException, CodeGenException {
+        final String path;
         if (args.length == 0) {
-            throw new IllegalArgumentException("No .kl file provided");
+            path = DEFAULT_PATH;
+        } else {
+            path = args[0];
         }
-        AbstractParser parser = new RecursiveDescentParser(new Scanner(args[0]));
+        AbstractParser parser = new RecursiveDescentParser(new Scanner(path));
         ParseResult result = parser.parse();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         if (result.getRoot().isPresent()) {
@@ -30,5 +35,9 @@ public class Main {
                 FileUtils.writeToFile(res.getClassName() + ".class", res.getByteCode());
             }
         }
+    }
+
+    public int f(int a, int b) {
+        return a > b ? 1 : -1;
     }
 }

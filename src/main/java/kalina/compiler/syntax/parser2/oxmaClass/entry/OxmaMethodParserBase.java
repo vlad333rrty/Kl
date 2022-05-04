@@ -32,8 +32,10 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public abstract class OxmaMethodParserBase extends AbstractOxmaClassEntryParser {
+public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
     private static final Logger logger = LogManager.getLogger(OxmaMethodParserBase.class);
+
+    private static final String BEGIN_BLOCK_INNER_NAME = "main";
 
     protected final OxmaExpressionsParser expressionsParser;
     protected final OxmaConditionExpressionsParser conditionExpressionsParser;
@@ -77,6 +79,25 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaClassEntryParser 
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
         parseFunEntry(returnType, methodNode);
         Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
+        methodNode.addExpression(new ASTReturnInstruction(Optional.empty()));
+
+        return methodNode;
+    }
+
+    @Override
+    public ASTMethodNode parseBegin(String ownerClassName) throws ParseException {
+        Type returnType = Type.VOID_TYPE;
+        ASTMethodNode methodNode = new ASTMethodNode(
+                BEGIN_BLOCK_INNER_NAME,
+                List.of(new TypeAndName(Type.getType(String[].class), "args")),
+                returnType,
+                true,
+                0);
+
+        Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
+        parseFunEntry(returnType, methodNode);
+        Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
+        methodNode.addExpression(new ASTReturnInstruction(Optional.empty()));
 
         return methodNode;
     }

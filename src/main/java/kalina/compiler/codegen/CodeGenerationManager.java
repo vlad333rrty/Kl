@@ -35,12 +35,10 @@ public class CodeGenerationManager {
                 generateByteCodeInt((ClassBasicBlock) bb, result);
                 return;
             }
-            if (bb instanceof FunBasicBlock) {
-                FunBasicBlock funBasicBlock = (FunBasicBlock) bb;
+            if (bb instanceof FunBasicBlock funBasicBlock) {
                 mv = Optional.of(funBasicBlock.getMethodVisitor(cw));
             }
-            if (bb instanceof BasicBlock) {
-                BasicBlock basicBlock = (BasicBlock) bb;
+            if (bb instanceof BasicBlock basicBlock) {
                 basicBlock.getInstruction().translateToBytecode(mv, Optional.of(cw));
             }
             bbO = bb.getNext();
