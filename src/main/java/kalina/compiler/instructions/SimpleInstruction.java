@@ -12,7 +12,7 @@ import org.objectweb.asm.MethodVisitor;
  *
  * @author vlad333rrty
  */
-public class SimpleInstruction extends  Instruction{
+public class SimpleInstruction extends Instruction {
     private final Expression expression;
 
     public SimpleInstruction(Expression expression) {

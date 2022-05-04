@@ -286,6 +286,27 @@ begin		    {
 			yylval->ident=yytext;
                         return BEGIN_TAG;
 		    }
+extends		    {
+			yylval->ident=yytext;
+                        return EXTENDS_TAG;
+		    }
+const		    {
+			yylval->ident=yytext;
+                        return CONST_TAG;
+		    }
+private		    {
+			yylval->ident=yytext;
+                        return PRIVATE_TAG;
+		    }
+protected	    {
+			yylval->ident=yytext;
+                        return PROTECTED_TAG;
+		    }
+public		    {
+			yylval->ident=yytext;
+                        return PUBLIC_TAG;
+		    }
+
 \?              {
                     yylval->ident=yytext;
                     return QUESTION_MARK_TAG;

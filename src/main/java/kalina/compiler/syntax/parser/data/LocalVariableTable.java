@@ -17,11 +17,13 @@ public class LocalVariableTable extends AbstractLocalVariableTable {
     }
 
     @Override
-    public void addVariable(String name, Type type) {
+    public int addVariable(String name, Type type) {
         if (hasVariable(name)) {
             throw new IllegalArgumentException("Variable is already present in the table: " + name);
         }
-        put(name, new TypeAndIndex(type, indexGenerator.getNewIndex(type)));
+        int index = indexGenerator.getNewIndex(type);
+        put(name, new TypeAndIndex(type, index));
+        return index;
     }
 
     @Override
@@ -39,5 +41,10 @@ public class LocalVariableTable extends AbstractLocalVariableTable {
     @Override
     public boolean hasVariable(String name) {
         return get(name) != null;
+    }
+
+    @Override
+    public boolean hasVariableGlobal(String name) {
+        return findVariable(name).isPresent();
     }
 }

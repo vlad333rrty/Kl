@@ -67,6 +67,12 @@
 #define BOOL_OR_TAG 63
 #define XOR_TAG 64
 
+#define EXTENDS_TAG 65
+#define CONST_TAG 66
+#define PRIVATE_TAG 67
+#define PROTECTED_TAG 68
+#define PUBLIC_TAG 69
+
 #define ARRAY_TYPE_TAG 99 // consider
 
 #define END_TAG -1

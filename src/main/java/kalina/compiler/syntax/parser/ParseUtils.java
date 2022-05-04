@@ -118,4 +118,10 @@ public final class ParseUtils {
     public static List<Type> expressionsToTypes(List<Expression> expressions) {
         return expressions.stream().map(Expression::getType).collect(Collectors.toList());
     }
+
+    public static boolean isPrimitiveType(TokenTag tag) {
+        return tag == TokenTag.SHORT_TAG || tag == TokenTag.INT_TAG || tag == TokenTag.LONG_TAG
+                || tag == TokenTag.FLOAT_TAG || tag == TokenTag.DOUBLE_TAG || tag == TokenTag.STRING_TAG
+                || tag == TokenTag.BOOL_TAG;
+    }
 }
