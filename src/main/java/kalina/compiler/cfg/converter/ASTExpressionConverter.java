@@ -8,10 +8,12 @@ import kalina.compiler.ast.expression.ASTCondExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTFactor;
 import kalina.compiler.ast.expression.ASTFunCallExpression;
+import kalina.compiler.ast.expression.ASTMethodCallExpression;
 import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTTerm;
 import kalina.compiler.ast.expression.ASTValueExpression;
 import kalina.compiler.ast.expression.ASTVariableExpression;
+import kalina.compiler.cfg.traverse.FunctionTableProvider;
 import kalina.compiler.expressions.ArithmeticExpression;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
@@ -34,6 +36,12 @@ import org.objectweb.asm.Type;
  */
 public class ASTExpressionConverter {
     private static final Logger logger = LogManager.getLogger(ASTExpressionConverter.class);
+
+    private final FunctionTableProvider functionTableProvider;
+
+    public ASTExpressionConverter(FunctionTableProvider functionTableProvider) {
+        this.functionTableProvider = functionTableProvider;
+    }
 
     public Expression convert(
             ASTExpression astExpression,
@@ -67,17 +75,7 @@ public class ASTExpressionConverter {
             return new ArithmeticExpression(terms, arithmeticExpression.operations());
         }
         if (astExpression instanceof ASTFunCallExpression funCallExpression) {
-            List<Expression> arguments = funCallExpression.arguments().stream()
-                    .map(arg -> convert(arg, localVariableTable, functionTable))
-                    .toList();
-            List<Type> signature = arguments.stream().map(Expression::getType).toList();
-            Optional<OxmaFunctionInfo> functionInfo =
-                    functionTable.getFunctionInfo(funCallExpression.funName(), signature);
-            if (functionInfo.isEmpty()) {
-                logger.error("No declaration found for method {}", funCallExpression.funName());
-                return null;
-            }
-            return new FunCallExpression(funCallExpression.funName(), arguments, functionInfo.get());
+            return convertFunCallExpression(funCallExpression.funName(), funCallExpression.arguments(), localVariableTable, functionTable);
         }
         if (astExpression instanceof ASTObjectCreationExpression objectCreationExpression) {
             List<Expression> arguments = objectCreationExpression.arguments().stream()
@@ -85,9 +83,40 @@ public class ASTExpressionConverter {
                     .toList();
             return new ObjectCreationExpression(objectCreationExpression.className(), arguments);
         }
+        if (astExpression instanceof ASTMethodCallExpression methodCallExpression) {
+            Optional<OxmaFunctionTable> otherClassFunctionTable = functionTableProvider
+                    .getFunctionTable(methodCallExpression.ownerObjectName());
+            if (otherClassFunctionTable.isEmpty()) {
+                logger.error("Unknown type {}", methodCallExpression.ownerObjectName());
+                return null;
+            }
+            return convertFunCallExpression(
+                    methodCallExpression.funName(),
+                    methodCallExpression.arguments(),
+                    localVariableTable,
+                    otherClassFunctionTable.get());
+        }
 
         logger.error("Unknown expression {}", astExpression);
         throw new IllegalArgumentException("Unexpected expression type");
+    }
+
+    private FunCallExpression convertFunCallExpression(
+            String funName,
+            List<ASTExpression> astArgs,
+            AbstractLocalVariableTable localVariableTable,
+            OxmaFunctionTable functionTable)
+    {
+        List<Expression> arguments = astArgs.stream()
+                .map(arg -> convert(arg, localVariableTable, functionTable))
+                .toList();
+        Optional<OxmaFunctionInfo> functionInfo = functionTable
+                .getFunctionInfo(funName, getSignatureFromExpressions(arguments));
+        if (functionInfo.isEmpty()) {
+            logger.error("No declaration found for method {}", funName);
+            return null;
+        }
+        return new FunCallExpression(funName, arguments, functionInfo.get());
     }
 
     public CondExpression convertCondExpression(
@@ -99,5 +128,9 @@ public class ASTExpressionConverter {
                 .map(expr -> convert(expr, localVariableTable, functionTable))
                 .toList();
         return new CondExpression(expressions, condExpression.operations());
+    }
+
+    private List<Type> getSignatureFromExpressions(List<Expression> expressions) {
+        return expressions.stream().map(Expression::getType).toList();
     }
 }

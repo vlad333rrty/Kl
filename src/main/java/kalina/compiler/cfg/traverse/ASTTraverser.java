@@ -2,6 +2,8 @@ package kalina.compiler.cfg.traverse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTRootNode;
@@ -16,6 +18,7 @@ import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
 import kalina.compiler.syntax.parser.data.ITypeDictionary;
 import kalina.compiler.syntax.parser.data.LocalVariableTableFactory;
 import kalina.compiler.syntax.parser.data.TypeDictionary;
+import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 
 /**
  * @author vlad333rrty
@@ -25,10 +28,11 @@ public class ASTTraverser {
         ITypeDictionary typeDictionary = new TypeDictionary();
         fillTypeDictionary(root, typeDictionary);
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
+        FunctionTableProvider functionTableProvider = getFunctionTableProvider(root);
         ClassTraverser classTraverser = new ClassTraverser(
                 localVariableTableFactory,
                 new TypeChecker(typeDictionary),
-                new ASTExpressionConverter()
+                new ASTExpressionConverter(functionTableProvider)
         );
 
         List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();
@@ -40,6 +44,14 @@ public class ASTTraverser {
         }
 
         return new RootBasicBlock(classBasicBlocks);
+    }
+
+    private FunctionTableProvider getFunctionTableProvider(ASTRootNode root) {
+        Map<String, OxmaFunctionTable> classNameToFunctionTable = root.getClassNodes().stream()
+                .collect(Collectors.toMap(
+                        ASTClassNode::getClassName,
+                        ASTClassNode::getOxmaFunctionTable));
+        return new FunctionTableProvider(classNameToFunctionTable);
     }
 
     private void fillTypeDictionary(ASTRootNode root, ITypeDictionary typeDictionary) {
