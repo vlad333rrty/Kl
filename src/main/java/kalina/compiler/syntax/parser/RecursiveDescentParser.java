@@ -838,8 +838,10 @@ public class RecursiveDescentParser extends AbstractParser {
         Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
         List<Expression> expressions = parseFunArgs(localVariableTable, functionTable);
         Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
-        if (functionTable.getFunctionInfo(funName, ParseUtils.expressionsToTypes(expressions)).isPresent()) {
-            return new SimpleInstruction(parseFunCallInt(localVariableTable, functionTable, funName, typeAndIndex));
+        Optional<FunctionInfo> functionInfo = functionTable.getFunctionInfo(funName, ParseUtils.expressionsToTypes(expressions));
+        if (functionInfo.isPresent()) {
+            Expression expression = new FunCallExpression(funName, expressions, functionInfo.get(), Optional.empty());
+            return new SimpleInstruction(expression);
         } else {
             Instruction instruction;
             try {

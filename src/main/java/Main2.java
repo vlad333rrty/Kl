@@ -25,11 +25,13 @@ public class Main2 {
         ASTTraverser astTraverser = new ASTTraverser();
         RootBasicBlock rootBB = astTraverser.traverse(result);
         DotGraphConstructor.plotGraph(result);
-        ClassBasicBlock bb = rootBB.getClassBasicBlocks().get(0);
+        List<ClassBasicBlock> bbs = rootBB.getClassBasicBlocks();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
-        List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
-        for (CodeGenerationResult res : codeGenerationResults) {
-            FileUtils.writeToFile(res.getClassName() + ".class", res.getByteCode());
+        for (ClassBasicBlock bb : bbs) {
+            List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
+            for (CodeGenerationResult res : codeGenerationResults) {
+                FileUtils.writeToFile(res.getClassName() + ".class", res.getByteCode());
+            }
         }
     }
 }

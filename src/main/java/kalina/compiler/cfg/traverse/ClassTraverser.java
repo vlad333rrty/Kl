@@ -10,7 +10,9 @@ import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTMethodEntryNode;
 import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.ast.expression.ASTAssignInstruction;
+import kalina.compiler.ast.expression.ASTDoInstruction;
 import kalina.compiler.ast.expression.ASTExpression;
+import kalina.compiler.ast.expression.ASTForInstruction;
 import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTIfInstruction;
 import kalina.compiler.ast.expression.ASTInitInstruction;
@@ -27,6 +29,8 @@ import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.ReturnValueInfo;
 import kalina.compiler.expressions.VariableNameAndIndex;
 import kalina.compiler.expressions.v2.FunCallExpression;
+import kalina.compiler.instructions.DoInstruction;
+import kalina.compiler.instructions.v2.ForInstruction;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.IfInstruction;
 import kalina.compiler.instructions.Instruction;
@@ -112,25 +116,59 @@ public class ClassTraverser {
     {
         final AbstractBasicBlock bb;
         if (expression instanceof ASTInitInstruction initInstruction) {
-            bb = constructInitInstruction(initInstruction, functionTable, localVariableTable);
+            bb = constructInitBasicBlock(initInstruction, functionTable, localVariableTable);
         } else if (expression instanceof ASTAssignInstruction assignInstruction) {
-            bb = constructAssignInstruction(assignInstruction, functionTable, localVariableTable);
+            bb = constructAssignBasicBlock(assignInstruction, functionTable, localVariableTable);
         } else if (expression instanceof ASTIfInstruction ifInstruction) {
-            bb = constructIfInstruction(ifInstruction, functionTable, localVariableTable, returnType);
+            bb = constructIfBasicBlock(ifInstruction, functionTable, localVariableTable, returnType);
         } else if (expression instanceof ASTFunCallExpression funCallExpression) {
-            bb = constructFunCallInstruction(funCallExpression, functionTable, localVariableTable);
-        }
-
-        else if (expression instanceof ASTReturnInstruction returnInstruction) {
-            bb = constructFunEndInstruction(returnInstruction, functionTable, localVariableTable, returnType);
-        }
-        else {
+            bb = constructFunCallBasicBlock(funCallExpression, functionTable, localVariableTable);
+        } else if (expression instanceof ASTForInstruction forInstruction) {
+            bb = constructForBasicBlock(forInstruction, functionTable, localVariableTable, returnType);
+        } else if (expression instanceof ASTDoInstruction doInstruction) {
+            bb = constructDoInstruction(doInstruction, functionTable, localVariableTable, returnType);
+        } else if (expression instanceof ASTReturnInstruction returnInstruction) {
+            bb = constructFunEndBasicBlock(returnInstruction, functionTable, localVariableTable, returnType);
+        } else {
             throw new UnsupportedOperationException();
         }
         return bb;
     }
 
-    private AbstractBasicBlock constructFunCallInstruction(
+    private AbstractBasicBlock constructDoInstruction(
+            ASTDoInstruction doInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable,
+            Type returnType) throws CFGConversionException
+    {
+        CondExpression condExpression = astExpressionConverter.convertCondExpression(doInstruction.condition(), localVariableTable, functionTable);
+        Optional<AbstractBasicBlock> entry = traverseScope(doInstruction.entry(), functionTable, localVariableTable, returnType);
+        DoInstruction instruction = new DoInstruction(entry, condExpression);
+        return new BasicBlock(instruction);
+    }
+
+    private AbstractBasicBlock constructForBasicBlock(
+            ASTForInstruction forInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable,
+            Type returnType) throws CFGConversionException
+    {
+        Optional<InitInstruction> declarations = forInstruction.declarations().isPresent()
+                ? Optional.of(constructInitInstruction(forInstruction.declarations().get(), functionTable, localVariableTable))
+                : Optional.empty();
+        Optional<CondExpression> condition = forInstruction.condition()
+                .map(cond -> astExpressionConverter.convertCondExpression(cond, localVariableTable, functionTable));
+        Optional<Instruction> action = forInstruction.action().isPresent()
+                ? Optional.of(constructAssignInstruction((ASTAssignInstruction) forInstruction.action().get(), functionTable, localVariableTable))
+                : Optional.empty();
+
+        Optional<AbstractBasicBlock> entry = traverseScope(forInstruction.entry(), functionTable, localVariableTable, returnType);
+
+        ForInstruction instruction = new ForInstruction(declarations, condition, action, entry);
+        return new BasicBlock(instruction);
+    }
+
+    private AbstractBasicBlock constructFunCallBasicBlock(
             ASTFunCallExpression funCallExpression,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable) throws CFGConversionException
@@ -162,7 +200,7 @@ public class ClassTraverser {
         return new BasicBlock(instruction);
     }
 
-    private AbstractBasicBlock constructFunEndInstruction(
+    private AbstractBasicBlock constructFunEndBasicBlock(
             ASTReturnInstruction returnInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
@@ -174,7 +212,7 @@ public class ClassTraverser {
         return new BasicBlock(new FunEndInstruction(returnValueInfo));
     }
 
-    private AbstractBasicBlock constructIfInstruction(
+    private AbstractBasicBlock constructIfBasicBlock(
             ASTIfInstruction ifInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
@@ -191,7 +229,16 @@ public class ClassTraverser {
         return new BasicBlock(instruction);
     }
 
-    private AbstractBasicBlock constructAssignInstruction(
+    private AbstractBasicBlock constructAssignBasicBlock(
+            ASTAssignInstruction assignInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable)
+    {
+        AssignInstruction instruction = constructAssignInstruction(assignInstruction, functionTable, localVariableTable);
+        return new BasicBlock(instruction);
+    }
+
+    private AssignInstruction constructAssignInstruction(
             ASTAssignInstruction assignInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable)
@@ -208,16 +255,24 @@ public class ClassTraverser {
                 .filter(Objects::nonNull)
                 .toList();
 
-        AssignInstruction instruction = new AssignInstruction(
+        return new AssignInstruction(
                 variableInfos,
                 assignInstruction.rhs().stream()
                         .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
                         .toList()
         );
+    }
+
+    private AbstractBasicBlock constructInitBasicBlock(
+            ASTInitInstruction initInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+    {
+        InitInstruction instruction = constructInitInstruction(initInstruction, functionTable, localVariableTable);
         return new BasicBlock(instruction);
     }
 
-    private AbstractBasicBlock constructInitInstruction(
+    private InitInstruction constructInitInstruction(
             ASTInitInstruction initInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable) throws CFGConversionException
@@ -240,7 +295,6 @@ public class ClassTraverser {
         List<Expression> rhs = initInstruction.rhs().stream()
                 .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
                 .toList();
-        InitInstruction instruction = new InitInstruction(lhs, rhs);
-        return new BasicBlock(instruction);
+        return new InitInstruction(lhs, rhs);
     }
 }

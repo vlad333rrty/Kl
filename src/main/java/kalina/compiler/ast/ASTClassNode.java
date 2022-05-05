@@ -53,9 +53,6 @@ public class ASTClassNode {
 
     @Override
     public String toString() {
-        return "Class{ className='" + className + '\'' +
-                "\n, methods number=" + methodNodes.size() +
-                "\n, fields number=" + fieldNodes.size() +
-                '}';
+        return "class " + className;
     }
 }
