@@ -22,19 +22,21 @@ public final class DotGraphConstructor {
 
     private static int counter = 0;
 
-    public static void plotGraph(ASTRootNode rootNode) {
+    public static void plotGraph(ASTRootNode rootNode, String fileName) {
         String graph = buildGraphviz(rootNode);
         try {
             logger.info("Trying to plot graph");
-            plot(graph);
+            plot(graph, fileName);
+            logger.info("Successfully plotted the graph");
         } catch (IOException e) {
             logger.error("Failed to plot graph: {}", e.getMessage());
         }
     }
 
-    private static void plot(String dotCode) throws IOException {
+    private static void plot(String dotCode, String fileName) throws IOException {
         MutableGraph graph = new Parser().read(dotCode);
-        Graphviz.fromGraph(graph).render(Format.PNG).toFile(new File("/home/vlad333rrty/IdeaProjects/KalinaLang/internal/cfg.png"));
+        String pathToCompiler = System.getProperty("user.dir");
+        Graphviz.fromGraph(graph).render(Format.PNG).toFile(new File(pathToCompiler + "/internal/" + fileName));
     }
 
     private static String buildGraphviz(ASTRootNode rootNode) {

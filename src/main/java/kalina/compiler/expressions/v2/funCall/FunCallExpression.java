@@ -1,4 +1,4 @@
-package kalina.compiler.expressions.v2;
+package kalina.compiler.expressions.v2.funCall;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,26 +16,26 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class FunCallExpression extends Expression {
+public class FunCallExpression extends AbstractFunCallExpression {
     private final String funName;
-    private final List<Expression> arguments;
     private final OxmaFunctionInfo functionInfo;
-    private final int index;
+    private final Optional<Integer> variableIndex;
 
     public FunCallExpression(
             String funName,
             List<Expression> arguments,
-            OxmaFunctionInfo functionInfo)
+            OxmaFunctionInfo functionInfo,
+            Optional<Integer> variableIndex)
     {
+        super(arguments);
         this.funName = funName;
-        this.arguments = arguments;
         this.functionInfo = functionInfo;
-        this.index = 0; // todo consider
+        this.variableIndex = variableIndex;
     }
 
     @Override
     public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
-        mv.visitVarInsn(Opcodes.ALOAD, index);
+        variableIndex.ifPresent(index -> mv.visitVarInsn(Opcodes.ALOAD, index));
         for (Expression expression : arguments) {
             expression.translateToBytecode(mv);
         }

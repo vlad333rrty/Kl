@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import kalina.compiler.ast.expression.ASTArithmeticExpression;
+import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
+import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTFactor;
 import kalina.compiler.ast.expression.ASTFunCallExpression;
@@ -17,6 +19,7 @@ import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser.Assert;
 import kalina.compiler.syntax.parser.ParseException;
 import kalina.compiler.syntax.parser.ParseUtils;
+import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.scanner.IScanner;
 import kalina.compiler.syntax.tokens.Token;
 import org.objectweb.asm.Type;
@@ -24,21 +27,21 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class OxmaExpressionsParser extends AbstractOxmaExpressionsParser {
+public class OxmaExpressionsParser extends OxmaParserBase {
 
     public OxmaExpressionsParser(IScanner scanner) {
         super(scanner);
     }
 
-    @Override
     public ASTExpression parse() throws ParseException {
         if (peekNextToken().getTag() == TokenTag.NEW_TAG) {
+            getNextToken();
             return parseNewInt();
         }
         if (peekNextToken().getTag() == TokenTag.STRING_LITERAL_TAG) {
             return new ASTValueExpression(getNextToken().getValue(), Type.getType(String.class));
         }
-        if (peekNextToken().getTag() ==TokenTag.BOOL_VALUE_TAG) {
+        if (peekNextToken().getTag() == TokenTag.BOOL_VALUE_TAG) {
             return new ASTValueExpression(ParseUtils.getTrueValue(getNextToken()), Type.BOOLEAN_TYPE);
         }
         return parseAr();
@@ -106,6 +109,10 @@ public class OxmaExpressionsParser extends AbstractOxmaExpressionsParser {
 
                 ASTExpression methodCall = parseMethodCall(name, methodName.getValue());
                 return ASTFactor.createFactor(methodCall);
+            } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
+                List<Integer> indices = parseArrayGetElement();
+                ASTExpression getElementExpression = new ASTArrayGetElementExpression(name, indices);
+                return ASTFactor.createFactor(getElementExpression);
             }
 
             return ASTFactor.createFactor(new ASTVariableExpression(name));
@@ -124,15 +131,27 @@ public class OxmaExpressionsParser extends AbstractOxmaExpressionsParser {
     }
 
     private ASTExpression parseNewInt() throws ParseException {
-        Assert.assertTag(getNextToken(), TokenTag.NEW_TAG);
         Token token = getNextToken();
+        if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
+            Assert.assertTrue(token, tag -> tag == TokenTag.IDENT_TAG || ParseUtils.isPrimitiveType(tag));
+            return parseArrayWithCapacityCreation(ParseUtils.convertRawType(token));
+        }
 
-        String className = token.getValue();
+        String type = token.getValue();
         Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
         List<ASTExpression> arguments = parseFunArgs();
         Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
 
-        return new ASTObjectCreationExpression(className, arguments);
+        return new ASTObjectCreationExpression(type, arguments);
+    }
+
+    private ASTExpression parseArrayWithCapacityCreation(Type type) throws ParseException {
+        List<Integer> capacities = parseArrayGetElement();
+        return new ASTArrayCreationExpression(capacities, createArrayType(type, capacities.size()), type);
+    }
+
+    private Type createArrayType(Type type, int dimension) {
+        return Type.getType("[".repeat(dimension).concat(type.getDescriptor()));
     }
 
     private List<ASTExpression> parseFunArgs() throws ParseException {
@@ -164,5 +183,22 @@ public class OxmaExpressionsParser extends AbstractOxmaExpressionsParser {
         Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
 
         return new ASTMethodCallExpression(ownerObjectName, funName, args);
+    }
+
+    public List<Integer> parseArrayGetElement() throws ParseException {
+        List<Integer> indices = new ArrayList<>();
+        while (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
+            getNextToken(); // skip `[`
+            Token token = getNextToken();
+            Assert.assertTag(token, TokenTag.NUMBER_TAG);
+            int index = (int) ParseUtils.getTrueValue(token);
+            if (index < 0) {
+                throw new ParseException("Array indexation error: negative index");
+            }
+            indices.add(index);
+            Assert.assertTag(getNextToken(), TokenTag.RIGHT_SQ_BR_TAG);
+        }
+
+        return indices;
     }
 }

@@ -45,4 +45,9 @@ public class FunBasicBlock extends AbstractBasicBlock {
     public Instruction getInstruction() {
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "fun " + name + "(" + arguments + ") -> " + returnType.orElse(Type.VOID_TYPE);
+    }
 }

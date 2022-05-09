@@ -22,12 +22,18 @@ public class LocalVariableTable extends AbstractLocalVariableTable {
             throw new IllegalArgumentException("Variable is already present in the table: " + name);
         }
         int index = indexGenerator.getNewIndex(type);
-        put(name, new TypeAndIndex(type, index));
+        final ExtendedVariableInfo variableInfo;
+        if (type.getSort() == Type.ARRAY) {
+            Type typeOArray =
+                    Type.getType(type.getDescriptor().substring(type.getDescriptor().lastIndexOf("[")));
+
+        }
+        put(name, new ExtendedVariableInfo(type, index));
         return index;
     }
 
     @Override
-    public Optional<TypeAndIndex> findVariable(String name) {
+    public Optional<ExtendedVariableInfo> findVariable(String name) {
         AbstractLocalVariableTable current = this;
         while (!current.hasVariable(name)) {
             if (current.parent == current) {
@@ -46,5 +52,14 @@ public class LocalVariableTable extends AbstractLocalVariableTable {
     @Override
     public boolean hasVariableGlobal(String name) {
         return findVariable(name).isPresent();
+    }
+
+    @Override
+    public ExtendedVariableInfo findVariableOrElseThrow(String name) {
+        Optional<ExtendedVariableInfo> info = findVariable(name);
+        if (info.isEmpty()) {
+            throw new IllegalArgumentException("No declaration found for variable " + name);
+        }
+        return info.get();
     }
 }

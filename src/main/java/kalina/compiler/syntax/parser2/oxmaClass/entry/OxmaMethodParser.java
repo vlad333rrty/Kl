@@ -16,7 +16,7 @@ import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser.Assert;
 import kalina.compiler.syntax.parser.ParseException;
 import kalina.compiler.syntax.parser.ParseUtils;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
+import kalina.compiler.syntax.parser2.oxmaClass.entry.rhs.OxmaRHSParser;
 import kalina.compiler.syntax.parser2.oxmaClass.expressions.OxmaConditionExpressionsParser;
 import kalina.compiler.syntax.parser2.oxmaClass.expressions.OxmaExpressionsParser;
 import kalina.compiler.syntax.scanner.IScanner;
@@ -29,11 +29,11 @@ import org.objectweb.asm.Type;
 public class OxmaMethodParser extends OxmaMethodParserBase {
     public OxmaMethodParser(
             IScanner scanner,
-            OxmaFunctionTable functionTable,
             OxmaExpressionsParser expressionsParser,
-            OxmaConditionExpressionsParser conditionExpressionsParser)
+            OxmaConditionExpressionsParser conditionExpressionsParser,
+            OxmaRHSParser rhsParser)
     {
-        super(scanner, functionTable, expressionsParser, conditionExpressionsParser);
+        super(scanner, expressionsParser, conditionExpressionsParser, rhsParser);
     }
 
     @Override
@@ -111,15 +111,7 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
 
     private ASTInitInstruction parseVarDeclInt() throws ParseException {
         ASTLHS lhs = parseLHS();
-        Token token = peekNextToken();
-        List<ASTExpression> rhs;
-        if (token.getTag() == TokenTag.ASSIGN_TAG) {
-            getNextToken();
-            rhs = parseRHS(lhs.size());
-        } else {
-            rhs = List.of();
-        }
-
+        List<ASTExpression> rhs = parseRHS(lhs.size());
         return new ASTInitInstruction(lhs, rhs);
     }
 
@@ -129,8 +121,7 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
 
         Assert.assertTrue(token, tag -> tag == TokenTag.IDENT_TAG || ParseUtils.isPrimitiveType(tag));
 
-        String type = token.getValue();
-        Type convertedType = ParseUtils.convertRawType(type);
+        Type convertedType = ParseUtils.convertRawType(token);
         variableNames.add(parseSingleVariableDeclaration());
         while (peekNextToken().getTag() == TokenTag.COMMA_TAG) {
             getNextToken();

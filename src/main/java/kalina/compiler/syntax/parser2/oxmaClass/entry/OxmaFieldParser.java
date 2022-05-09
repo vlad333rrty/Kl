@@ -7,7 +7,7 @@ import kalina.compiler.syntax.scanner.IScanner;
 /**
  * @author vlad333rrty
  */
-public class OxmaFieldParser extends AbstractOxmaClassEntryParser {
+public class OxmaFieldParser extends AbstractOxmaFieldParser {
     public OxmaFieldParser(IScanner scanner) {
         super(scanner);
     }

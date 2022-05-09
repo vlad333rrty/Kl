@@ -8,8 +8,8 @@ import kalina.compiler.syntax.scanner.IScanner;
 /**
  * @author vlad333rrty
  */
-public abstract class AbstractOxmaClassEntryParser extends OxmaParserBase {
-    protected AbstractOxmaClassEntryParser(IScanner scanner) {
+public abstract class AbstractOxmaFieldParser extends OxmaParserBase {
+    protected AbstractOxmaFieldParser(IScanner scanner) {
         super(scanner);
     }
 

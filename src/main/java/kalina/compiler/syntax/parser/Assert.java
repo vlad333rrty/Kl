@@ -2,7 +2,7 @@ package kalina.compiler.syntax.parser;
 
 import java.util.function.Predicate;
 
-import kalina.compiler.codegen.TypeCastOpcodesMapper;
+import kalina.compiler.codegen.typeCast.TypeCastOpcodesMapper;
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser.data.ITypeDictionary;
 import kalina.compiler.syntax.tokens.Token;

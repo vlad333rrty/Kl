@@ -7,6 +7,4 @@ public interface ITypeDictionary {
     boolean addType(String name);
 
     boolean hasType(String name);
-
-    boolean isPrimitive(String name);
 }

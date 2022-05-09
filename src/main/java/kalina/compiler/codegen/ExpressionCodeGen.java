@@ -1,5 +1,6 @@
 package kalina.compiler.codegen;
 
+import kalina.compiler.codegen.typeCast.ITypeCaster;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
