@@ -3,6 +3,7 @@ package kalina.compiler.syntax.scanner;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.tokens.Token;
@@ -34,8 +35,7 @@ public class Scanner implements IScanner {
             value = scanner.next();
         }
 
-        return new Token(Arrays.stream(TokenTag.values()).filter(t -> t.ordinal() == tag)
-                .findFirst().orElseThrow(), value);
+        return new Token(getTag(tag), value);
     }
 
     @Override
@@ -49,5 +49,16 @@ public class Scanner implements IScanner {
 
     private String removeQuotes(String s) {
         return s.substring(1, s.length() - 1);
+    }
+
+    private TokenTag getTag(int tag) {
+        try{
+            return Arrays.stream(TokenTag.values())
+                    .filter(t -> t.ordinal() == tag)
+                    .findFirst()
+                    .orElseThrow();
+        } catch (NoSuchElementException e) {
+            throw new NoSuchElementException("Cannot find token with tag " + tag);
+        }
     }
 }

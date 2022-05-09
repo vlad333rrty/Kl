@@ -16,4 +16,9 @@ public class BasicBlock extends AbstractBasicBlock {
     public Instruction getInstruction() {
         return instruction;
     }
+
+    @Override
+    public String toString() {
+        return instruction.toString();
+    }
 }

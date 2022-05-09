@@ -1,5 +1,6 @@
-package kalina.compiler.codegen;
+package kalina.compiler.codegen.typeCast;
 
+import kalina.compiler.codegen.CodeGenException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 

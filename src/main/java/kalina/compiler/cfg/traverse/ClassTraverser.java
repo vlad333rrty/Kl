@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTMethodEntryNode;
 import kalina.compiler.ast.ASTMethodNode;
+import kalina.compiler.ast.expression.ASTAbstractAssignInstruction;
 import kalina.compiler.ast.expression.ASTAssignInstruction;
 import kalina.compiler.ast.expression.ASTDoInstruction;
 import kalina.compiler.ast.expression.ASTExpression;
@@ -17,33 +18,36 @@ import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTIfInstruction;
 import kalina.compiler.ast.expression.ASTInitInstruction;
 import kalina.compiler.ast.expression.ASTReturnInstruction;
+import kalina.compiler.ast.expression.array.ASTArrayAssignInstruction;
 import kalina.compiler.bb.AbstractBasicBlock;
 import kalina.compiler.bb.BasicBlock;
 import kalina.compiler.bb.FunBasicBlock;
+import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.converter.ASTExpressionConverter;
+import kalina.compiler.cfg.converter.ASTInitExpressionConverter;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
+import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.ReturnValueInfo;
 import kalina.compiler.expressions.VariableNameAndIndex;
-import kalina.compiler.expressions.v2.FunCallExpression;
 import kalina.compiler.instructions.DoInstruction;
-import kalina.compiler.instructions.v2.ForInstruction;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.IfInstruction;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.SimpleInstruction;
+import kalina.compiler.instructions.v2.AbstractAssignInstruction;
+import kalina.compiler.instructions.v2.ArrayAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.ForInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
-import kalina.compiler.odk.ClassAndSignature;
-import kalina.compiler.odk.ODKMapper;
 import kalina.compiler.syntax.parser.data.AbstractLocalVariableTable;
+import kalina.compiler.syntax.parser.data.AssignArrayVariableInfo;
+import kalina.compiler.syntax.parser.data.ExtendedVariableInfo;
 import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
-import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser.data.VariableInfo;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,18 +62,21 @@ public class ClassTraverser {
     private final ILocalVariableTableFactory localVariableTableFactory;
     private final TypeChecker typeChecker;
     private final ASTExpressionConverter astExpressionConverter;
+    private final ASTInitExpressionConverter initExpressionConverter;
 
     public ClassTraverser(
             ILocalVariableTableFactory localVariableTableFactory,
             TypeChecker typeChecker,
-            ASTExpressionConverter astExpressionConverter)
+            ASTExpressionConverter astExpressionConverter,
+            ASTInitExpressionConverter initExpressionConverter)
     {
         this.localVariableTableFactory = localVariableTableFactory;
         this.typeChecker = typeChecker;
         this.astExpressionConverter = astExpressionConverter;
+        this.initExpressionConverter = initExpressionConverter;
     }
 
-    public List<AbstractBasicBlock> traverse(ASTClassNode classNode) throws CFGConversionException {
+    public List<AbstractBasicBlock> traverse(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
         List<AbstractBasicBlock> result = new ArrayList<>();
         for (ASTMethodNode node : classNode.getMethodNodes()) {
             FunBasicBlock funBasicBlock =
@@ -92,7 +99,7 @@ public class ClassTraverser {
             ASTMethodEntryNode node,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            Type returnType) throws CFGConversionException
+            Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
         AbstractLocalVariableTable childTable = localVariableTableFactory.createChildLocalVariableTable(localVariableTable);
         List<AbstractBasicBlock> result = new ArrayList<>();
@@ -112,12 +119,12 @@ public class ClassTraverser {
             ASTExpression expression,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            Type returnType) throws CFGConversionException
+            Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
         final AbstractBasicBlock bb;
         if (expression instanceof ASTInitInstruction initInstruction) {
             bb = constructInitBasicBlock(initInstruction, functionTable, localVariableTable);
-        } else if (expression instanceof ASTAssignInstruction assignInstruction) {
+        } else if (expression instanceof ASTAbstractAssignInstruction assignInstruction) {
             bb = constructAssignBasicBlock(assignInstruction, functionTable, localVariableTable);
         } else if (expression instanceof ASTIfInstruction ifInstruction) {
             bb = constructIfBasicBlock(ifInstruction, functionTable, localVariableTable, returnType);
@@ -139,7 +146,7 @@ public class ClassTraverser {
             ASTDoInstruction doInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            Type returnType) throws CFGConversionException
+            Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
         CondExpression condExpression = astExpressionConverter.convertCondExpression(doInstruction.condition(), localVariableTable, functionTable);
         Optional<AbstractBasicBlock> entry = traverseScope(doInstruction.entry(), functionTable, localVariableTable, returnType);
@@ -151,13 +158,14 @@ public class ClassTraverser {
             ASTForInstruction forInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            Type returnType) throws CFGConversionException
+            Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
         Optional<InitInstruction> declarations = forInstruction.declarations().isPresent()
                 ? Optional.of(constructInitInstruction(forInstruction.declarations().get(), functionTable, localVariableTable))
                 : Optional.empty();
-        Optional<CondExpression> condition = forInstruction.condition()
-                .map(cond -> astExpressionConverter.convertCondExpression(cond, localVariableTable, functionTable));
+        Optional<CondExpression> condition = forInstruction.condition().isPresent()
+                ? Optional.of(astExpressionConverter.convertCondExpression(forInstruction.condition().get(), localVariableTable, functionTable))
+                : Optional.empty();
         Optional<Instruction> action = forInstruction.action().isPresent()
                 ? Optional.of(constructAssignInstruction((ASTAssignInstruction) forInstruction.action().get(), functionTable, localVariableTable))
                 : Optional.empty();
@@ -171,33 +179,10 @@ public class ClassTraverser {
     private AbstractBasicBlock constructFunCallBasicBlock(
             ASTFunCallExpression funCallExpression,
             OxmaFunctionTable functionTable,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+            AbstractLocalVariableTable localVariableTable)
     {
-        List<Expression> funArgs = funCallExpression.arguments().stream()
-                .map(arg -> astExpressionConverter.convert(arg, localVariableTable, functionTable))
-                .toList();
-        List<Type> signature = funArgs.stream().map(Expression::getType).toList();
-        String funName = funCallExpression.funName();
-        Optional<OxmaFunctionInfo> functionInfo = functionTable.getFunctionInfo(funName, signature);
-
-        final Instruction instruction;
-        if (functionInfo.isEmpty()) {
-            Optional<ClassAndSignature> stdFun = ODKMapper.getO(funName);
-            if (stdFun.isEmpty()) {
-                logger.error("");
-                throw new CFGConversionException();
-            }
-            try {
-                instruction = stdFun.get().createInstruction(funArgs);
-            } catch (Exception e) {
-                throw new CFGConversionException();
-            }
-        } else {
-            FunCallExpression funCall = new FunCallExpression(funName, funArgs, functionInfo.get());
-            instruction = new SimpleInstruction(funCall);
-        }
-
-        return new BasicBlock(instruction);
+        Expression funCall = astExpressionConverter.convert(funCallExpression, localVariableTable, functionTable);
+        return new BasicBlock(new SimpleInstruction(funCall));
     }
 
     private AbstractBasicBlock constructFunEndBasicBlock(
@@ -216,7 +201,7 @@ public class ClassTraverser {
             ASTIfInstruction ifInstruction,
             OxmaFunctionTable functionTable,
             AbstractLocalVariableTable localVariableTable,
-            Type returnType) throws CFGConversionException
+            Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
         CondExpression condExpression = astExpressionConverter
                 .convertCondExpression(ifInstruction.condExpression(), localVariableTable, functionTable);
@@ -230,43 +215,93 @@ public class ClassTraverser {
     }
 
     private AbstractBasicBlock constructAssignBasicBlock(
-            ASTAssignInstruction assignInstruction,
+            ASTAbstractAssignInstruction abstractAssignInstruction,
             OxmaFunctionTable functionTable,
-            AbstractLocalVariableTable localVariableTable)
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
-        AssignInstruction instruction = constructAssignInstruction(assignInstruction, functionTable, localVariableTable);
+        final AbstractAssignInstruction instruction;
+        if (abstractAssignInstruction instanceof ASTAssignInstruction assignInstruction) {
+            instruction = constructAssignInstruction(assignInstruction, functionTable, localVariableTable);
+        } else if (abstractAssignInstruction instanceof ASTArrayAssignInstruction assignInstruction) {
+            instruction = constructArrayAssignInstruction(assignInstruction, functionTable, localVariableTable);
+        } else {
+            throw new IllegalArgumentException("Unexpected type " + abstractAssignInstruction);
+        }
         return new BasicBlock(instruction);
     }
 
     private AssignInstruction constructAssignInstruction(
             ASTAssignInstruction assignInstruction,
             OxmaFunctionTable functionTable,
-            AbstractLocalVariableTable localVariableTable)
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
-        List<VariableInfo> variableInfos = assignInstruction.lhs().stream()
+        List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
                 .map(name -> {
-                    Optional<TypeAndIndex> typeAndIndexO = localVariableTable.findVariable(name);
-                    if (typeAndIndexO.isEmpty()) {
+                    Optional<ExtendedVariableInfo> variableInfoO = localVariableTable.findVariable(name);
+                    if (variableInfoO.isEmpty()) {
                         logger.error("No info found for variable {}", name);
                         return null;
                     }
-                    return new VariableInfo(name, typeAndIndexO.get().getIndex(), typeAndIndexO.get().getType());
+                    ExtendedVariableInfo variableInfo = variableInfoO.get();
+                    return new VariableInfo(name, variableInfo.getIndex(), variableInfo.getType());
                 })
                 .filter(Objects::nonNull)
                 .toList();
 
-        return new AssignInstruction(
+        AssignInstruction instruction = new AssignInstruction(
                 variableInfos,
-                assignInstruction.rhs().stream()
+                assignInstruction.getRHS().stream()
                         .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
                         .toList()
         );
+        ExpressionValidator.validateAssignExpression(instruction);
+        return instruction;
+    }
+
+    private ArrayAssignInstruction constructArrayAssignInstruction(
+            ASTArrayAssignInstruction assignInstruction,
+            OxmaFunctionTable functionTable,
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
+    {
+        List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
+                .map(lhs -> {
+                    Optional<ExtendedVariableInfo> variableInfoO = localVariableTable.findVariable(lhs.name());
+                    if (variableInfoO.isEmpty()) {
+                        logger.error("No info found for variable {}", lhs.name());
+                        throw new IllegalArgumentException();
+                    }
+                    ExtendedVariableInfo variableInfo = variableInfoO.get();
+                    Assert.isArray(variableInfo.getType());
+                    if (variableInfo.getArrayVariableInfo().isEmpty()) {
+                        logger.error("No array info found for variable {}", lhs.name());
+                        throw new IllegalArgumentException();
+                    }
+                    AssignArrayVariableInfo arrayVariableInfo = new AssignArrayVariableInfo(
+                            lhs.indices(),
+                            variableInfo.getArrayVariableInfo().get().getElementType(),
+                            CFGUtils.lowArrayDimension(variableInfo.getType(), lhs.indices().size()));
+                    return new VariableInfo(
+                            lhs.name(),
+                            variableInfo.getIndex(),
+                            variableInfo.getType(),
+                            arrayVariableInfo);
+                })
+                .toList();
+
+        ArrayAssignInstruction instruction = new ArrayAssignInstruction(
+                variableInfos,
+                assignInstruction.getRHS().stream()
+                        .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
+                        .toList()
+        );
+        ExpressionValidator.validateAssignExpression(instruction);
+        return instruction;
     }
 
     private AbstractBasicBlock constructInitBasicBlock(
             ASTInitInstruction initInstruction,
             OxmaFunctionTable functionTable,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+            AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException
     {
         InitInstruction instruction = constructInitInstruction(initInstruction, functionTable, localVariableTable);
         return new BasicBlock(instruction);
@@ -275,11 +310,11 @@ public class ClassTraverser {
     private InitInstruction constructInitInstruction(
             ASTInitInstruction initInstruction,
             OxmaFunctionTable functionTable,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException
+            AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException
     {
         Type type = initInstruction.lhs().type();
         if (!Assert.assertIsValidDeclarationType(type, typeChecker)) {
-            throw new CFGConversionException();
+            throw new CFGConversionException("Wrong declaration type");
         }
         List<String> filteredVariableNames = initInstruction.lhs()
                 .variableNames()
@@ -292,9 +327,18 @@ public class ClassTraverser {
             variableNameAndIndices.add(new VariableNameAndIndex(name, index));
         });
         LHS lhs = new LHS(variableNameAndIndices, type);
-        List<Expression> rhs = initInstruction.rhs().stream()
-                .map(expr -> astExpressionConverter.convert(expr, localVariableTable, functionTable))
-                .toList();
-        return new InitInstruction(lhs, rhs);
+        List<Expression> rhs = new ArrayList<>();
+        IntStream.range(0, initInstruction.rhs().size())
+                .forEach(i -> {
+                    Expression convert = initExpressionConverter.convert(
+                            initInstruction.rhs().get(i),
+                            localVariableTable,
+                            functionTable,
+                            lhs.getVars().get(i).getName());
+                    rhs.add(convert);
+                });
+        InitInstruction instruction = new InitInstruction(lhs, rhs);
+        ExpressionValidator.validateInitExpression(instruction);
+        return instruction;
     }
 }

@@ -73,7 +73,7 @@
 #define PROTECTED_TAG 68
 #define PUBLIC_TAG 69
 
-#define ARRAY_TYPE_TAG 99 // consider
+#define ARRAY_TYPE_TAG 70
 
 #define END_TAG -1
 

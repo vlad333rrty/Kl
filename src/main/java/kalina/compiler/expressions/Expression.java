@@ -3,7 +3,7 @@ package kalina.compiler.expressions;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.ExpressionCodeGen;
 import kalina.compiler.codegen.IExpressionCodeGen;
-import kalina.compiler.codegen.TypeCaster;
+import kalina.compiler.codegen.typeCast.TypeCaster;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;
 

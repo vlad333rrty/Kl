@@ -21,7 +21,6 @@ public class TypeDictionary implements ITypeDictionary {
         return isPrimitive(name) || types.contains(name);
     }
 
-    @Override
     public boolean isPrimitive(String name) {
         return primitiveTypes.contains(name);
     }

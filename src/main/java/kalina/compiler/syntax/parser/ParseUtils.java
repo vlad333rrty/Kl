@@ -49,26 +49,32 @@ public final class ParseUtils {
     }
 
     public static Type convertRawType(String type) {
-        switch (type) {
-            case "void":
-                return Type.VOID_TYPE;
-            case "short":
-                return Type.SHORT_TYPE;
-            case "int":
-                return Type.INT_TYPE;
-            case "long":
-                return Type.LONG_TYPE;
-            case "float":
-                return Type.FLOAT_TYPE;
-            case "double":
-                return Type.DOUBLE_TYPE;
-            case "bool":
-                return Type.BOOLEAN_TYPE;
-            case "string":
-                return Type.getType(String.class);
-            default:
-                return Type.getObjectType(type);
+        return switch (type) {
+            case "void" -> Type.VOID_TYPE;
+            case "short" -> Type.SHORT_TYPE;
+            case "int" -> Type.INT_TYPE;
+            case "long" -> Type.LONG_TYPE;
+            case "float" -> Type.FLOAT_TYPE;
+            case "double" -> Type.DOUBLE_TYPE;
+            case "bool" -> Type.BOOLEAN_TYPE;
+            case "string" -> Type.getType(String.class);
+            default -> Type.getObjectType(type);
+        };
+    }
+
+    public static Type convertRawType(Token token) {
+        if (token.getTag() == TokenTag.ARRAY_TYPE_TAG) {
+            return Type.getType(buildDescriptorForArray(token.getValue()));
+        } else {
+            return convertRawType(token.getValue());
         }
+    }
+
+    private static String buildDescriptorForArray(String value) {
+        String arrayType = value.substring(0, value.indexOf("["));
+        String typeDescriptor = convertRawType(arrayType).getDescriptor();
+        int dimension = (int)value.chars().filter(c -> c == '[').count();
+        return "[".repeat(dimension).concat(typeDescriptor);
     }
 
     public static boolean isComparisonOperation(Token token) {

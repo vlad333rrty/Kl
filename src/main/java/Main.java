@@ -11,6 +11,7 @@ import kalina.compiler.syntax.parser.ParseResult;
 import kalina.compiler.syntax.parser.RecursiveDescentParser;
 import kalina.compiler.syntax.scanner.Scanner;
 import kalina.compiler.utils.FileUtils;
+import kalina.internal.CFGTreePrinter;
 
 /**
  * @author vlad333rrty
@@ -29,15 +30,12 @@ public class Main {
         ParseResult result = parser.parse();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         if (result.getRoot().isPresent()) {
+            CFGTreePrinter.print(result.getRoot().get());
             ClassBasicBlock bb = result.getRoot().get();
             List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
             for (CodeGenerationResult res : codeGenerationResults) {
                 FileUtils.writeToFile(res.getClassName() + ".class", res.getByteCode());
             }
         }
-    }
-
-    public int f(int a, int b) {
-        return a > b ? 1 : -1;
     }
 }

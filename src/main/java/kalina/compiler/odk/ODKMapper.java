@@ -1,20 +1,20 @@
 package kalina.compiler.odk;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import kalina.compiler.instructions.PrintlnInstruction;
+import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
+import kalina.compiler.expressions.v2.funCall.PrintlnExpression;
 
 /**
  * @author vlad333rrty
  */
 public final class ODKMapper {
-    private static final Map<String, ClassAndSignature> nameToInstructionAndSignature = Map.of(
-            "println", new ClassAndSignature(PrintlnInstruction.class, new Class[]{List.class})
+    private static final Map<String, Class<? extends AbstractFunCallExpression>> nameToInstructionAndSignature = Map.of(
+            "println", PrintlnExpression.class
     );
 
-    public static Optional<ClassAndSignature> getO(String name) {
+    public static Optional<Class<? extends AbstractFunCallExpression>> getO(String name) {
         return Optional.ofNullable(nameToInstructionAndSignature.get(name));
     }
 }

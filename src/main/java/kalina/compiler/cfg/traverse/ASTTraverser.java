@@ -11,28 +11,33 @@ import kalina.compiler.bb.AbstractBasicBlock;
 import kalina.compiler.bb.ClassBasicBlock;
 import kalina.compiler.bb.RootBasicBlock;
 import kalina.compiler.cfg.converter.ASTExpressionConverter;
+import kalina.compiler.cfg.converter.ASTInitExpressionConverter;
 import kalina.compiler.cfg.data.TypeChecker;
+import kalina.compiler.cfg.data.TypeDictionary;
+import kalina.compiler.cfg.data.TypeDictionaryImpl;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
+import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.instructions.DefaultConstructorInstruction;
 import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
-import kalina.compiler.syntax.parser.data.ITypeDictionary;
 import kalina.compiler.syntax.parser.data.LocalVariableTableFactory;
-import kalina.compiler.syntax.parser.data.TypeDictionary;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 
 /**
  * @author vlad333rrty
  */
 public class ASTTraverser {
-    public RootBasicBlock traverse(ASTRootNode root) throws CFGConversionException {
-        ITypeDictionary typeDictionary = new TypeDictionary();
+    public RootBasicBlock traverse(ASTRootNode root) throws CFGConversionException, IncompatibleTypesException {
+        TypeDictionary typeDictionary = new TypeDictionaryImpl();
         fillTypeDictionary(root, typeDictionary);
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
         FunctionTableProvider functionTableProvider = getFunctionTableProvider(root);
+        ASTExpressionConverter expressionConverter = new ASTExpressionConverter(functionTableProvider);
+        ASTInitExpressionConverter initExpressionConverter = new ASTInitExpressionConverter(expressionConverter);
         ClassTraverser classTraverser = new ClassTraverser(
                 localVariableTableFactory,
                 new TypeChecker(typeDictionary),
-                new ASTExpressionConverter(functionTableProvider)
+                expressionConverter,
+                initExpressionConverter
         );
 
         List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();
@@ -54,7 +59,7 @@ public class ASTTraverser {
         return new FunctionTableProvider(classNameToFunctionTable);
     }
 
-    private void fillTypeDictionary(ASTRootNode root, ITypeDictionary typeDictionary) {
+    private void fillTypeDictionary(ASTRootNode root, TypeDictionary typeDictionary) {
         root.getClassNodes().stream().map(ASTClassNode::getClassName).forEach(typeDictionary::addType);
     }
 }

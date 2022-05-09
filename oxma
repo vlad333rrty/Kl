@@ -16,8 +16,8 @@ run_lexer () {
 
 ERROR_STATE=255
 
-OUTPUT_FILE_NAME=output.kl
-OUTPUT_FILE_PATH="$loc/data/$OUTPUT_FILE_NAME"
+DEFAULT_OUTPUT_FILE_NAME=output.kl
+OUTPUT_FILE_PATH="$loc/data/$DEFAULT_OUTPUT_FILE_NAME"
 
 # run program lexer
 run_lexer "$path_to_lexer" lexer.l "$1" "$OUTPUT_FILE_PATH" result

@@ -8,12 +8,13 @@ import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.expressions.operations.ComparisonOperation;
 import kalina.compiler.syntax.parser.ParseException;
 import kalina.compiler.syntax.parser.ParseUtils;
+import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.scanner.IScanner;
 
 /**
  * @author vlad333rrty
  */
-public class OxmaConditionExpressionsParser extends AbstractOxmaExpressionsParser {
+public class OxmaConditionExpressionsParser extends OxmaParserBase {
     private final OxmaExpressionsParser expressionsParser;
 
     public OxmaConditionExpressionsParser(IScanner scanner, OxmaExpressionsParser expressionsParser) {
@@ -22,7 +23,6 @@ public class OxmaConditionExpressionsParser extends AbstractOxmaExpressionsParse
     }
 
     // todo improve logic
-    @Override
     public ASTCondExpression parse() throws ParseException {
         ASTExpression expression = expressionsParser.parse();
         List<ASTExpression> expressions = new ArrayList<>();

@@ -9,7 +9,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-class Assert {
+public class Assert {
     private static final Logger logger = LogManager.getLogger(Assert.class);
 
     public static boolean assertIsValidDeclarationType(Type type, TypeChecker typeChecker) {
@@ -26,5 +26,12 @@ class Assert {
             return false;
         }
         return true;
+    }
+
+    public static void isArray(Type type) {
+        if (type.getSort() != Type.ARRAY) {
+            logger.error("Expected array, got {}", type);
+            throw new IllegalArgumentException("Expected array, got " + type);
+        }
     }
 }

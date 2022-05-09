@@ -1,14 +1,17 @@
 package kalina.compiler.cfg.data;
 
-import kalina.compiler.syntax.parser.data.ITypeDictionary;
+import java.util.Set;
 
 /**
  * @author vlad333rrty
  */
 public class TypeChecker {
-    private final ITypeDictionary typeDictionary;
+    private static final Set<String> isPrimitiveNumber =
+            Set.of("short", "int", "long", "bool", "float", "double");
 
-    public TypeChecker(ITypeDictionary typeDictionary) {
+    private final TypeDictionary typeDictionary;
+
+    public TypeChecker(TypeDictionary typeDictionary) {
         this.typeDictionary = typeDictionary;
     }
 
@@ -16,7 +19,7 @@ public class TypeChecker {
         return typeDictionary.hasType(name);
     }
 
-    public boolean isPrimitive(String name) {
-        return typeDictionary.isPrimitive(name);
+    public static boolean isPrimitiveNumber(String name) {
+        return isPrimitiveNumber.contains(name);
     }
 }

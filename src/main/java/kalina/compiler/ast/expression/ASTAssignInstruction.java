@@ -1,30 +1,24 @@
 package kalina.compiler.ast.expression;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * @author vlad333rrty
  */
-public class ASTAssignInstruction implements ASTExpression {
+public class ASTAssignInstruction extends ASTAbstractAssignInstruction {
     private final List<String> lhs;
-    private final List<ASTExpression> rhs;
 
     public ASTAssignInstruction(List<String> lhs, List<ASTExpression> rhs) {
+        super(rhs);
         this.lhs = lhs;
-        this.rhs = rhs;
     }
 
     @Override
-    public String toString() {
-        return lhs + " = " + rhs.stream().map(Object::toString).collect(Collectors.joining(", "));
+    protected String getLHSString() {
+        return lhs.toString();
     }
 
-    public List<String> lhs() {
+    public List<String> getLHS() {
         return lhs;
-    }
-
-    public List<ASTExpression> rhs() {
-        return rhs;
     }
 }

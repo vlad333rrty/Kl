@@ -56,6 +56,14 @@ public class InitInstruction extends Instruction {
         }
     }
 
+    public LHS getLhs() {
+        return lhs;
+    }
+
+    public List<Expression> getRhs() {
+        return rhs;
+    }
+
     private Object getEmptyValue(Type type) {
         return switch (type.getSort()) {
             case Type.SHORT, Type.INT -> 0;
