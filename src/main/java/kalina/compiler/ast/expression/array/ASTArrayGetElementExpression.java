@@ -9,9 +9,9 @@ import kalina.compiler.ast.expression.ASTExpression;
  */
 public class ASTArrayGetElementExpression implements ASTExpression {
     private final String variableName;
-    private final List<Integer> indices;
+    private final List<ASTExpression> indices;
 
-    public ASTArrayGetElementExpression(String variableName, List<Integer> indices) {
+    public ASTArrayGetElementExpression(String variableName, List<ASTExpression> indices) {
         this.variableName = variableName;
         this.indices = indices;
     }
@@ -20,7 +20,12 @@ public class ASTArrayGetElementExpression implements ASTExpression {
         return variableName;
     }
 
-    public List<Integer> getIndices() {
+    public List<ASTExpression> getIndices() {
         return indices;
+    }
+
+    @Override
+    public String toString() {
+        return variableName + indices;
     }
 }

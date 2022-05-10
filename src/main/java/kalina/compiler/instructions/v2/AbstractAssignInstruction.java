@@ -53,7 +53,7 @@ public abstract class AbstractAssignInstruction extends Instruction {
         return rhs;
     }
 
-    protected abstract void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo);
+    protected abstract void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo) throws CodeGenException;
 
     protected abstract void visitStore(MethodVisitor mv, VariableInfo variableInfo);
 }

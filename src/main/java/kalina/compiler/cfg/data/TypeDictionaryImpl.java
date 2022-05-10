@@ -8,7 +8,7 @@ import java.util.Set;
  */
 public class TypeDictionaryImpl implements TypeDictionary {
     private final Set<String> types = new HashSet<>(Set.of(
-            "short", "int", "long", "bool", "float", "double", "java.lang.String"
+            "short", "int", "long", "bool", "float", "double", "java.lang.String", "boolean"
     ));
 
     @Override

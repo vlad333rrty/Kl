@@ -8,13 +8,13 @@ import kalina.compiler.ast.ASTMethodEntryNode;
  * @author vlad333rrty
  */
 public final class ASTForInstruction implements ASTExpression {
-    private final Optional<ASTInitInstruction> declarations;
+    private final Optional<ASTExpression> declarations;
     private final Optional<ASTCondExpression> condition;
     private final Optional<ASTExpression> action;
     private final ASTMethodEntryNode entry;
 
     public ASTForInstruction(
-            Optional<ASTInitInstruction> declarations,
+            Optional<ASTExpression> declarations,
             Optional<ASTCondExpression> condition,
             Optional<ASTExpression> action,
             ASTMethodEntryNode entry)
@@ -33,7 +33,7 @@ public final class ASTForInstruction implements ASTExpression {
                 entry.toString() + "\n}";
     }
 
-    public Optional<ASTInitInstruction> declarations() {
+    public Optional<ASTExpression> declarations() {
         return declarations;
     }
 

@@ -16,13 +16,13 @@ import org.objectweb.asm.Opcodes;
  * @author vlad333rrty
  */
 public class ForInstruction extends Instruction {
-    private final Optional<InitInstruction> declarations;
+    private final Optional<Instruction> declarations;
     private final Optional<CondExpression> condition;
     private final Optional<Instruction> action;
     private final Optional<AbstractBasicBlock> entry;
 
     public ForInstruction(
-            Optional<InitInstruction> declarations,
+            Optional<Instruction> declarations,
             Optional<CondExpression> condition,
             Optional<Instruction> action,
             Optional<AbstractBasicBlock> entry)
@@ -38,7 +38,7 @@ public class ForInstruction extends Instruction {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
             if (declarations.isPresent()) {
-                InitInstruction instruction = declarations.get();
+                Instruction instruction = declarations.get();
                 //methodVisitor.visitLabel(instruction.getStart());
                 instruction.translateToBytecode(mv, cw);
             }
