@@ -110,7 +110,7 @@ public class OxmaExpressionsParser extends OxmaParserBase {
                 ASTExpression methodCall = parseMethodCall(name, methodName.getValue());
                 return ASTFactor.createFactor(methodCall);
             } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
-                List<Integer> indices = parseArrayGetElement();
+                List<ASTExpression> indices = parseArrayGetElement();
                 ASTExpression getElementExpression = new ASTArrayGetElementExpression(name, indices);
                 return ASTFactor.createFactor(getElementExpression);
             }
@@ -146,7 +146,7 @@ public class OxmaExpressionsParser extends OxmaParserBase {
     }
 
     private ASTExpression parseArrayWithCapacityCreation(Type type) throws ParseException {
-        List<Integer> capacities = parseArrayGetElement();
+        List<ASTExpression> capacities = parseArrayGetElement();
         return new ASTArrayCreationExpression(capacities, createArrayType(type, capacities.size()), type);
     }
 
@@ -185,16 +185,11 @@ public class OxmaExpressionsParser extends OxmaParserBase {
         return new ASTMethodCallExpression(ownerObjectName, funName, args);
     }
 
-    public List<Integer> parseArrayGetElement() throws ParseException {
-        List<Integer> indices = new ArrayList<>();
+    public List<ASTExpression> parseArrayGetElement() throws ParseException {
+        List<ASTExpression>indices = new ArrayList<>();
         while (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
             getNextToken(); // skip `[`
-            Token token = getNextToken();
-            Assert.assertTag(token, TokenTag.NUMBER_TAG);
-            int index = (int) ParseUtils.getTrueValue(token);
-            if (index < 0) {
-                throw new ParseException("Array indexation error: negative index");
-            }
+            ASTExpression index = parse();
             indices.add(index);
             Assert.assertTag(getNextToken(), TokenTag.RIGHT_SQ_BR_TAG);
         }

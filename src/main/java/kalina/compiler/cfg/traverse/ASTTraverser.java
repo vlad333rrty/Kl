@@ -11,7 +11,6 @@ import kalina.compiler.bb.AbstractBasicBlock;
 import kalina.compiler.bb.ClassBasicBlock;
 import kalina.compiler.bb.RootBasicBlock;
 import kalina.compiler.cfg.converter.ASTExpressionConverter;
-import kalina.compiler.cfg.converter.ASTInitExpressionConverter;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.TypeDictionary;
 import kalina.compiler.cfg.data.TypeDictionaryImpl;
@@ -32,12 +31,10 @@ public class ASTTraverser {
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
         FunctionTableProvider functionTableProvider = getFunctionTableProvider(root);
         ASTExpressionConverter expressionConverter = new ASTExpressionConverter(functionTableProvider);
-        ASTInitExpressionConverter initExpressionConverter = new ASTInitExpressionConverter(expressionConverter);
         ClassTraverser classTraverser = new ClassTraverser(
                 localVariableTableFactory,
                 new TypeChecker(typeDictionary),
-                expressionConverter,
-                initExpressionConverter
+                expressionConverter
         );
 
         List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();

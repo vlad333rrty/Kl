@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import kalina.compiler.ast.ASTLHS;
 import kalina.compiler.ast.ASTMethodEntryNode;
+import kalina.compiler.ast.expression.ASTAssignInstruction;
 import kalina.compiler.ast.expression.ASTCondExpression;
 import kalina.compiler.ast.expression.ASTDoInstruction;
 import kalina.compiler.ast.expression.ASTExpression;
@@ -57,11 +58,11 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
     @Override
     protected ASTExpression parseForStmt(Type returnType) throws ParseException {
         Assert.assertTag(getNextToken(), TokenTag.FOR_TAG);
-        Optional<ASTInitInstruction> varDecl;
+        Optional<ASTExpression> declarationsOrAssigns;
         if (peekNextToken().getTag() == TokenTag.SEMICOLON_TAG) {
-            varDecl = Optional.empty();
+            declarationsOrAssigns = Optional.empty();
         } else {
-            varDecl = Optional.of(parseVarDeclInt());
+            declarationsOrAssigns = Optional.of(parseForStmtDeclsOrAssigns());
         }
         Assert.assertTag(getNextToken(), TokenTag.SEMICOLON_TAG);
         Optional<ASTCondExpression> cond;
@@ -83,7 +84,7 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
         parseFunEntry(returnType, forEntry);
         Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
 
-        return new ASTForInstruction(varDecl, cond, action, forEntry);
+        return new ASTForInstruction(declarationsOrAssigns, cond, action, forEntry);
     }
 
     @Override
@@ -109,26 +110,49 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
         return branch;
     }
 
-    private ASTInitInstruction parseVarDeclInt() throws ParseException {
-        ASTLHS lhs = parseLHS();
-        List<ASTExpression> rhs = parseRHS(lhs.size());
-        return new ASTInitInstruction(lhs, rhs);
+    private ASTExpression parseForStmtDeclsOrAssigns() throws ParseException {
+        Token token = getNextToken();
+        if ((token.getTag() == TokenTag.IDENT_TAG || ParseUtils.isPrimitiveType(token.getTag()))
+                && peekNextToken().getTag() == TokenTag.IDENT_TAG)
+        {
+            return parseForStmtInits(token);
+        }
+        Assert.assertTag(token, TokenTag.IDENT_TAG);
+        return parseForStmtAssigns(token.getValue());
     }
 
-    private ASTLHS parseLHS() throws ParseException {
+    private List<String> parseForStmtLHS() throws ParseException {
         List<String> variableNames = new ArrayList<>();
-        Token token = getNextToken();
-
-        Assert.assertTrue(token, tag -> tag == TokenTag.IDENT_TAG || ParseUtils.isPrimitiveType(tag));
-
-        Type convertedType = ParseUtils.convertRawType(token);
         variableNames.add(parseSingleVariableDeclaration());
         while (peekNextToken().getTag() == TokenTag.COMMA_TAG) {
             getNextToken();
             variableNames.add(parseSingleVariableDeclaration());
         }
+        return variableNames;
+    }
 
-        return new ASTLHS(variableNames, convertedType);
+    private List<String> parseForStmtLHSWithFirstVariable(String firstVarName) throws ParseException {
+        List<String> variableNames = new ArrayList<>();
+        variableNames.add(firstVarName);
+        while (peekNextToken().getTag() == TokenTag.COMMA_TAG) {
+            getNextToken();
+            variableNames.add(parseSingleVariableDeclaration());
+        }
+        return variableNames;
+    }
+
+    private ASTExpression parseForStmtInits(Token typeToken) throws ParseException {
+        Type convertedType = ParseUtils.convertRawType(typeToken);
+        List<String> variableNames = parseForStmtLHS();
+        ASTLHS lhs = new ASTLHS(variableNames, convertedType);
+        List<ASTExpression> rhs = parseRHS(lhs.size());
+        return new ASTInitInstruction(lhs, rhs);
+    }
+
+    private ASTExpression parseForStmtAssigns(String firstVarName) throws ParseException {
+        List<String> variableNames = parseForStmtLHSWithFirstVariable(firstVarName);
+        List<ASTExpression> rhs = parseRHS(variableNames.size());
+        return new ASTAssignInstruction(variableNames, rhs);
     }
 
     private ASTExpression parseAction() throws ParseException {

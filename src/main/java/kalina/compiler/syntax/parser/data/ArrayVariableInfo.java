@@ -16,10 +16,6 @@ public class ArrayVariableInfo {
         this.elementType = elementType;
     }
 
-    public List<Integer> getCapacities() {
-        return capacities;
-    }
-
     public Type getElementType() {
         return elementType;
     }

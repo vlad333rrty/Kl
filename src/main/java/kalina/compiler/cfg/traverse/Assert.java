@@ -20,12 +20,11 @@ public class Assert {
         return true;
     }
 
-    public static boolean assertMultipleVariableDeclarations(String varName, AbstractLocalVariableTable localVariableTable) {
+    public static void assertMultipleVariableDeclarations(String varName, AbstractLocalVariableTable localVariableTable) {
         if (localVariableTable.hasVariableGlobal(varName)) {
             logger.error("Multiple variable declarations for {}", varName);
-            return false;
+            throw new IllegalArgumentException("Multiple variable declarations for " + varName);
         }
-        return true;
     }
 
     public static void isArray(Type type) {

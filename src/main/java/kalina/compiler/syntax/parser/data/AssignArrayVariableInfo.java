@@ -2,23 +2,24 @@ package kalina.compiler.syntax.parser.data;
 
 import java.util.List;
 
+import kalina.compiler.expressions.Expression;
 import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
  */
 public class AssignArrayVariableInfo {
-    private final List<Integer> indices;
+    private final List<Expression> indices;
     private final Type elementType;
     private final Type loweredType;
 
-    public AssignArrayVariableInfo(List<Integer> indices, Type elementType, Type loweredType) {
+    public AssignArrayVariableInfo(List<Expression> indices, Type elementType, Type loweredType) {
         this.indices = indices;
         this.elementType = elementType;
         this.loweredType = loweredType;
     }
 
-    public List<Integer> getIndices() {
+    public List<Expression> getIndices() {
         return indices;
     }
 

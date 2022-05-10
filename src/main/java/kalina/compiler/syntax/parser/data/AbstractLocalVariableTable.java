@@ -12,7 +12,7 @@ import org.objectweb.asm.Type;
 public abstract class AbstractLocalVariableTable {
     protected final IndexGenerator indexGenerator;
     protected final AbstractLocalVariableTable parent;
-    private final Map<String, ExtendedVariableInfo> variableTable = new HashMap<>();
+    private final Map<String, TypeAndIndex> variableTable = new HashMap<>();
 
     public AbstractLocalVariableTable(IndexGenerator indexGenerator) {
         this.indexGenerator = indexGenerator;
@@ -26,19 +26,19 @@ public abstract class AbstractLocalVariableTable {
 
     public abstract int addVariable(String name, Type type);
 
-    public abstract Optional<ExtendedVariableInfo> findVariable(String name);
+    public abstract Optional<TypeAndIndex> findVariable(String name);
 
-    public abstract ExtendedVariableInfo findVariableOrElseThrow(String name);
+    public abstract TypeAndIndex findVariableOrElseThrow(String name);
 
     public abstract boolean hasVariable(String name);
 
     public abstract boolean hasVariableGlobal(String name);
 
-    protected ExtendedVariableInfo get(String name) {
+    protected TypeAndIndex get(String name) {
         return variableTable.get(name);
     }
 
-    protected void put(String name, ExtendedVariableInfo value) {
+    protected void put(String name, TypeAndIndex value) {
         variableTable.put(name, value);
     }
 }

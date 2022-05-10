@@ -9,17 +9,17 @@ import org.objectweb.asm.Type;
  * @author vlad333rrty
  */
 public class ASTArrayCreationExpression implements ASTExpression {
-    private final List<Integer> capacities;
+    private final List<ASTExpression> capacities;
     private final Type arrayType;
     private final Type elementType;
 
-    public ASTArrayCreationExpression(List<Integer> capacities, Type arrayType, Type elementType) {
+    public ASTArrayCreationExpression(List<ASTExpression> capacities, Type arrayType, Type elementType) {
         this.capacities = capacities;
         this.arrayType = arrayType;
         this.elementType = elementType;
     }
 
-    public List<Integer> getCapacities() {
+    public List<ASTExpression> getCapacities() {
         return capacities;
     }
 

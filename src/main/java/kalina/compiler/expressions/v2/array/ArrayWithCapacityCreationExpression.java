@@ -12,11 +12,11 @@ import org.objectweb.asm.Type;
  * @author vlad333rrty
  */
 public class ArrayWithCapacityCreationExpression extends Expression implements AbstractArrayExpression {
-    private final List<Integer> capacities;
+    private final List<Expression> capacities;
     private final Type arrayType;
     private final Type type;
 
-    public ArrayWithCapacityCreationExpression(List<Integer> capacities, Type arrayType, Type type) {
+    public ArrayWithCapacityCreationExpression(List<Expression> capacities, Type arrayType, Type type) {
         this.capacities = capacities;
         this.arrayType = arrayType;
         this.type = type;
@@ -24,8 +24,8 @@ public class ArrayWithCapacityCreationExpression extends Expression implements A
 
     @Override
     public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
-        for (int i : capacities) {
-            visitIndexInstruction(mv, i);
+        for (Expression expression : capacities) {
+            expression.translateToBytecode(mv);
         }
         if (capacities.size() == 1) {
             if (type.getSort() >= 1 && type.getSort() <= 8) {

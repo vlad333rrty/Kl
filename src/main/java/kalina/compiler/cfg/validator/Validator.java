@@ -2,10 +2,10 @@ package kalina.compiler.cfg.validator;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.IntStream;
 
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.codegen.typeCast.TypeCastOpcodesMapper;
+import kalina.compiler.expressions.Expression;
 import org.objectweb.asm.Type;
 
 /**
@@ -34,12 +34,9 @@ public class Validator {
         }
     }
 
-    public static void validateArrayIndices(List<Integer> indices, List<Integer> capacities) {
+    public static void validateArrayIndices(List<Expression> indices, List<Integer> capacities) {
         if (indices.size() > capacities.size()) {
             throw new IllegalArgumentException("Incompatible array dimensions");
-        }
-        if (IntStream.range(0, indices.size()).anyMatch(i -> indices.get(i) >= capacities.get(i))) {
-            throw new IllegalArgumentException("Array out of bound exception. Arrays sizes: " + capacities + " indices: " + indices);
         }
     }
 }

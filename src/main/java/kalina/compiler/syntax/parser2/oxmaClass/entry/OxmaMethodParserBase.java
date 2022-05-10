@@ -304,7 +304,7 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
     }
 
     public ASTExpression parseArrayAssignOrArrayElementAccess(String arrayName) throws ParseException {
-        List<Integer> indices = expressionsParser.parseArrayGetElement();
+        List<ASTExpression> indices = expressionsParser.parseArrayGetElement();
         ASTArrayLHS lhs = new ASTArrayLHS(arrayName, indices);
         if (peekNextToken().getTag() == TokenTag.DO_TAG) {
             throw new UnsupportedOperationException("Cannot call class method from array variable");
@@ -325,7 +325,7 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
             getNextToken(); // skip `,`
             Token token = getNextToken();
             Assert.assertTag(token, TokenTag.IDENT_TAG);
-            List<Integer> indices = expressionsParser.parseArrayGetElement();
+            List<ASTExpression> indices = expressionsParser.parseArrayGetElement();
             lhs.add(new ASTArrayLHS(token.getValue(), indices));
         }
         Assert.assertTag(getNextToken(), TokenTag.ASSIGN_TAG);

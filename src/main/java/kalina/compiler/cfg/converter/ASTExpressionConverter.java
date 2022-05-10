@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import kalina.compiler.ast.expression.ASTArithmeticExpression;
-import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
 import kalina.compiler.ast.expression.ASTCondExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTFactor;
@@ -14,6 +13,8 @@ import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTTerm;
 import kalina.compiler.ast.expression.ASTValueExpression;
 import kalina.compiler.ast.expression.ASTVariableExpression;
+import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
+import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
 import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.traverse.FunctionTableProvider;
@@ -28,12 +29,12 @@ import kalina.compiler.expressions.Term;
 import kalina.compiler.expressions.ValueExpression;
 import kalina.compiler.expressions.VariableExpression;
 import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
+import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.expressions.v2.funCall.FunCallExpression;
 import kalina.compiler.odk.ODKMapper;
 import kalina.compiler.syntax.parser.data.AbstractLocalVariableTable;
-import kalina.compiler.syntax.parser.data.ArrayVariableInfo;
-import kalina.compiler.syntax.parser.data.ExtendedVariableInfo;
+import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import org.apache.logging.log4j.LogManager;
@@ -61,8 +62,8 @@ public class ASTExpressionConverter {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
         }
         if (astExpression instanceof ASTVariableExpression variableExpression) {
-            ExtendedVariableInfo extendedVariableInfo = localVariableTable.findVariableOrElseThrow(variableExpression.name());
-            return new VariableExpression(extendedVariableInfo.getIndex(), extendedVariableInfo.getType());
+            TypeAndIndex typeAndIndex = localVariableTable.findVariableOrElseThrow(variableExpression.name());
+            return new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType());
         }
         if (astExpression instanceof ASTFactor factor) {
             Expression expression = convert(factor.expression(), localVariableTable, functionTable);
@@ -98,7 +99,7 @@ public class ASTExpressionConverter {
         }
         if (astExpression instanceof ASTMethodCallExpression methodCallExpression) {
             String ownerObjectName = methodCallExpression.ownerObjectName();
-            Optional<ExtendedVariableInfo> variableO = localVariableTable.findVariable(ownerObjectName);
+            Optional<TypeAndIndex> variableO = localVariableTable.findVariable(ownerObjectName);
             Optional<OxmaFunctionTable> otherClassFunctionTable = variableO.isPresent()
                     ? functionTableProvider.getFunctionTable(variableO.get().getType().getClassName())
                     : functionTableProvider.getFunctionTable(ownerObjectName);
@@ -111,16 +112,28 @@ public class ASTExpressionConverter {
                     methodCallExpression.arguments(),
                     localVariableTable,
                     otherClassFunctionTable.get(),
-                    variableO.map(ExtendedVariableInfo::getIndex));
+                    variableO.map(TypeAndIndex::getIndex));
+        }
+        if (astExpression instanceof ASTArrayCreationExpression arrayCreationExpression) {
+            List<Expression> capacities = arrayCreationExpression.getCapacities().stream()
+                    .map(e -> convert(e, localVariableTable, functionTable))
+                    .toList();
+            for (Expression capacity : capacities) {
+                if (capacity.getType() != Type.INT_TYPE) {
+                    throw new IllegalArgumentException("Unexpected type used for array creation: " + capacity.getType().getClassName());
+                }
+            }
+            return new ArrayWithCapacityCreationExpression(
+                    arrayCreationExpression.getCapacities().stream().map(e -> convert(e, localVariableTable, functionTable)).toList(),
+                    arrayCreationExpression.getArrayType(),
+                    arrayCreationExpression.getElementType());
         }
         if (astExpression instanceof ASTArrayGetElementExpression getElementExpression) {
-            ExtendedVariableInfo variableInfo =
+            TypeAndIndex variableInfo =
                     localVariableTable.findVariableOrElseThrow(getElementExpression.getVariableName());
-            ArrayVariableInfo arrayVariableInfo = variableInfo.getArrayVariableInfo().orElseThrow();
-            Validator.validateArrayIndices(getElementExpression.getIndices(), arrayVariableInfo.getCapacities());
             return new ArrayGetElementExpression(
-                    getElementExpression.getIndices(),
-                    arrayVariableInfo.getElementType(),
+                    getElementExpression.getIndices().stream().map(expr -> convert(expr, localVariableTable, functionTable)).toList(),
+                    CFGUtils.getArrayElementType(variableInfo.getType()),
                     CFGUtils.lowArrayDimension(variableInfo.getType(), getElementExpression.getIndices().size()),
                     variableInfo.getType(),
                     variableInfo.getIndex()

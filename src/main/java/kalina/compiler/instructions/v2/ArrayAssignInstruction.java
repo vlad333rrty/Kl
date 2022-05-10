@@ -2,6 +2,7 @@ package kalina.compiler.instructions.v2;
 
 import java.util.List;
 
+import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.array.AbstractArrayExpression;
 import kalina.compiler.syntax.parser.data.VariableInfo;
@@ -17,7 +18,7 @@ public class ArrayAssignInstruction extends AbstractAssignInstruction implements
     }
 
     @Override
-    protected void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo) {
+    protected void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo) throws CodeGenException {
         expressionCodeGen.loadVariable(mv, variableInfo.getType().getOpcode(Opcodes.ILOAD), variableInfo.getIndex());
         translateElementsAccess(mv, variableInfo.getArrayVariableInfoOrElseThrow().getIndices());
     }
