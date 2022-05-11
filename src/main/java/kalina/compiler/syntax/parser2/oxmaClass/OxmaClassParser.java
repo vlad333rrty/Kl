@@ -2,8 +2,8 @@ package kalina.compiler.syntax.parser2.oxmaClass;
 
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.syntax.build.TokenTag;
-import kalina.compiler.syntax.parser.Assert;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.Assert;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTableImpl;

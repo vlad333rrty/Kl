@@ -10,7 +10,7 @@ import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenerationManager;
 import kalina.compiler.codegen.CodeGenerationResult;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParser;
 import kalina.compiler.syntax.scanner.Scanner;
 import kalina.compiler.utils.FileUtils;

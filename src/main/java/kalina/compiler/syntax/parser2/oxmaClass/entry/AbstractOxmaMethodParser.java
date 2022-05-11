@@ -2,7 +2,7 @@ package kalina.compiler.syntax.parser2.oxmaClass.entry;
 
 import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.ast.ASTNode;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import kalina.compiler.syntax.scanner.IScanner;

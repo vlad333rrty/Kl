@@ -1,7 +1,7 @@
 package kalina.compiler.syntax.parser2.oxmaClass.entry.rhs;
 
 import kalina.compiler.ast.expression.ASTExpression;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.oxmaClass.expressions.OxmaExpressionsParser;
 import kalina.compiler.syntax.scanner.IScanner;
 

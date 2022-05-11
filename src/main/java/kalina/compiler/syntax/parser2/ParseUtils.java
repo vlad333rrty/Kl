@@ -1,13 +1,8 @@
-package kalina.compiler.syntax.parser;
+package kalina.compiler.syntax.parser2;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.operations.BoolOperation;
 import kalina.compiler.expressions.operations.ComparisonOperation;
 import kalina.compiler.syntax.build.TokenTag;
-import kalina.compiler.syntax.parser.data.ITypeDictionary;
 import kalina.compiler.syntax.tokens.Token;
 import org.objectweb.asm.Type;
 
@@ -15,37 +10,19 @@ import org.objectweb.asm.Type;
  * @author vlad333rrty
  */
 public final class ParseUtils {
-    public static boolean isValidType(Token token, ITypeDictionary typeDictionary) {
-        return typeDictionary.hasType(token.getValue());
-    }
-
-    public static boolean isValidDeclarationType(Token token, ITypeDictionary typeDictionary) {
-        return !token.getValue().equals("void") && isValidType(token, typeDictionary);
-    }
-
-    public static boolean isArrayType(Token token) {
-        return token.getValue().endsWith("[]");
-    }
 
     public static Object getTrueValue(Token token) {
         TokenTag tag = token.getTag();
         String value = token.getValue();
-        switch (tag) {
-            case NUMBER_TAG:
-                return Integer.parseInt(value);
-            case LONG_NUMBER_TAG:
-                return Long.parseLong(value.replaceAll("[lL]", "")); // l or L may appear only at the end
-            case FLOAT_NUMBER_TAG:
-                return Float.parseFloat(value);
-            case DOUBLE_NUMBER_TAG:
-                return Double.parseDouble(value);
-            case BOOL_VALUE_TAG:
-                return Boolean.parseBoolean(value);
-            case STRING_LITERAL_TAG:
-                return value;
-            default:
-                throw new IllegalArgumentException("Unexpected tag");
-        }
+        return switch (tag) {
+            case NUMBER_TAG -> Integer.parseInt(value);
+            case LONG_NUMBER_TAG -> Long.parseLong(value.replaceAll("[lL]", "")); // l or L may appear only at the end
+            case FLOAT_NUMBER_TAG -> Float.parseFloat(value);
+            case DOUBLE_NUMBER_TAG -> Double.parseDouble(value);
+            case BOOL_VALUE_TAG -> Boolean.parseBoolean(value);
+            case STRING_LITERAL_TAG -> value;
+            default -> throw new IllegalArgumentException("Unexpected tag");
+        };
     }
 
     public static Type convertRawType(String type) {
@@ -109,20 +86,12 @@ public final class ParseUtils {
 
     public static BoolOperation getBoolOperation(Token token) throws ParseException {
         TokenTag tag = token.getTag();
-        switch (tag) {
-            case BOOL_AND_TAG:
-                return BoolOperation.AND;
-            case BOOL_OR_TAG:
-                return BoolOperation.OR;
-            case XOR_TAG:
-                return BoolOperation.XOR;
-            default:
-                throw new ParseException("Unknown bool operation: " + token.getValue());
-        }
-    }
-
-    public static List<Type> expressionsToTypes(List<Expression> expressions) {
-        return expressions.stream().map(Expression::getType).collect(Collectors.toList());
+        return switch (tag) {
+            case BOOL_AND_TAG -> BoolOperation.AND;
+            case BOOL_OR_TAG -> BoolOperation.OR;
+            case XOR_TAG -> BoolOperation.XOR;
+            default -> throw new ParseException("Unknown bool operation: " + token.getValue());
+        };
     }
 
     public static boolean isPrimitiveType(TokenTag tag) {

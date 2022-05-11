@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser.data;
+package kalina.compiler.syntax.parser2.data;
 
 import java.util.List;
 import java.util.Optional;
