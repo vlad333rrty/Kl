@@ -47,7 +47,6 @@ import kalina.compiler.syntax.parser.data.AssignArrayVariableInfo;
 import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
 import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser.data.VariableInfo;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
@@ -61,15 +60,18 @@ public class ClassTraverser {
     private final ILocalVariableTableFactory localVariableTableFactory;
     private final TypeChecker typeChecker;
     private final ASTExpressionConverter astExpressionConverter;
+    private final GetFunctionInfoProvider getFunctionInfoProvider;
 
     public ClassTraverser(
             ILocalVariableTableFactory localVariableTableFactory,
             TypeChecker typeChecker,
-            ASTExpressionConverter astExpressionConverter)
+            ASTExpressionConverter astExpressionConverter,
+            GetFunctionInfoProvider getFunctionInfoProvider)
     {
         this.localVariableTableFactory = localVariableTableFactory;
         this.typeChecker = typeChecker;
         this.astExpressionConverter = astExpressionConverter;
+        this.getFunctionInfoProvider = getFunctionInfoProvider;
     }
 
     public List<AbstractBasicBlock> traverse(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
@@ -82,7 +84,11 @@ public class ClassTraverser {
                     : localVariableTableFactory.createLocalVariableTableForNonStatic();
             node.getArgs().forEach(arg -> localVariableTable.addVariable(arg.getName(), arg.getType()));
             for (ASTExpression expression : node.getExpressions()) {
-                AbstractBasicBlock bb = convertExpressionBasicBlock(expression, classNode.getOxmaFunctionTable(), localVariableTable, node.getReturnType());
+                AbstractBasicBlock bb = convertExpressionBasicBlock(
+                        expression,
+                        getFunctionInfoProvider.getFunctionTable(classNode.getClassName()).orElseThrow(),
+                        localVariableTable,
+                        node.getReturnType());
                 funBasicBlock.addAtTheEnd(bb);
             }
             result.add(funBasicBlock);
@@ -93,7 +99,7 @@ public class ClassTraverser {
 
     public Optional<AbstractBasicBlock> traverseScope(
             ASTMethodEntryNode node,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -113,7 +119,7 @@ public class ClassTraverser {
 
     public AbstractBasicBlock convertExpressionBasicBlock(
             ASTExpression expression,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -123,7 +129,7 @@ public class ClassTraverser {
 
     public Instruction convertExpression(
             ASTExpression expression,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -150,7 +156,7 @@ public class ClassTraverser {
 
     private Instruction constructDoInstruction(
             ASTDoInstruction doInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -161,7 +167,7 @@ public class ClassTraverser {
 
     private Instruction constructForInstruction(
             ASTForInstruction forInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -183,7 +189,7 @@ public class ClassTraverser {
 
     private Instruction constructFunCallInstruction(
             ASTFunCallExpression funCallExpression,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable)
     {
         Expression funCall = astExpressionConverter.convert(funCallExpression, localVariableTable, functionTable);
@@ -192,7 +198,7 @@ public class ClassTraverser {
 
     private Instruction constructFunEndBasicBlock(
             ASTReturnInstruction returnInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType)
     {
@@ -204,7 +210,7 @@ public class ClassTraverser {
 
     private Instruction constructIfInstruction(
             ASTIfInstruction ifInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable,
             Type returnType) throws CFGConversionException, IncompatibleTypesException
     {
@@ -220,7 +226,7 @@ public class ClassTraverser {
 
     private Instruction constructAssignInstruction(
             ASTAbstractAssignInstruction abstractAssignInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         final AbstractAssignInstruction instruction;
@@ -236,7 +242,7 @@ public class ClassTraverser {
 
     private AssignInstruction constructAssignInstruction(
             ASTAssignInstruction assignInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
@@ -264,7 +270,7 @@ public class ClassTraverser {
 
     private ArrayAssignInstruction constructArrayAssignInstruction(
             ASTArrayAssignInstruction assignInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
@@ -300,7 +306,7 @@ public class ClassTraverser {
 
     private InitInstruction constructInitInstruction(
             ASTInitInstruction initInstruction,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException
     {
         Type type = initInstruction.lhs().type();

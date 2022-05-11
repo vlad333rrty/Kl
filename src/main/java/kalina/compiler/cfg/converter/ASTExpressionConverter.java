@@ -17,7 +17,8 @@ import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
 import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
 import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.FunctionTableProvider;
+import kalina.compiler.cfg.traverse.GetFunctionInfoProvider;
+import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.cfg.validator.Validator;
 import kalina.compiler.expressions.ArithmeticExpression;
@@ -36,7 +37,6 @@ import kalina.compiler.odk.ODKMapper;
 import kalina.compiler.syntax.parser.data.AbstractLocalVariableTable;
 import kalina.compiler.syntax.parser.data.TypeAndIndex;
 import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
@@ -47,16 +47,16 @@ import org.objectweb.asm.Type;
 public class ASTExpressionConverter {
     private static final Logger logger = LogManager.getLogger(ASTExpressionConverter.class);
 
-    private final FunctionTableProvider functionTableProvider;
+    private final GetFunctionInfoProvider getFunctionInfoProvider;
 
-    public ASTExpressionConverter(FunctionTableProvider functionTableProvider) {
-        this.functionTableProvider = functionTableProvider;
+    public ASTExpressionConverter(GetFunctionInfoProvider getFunctionInfoProvider) {
+        this.getFunctionInfoProvider = getFunctionInfoProvider;
     }
 
     public Expression convert(
             ASTExpression astExpression,
             AbstractLocalVariableTable localVariableTable,
-            OxmaFunctionTable functionTable)
+            OxmaFunctionInfoProvider functionInfoProvider)
     {
         if (astExpression instanceof ASTValueExpression valueExpression) {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
@@ -66,43 +66,44 @@ public class ASTExpressionConverter {
             return new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType());
         }
         if (astExpression instanceof ASTFactor factor) {
-            Expression expression = convert(factor.expression(), localVariableTable, functionTable);
+            Expression expression = convert(factor.expression(), localVariableTable, functionInfoProvider);
             return factor.shouldNegate() ? Factor.createNegateFactor(expression) : Factor.createFactor(expression);
         }
         if (astExpression instanceof ASTTerm term) {
             List<Factor> factors = term.factors().stream()
-                    .map(factor -> (Factor)convert(factor, localVariableTable, functionTable)).toList();
+                    .map(factor -> (Factor)convert(factor, localVariableTable, functionInfoProvider)).toList();
             return new Term(factors, term.operations());
         }
         if (astExpression instanceof ASTArithmeticExpression arithmeticExpression) {
             List<Term> terms = arithmeticExpression.terms().stream()
-                    .map(term -> (Term)convert(term, localVariableTable, functionTable)).toList();
+                    .map(term -> (Term)convert(term, localVariableTable, functionInfoProvider)).toList();
             return new ArithmeticExpression(terms, arithmeticExpression.operations());
         }
         if (astExpression instanceof ASTFunCallExpression funCallExpression) {
             List<Expression> arguments = funCallExpression.arguments().stream()
-                    .map(arg -> convert(arg, localVariableTable, functionTable))
+                    .map(arg -> convert(arg, localVariableTable, functionInfoProvider))
                     .toList();
             String funName = funCallExpression.funName();
-            Optional<OxmaFunctionInfo> functionInfo = functionTable
+            Optional<OxmaFunctionInfo> functionInfoO = functionInfoProvider
                     .getFunctionInfo(funName, getSignatureFromExpressions(arguments));
-            if (functionInfo.isEmpty()) {
+            if (functionInfoO.isEmpty()) {
                 return tryToFindStdFun(funName, arguments);
             }
-            return new FunCallExpression(funName, arguments, functionInfo.get(), Optional.empty());
+            OxmaFunctionInfo functionInfo = functionInfoO.get();
+            return new FunCallExpression(funName, arguments, functionInfo, functionInfo.isStatic() ? Optional.empty() : Optional.of(0));
         }
         if (astExpression instanceof ASTObjectCreationExpression objectCreationExpression) {
             List<Expression> arguments = objectCreationExpression.arguments().stream()
-                    .map(arg -> convert(arg, localVariableTable, functionTable))
+                    .map(arg -> convert(arg, localVariableTable, functionInfoProvider))
                     .toList();
             return new ObjectCreationExpression(objectCreationExpression.className(), arguments);
         }
         if (astExpression instanceof ASTMethodCallExpression methodCallExpression) {
             String ownerObjectName = methodCallExpression.ownerObjectName();
             Optional<TypeAndIndex> variableO = localVariableTable.findVariable(ownerObjectName);
-            Optional<OxmaFunctionTable> otherClassFunctionTable = variableO.isPresent()
-                    ? functionTableProvider.getFunctionTable(variableO.get().getType().getClassName())
-                    : functionTableProvider.getFunctionTable(ownerObjectName);
+            Optional<OxmaFunctionInfoProvider> otherClassFunctionTable = variableO.isPresent()
+                    ? getFunctionInfoProvider.getFunctionTable(variableO.get().getType().getClassName())
+                    : getFunctionInfoProvider.getFunctionTable(ownerObjectName);
             if (otherClassFunctionTable.isEmpty()) {
                 logger.error("Unknown type {}", methodCallExpression.ownerObjectName());
                 throw new IllegalArgumentException("No function info can be found for " + methodCallExpression.funName());
@@ -116,7 +117,7 @@ public class ASTExpressionConverter {
         }
         if (astExpression instanceof ASTArrayCreationExpression arrayCreationExpression) {
             List<Expression> capacities = arrayCreationExpression.getCapacities().stream()
-                    .map(e -> convert(e, localVariableTable, functionTable))
+                    .map(e -> convert(e, localVariableTable, functionInfoProvider))
                     .toList();
             for (Expression capacity : capacities) {
                 if (capacity.getType() != Type.INT_TYPE) {
@@ -124,7 +125,7 @@ public class ASTExpressionConverter {
                 }
             }
             return new ArrayWithCapacityCreationExpression(
-                    arrayCreationExpression.getCapacities().stream().map(e -> convert(e, localVariableTable, functionTable)).toList(),
+                    arrayCreationExpression.getCapacities().stream().map(e -> convert(e, localVariableTable, functionInfoProvider)).toList(),
                     arrayCreationExpression.getArrayType(),
                     arrayCreationExpression.getElementType());
         }
@@ -132,7 +133,7 @@ public class ASTExpressionConverter {
             TypeAndIndex variableInfo =
                     localVariableTable.findVariableOrElseThrow(getElementExpression.getVariableName());
             return new ArrayGetElementExpression(
-                    getElementExpression.getIndices().stream().map(expr -> convert(expr, localVariableTable, functionTable)).toList(),
+                    getElementExpression.getIndices().stream().map(expr -> convert(expr, localVariableTable, functionInfoProvider)).toList(),
                     CFGUtils.getArrayElementType(variableInfo.getType()),
                     CFGUtils.lowArrayDimension(variableInfo.getType(), getElementExpression.getIndices().size()),
                     variableInfo.getType(),
@@ -162,7 +163,7 @@ public class ASTExpressionConverter {
             String funName,
             List<ASTExpression> astArgs,
             AbstractLocalVariableTable localVariableTable,
-            OxmaFunctionTable functionTable,
+            OxmaFunctionInfoProvider functionTable,
             Optional<Integer> variableIndex)
     {
         List<Expression> arguments = astArgs.stream()
@@ -180,7 +181,7 @@ public class ASTExpressionConverter {
     public CondExpression convertCondExpression(
             ASTCondExpression condExpression,
             AbstractLocalVariableTable localVariableTable,
-            OxmaFunctionTable functionTable) throws CFGConversionException
+            OxmaFunctionInfoProvider functionTable) throws CFGConversionException
     {
         List<Expression> expressions = condExpression.expressions().stream()
                 .map(expr -> convert(expr, localVariableTable, functionTable))

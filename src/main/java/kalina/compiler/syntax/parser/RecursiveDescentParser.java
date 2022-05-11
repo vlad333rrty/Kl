@@ -746,7 +746,7 @@ public class RecursiveDescentParser extends AbstractParser {
 
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
 
-        ClassBasicBlock classBasicBlock = new ClassBasicBlock(new DefaultConstructorInstruction(name));
+        ClassBasicBlock classBasicBlock = new ClassBasicBlock(new DefaultConstructorInstruction(name, Type.getType(Object.class).getInternalName()));
 
         AbstractLocalVariableTable localVariableTable = localVariableTableFactory.createLocalVariableTableForStatic();
         IFunctionTable functionTable = new FunctionTable();

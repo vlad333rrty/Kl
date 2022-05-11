@@ -21,7 +21,7 @@ import kalina.compiler.syntax.tokens.Token;
  */
 public class OxmaClassParser extends OxmaParserBase {
     private final OxmaMethodParserBase methodParser;
-    @SuppressWarnings("unused")
+    @SuppressWarnings("all")
     private final OxmaFieldParser fieldParser;
 
     public OxmaClassParser(IScanner scanner) {
@@ -39,11 +39,20 @@ public class OxmaClassParser extends OxmaParserBase {
         Token token = getNextToken();
         Assert.assertTag(token, TokenTag.IDENT_TAG);
         String className = token.getValue();
+        final String parentClassName;
+        if (peekNextToken().getTag() == TokenTag.EXTENDS_TAG) {
+            getNextToken(); // skip `extends`
+            Token superClass = getNextToken();
+            Assert.assertTag(superClass, TokenTag.IDENT_TAG);
+            parentClassName = superClass.getValue();
+        } else {
+            parentClassName = "java/lang/Object";
+        }
 
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
 
         OxmaFunctionTable functionTable = new OxmaFunctionTableImpl();
-        ASTClassNode classNode = new ASTClassNode("", className, functionTable);
+        ASTClassNode classNode = new ASTClassNode(parentClassName, className, functionTable);
         parseClassEntry(classNode, className, functionTable);
 
         Assert.assertTag(getNextToken(), TokenTag.RBRACE_TAG);
