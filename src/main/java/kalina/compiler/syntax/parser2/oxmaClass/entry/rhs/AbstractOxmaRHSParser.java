@@ -5,7 +5,7 @@ import java.util.List;
 
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.syntax.build.TokenTag;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.scanner.IScanner;
 

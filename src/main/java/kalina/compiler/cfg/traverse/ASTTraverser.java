@@ -18,8 +18,8 @@ import kalina.compiler.cfg.data.TypeDictionaryImpl;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.instructions.DefaultConstructorInstruction;
-import kalina.compiler.syntax.parser.data.ILocalVariableTableFactory;
-import kalina.compiler.syntax.parser.data.LocalVariableTableFactory;
+import kalina.compiler.syntax.parser2.data.ILocalVariableTableFactory;
+import kalina.compiler.syntax.parser2.data.LocalVariableTableFactory;
 
 /**
  * @author vlad333rrty

@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser;
+package kalina.compiler.syntax.parser2;
 
 /**
  * @author vlad333rrty

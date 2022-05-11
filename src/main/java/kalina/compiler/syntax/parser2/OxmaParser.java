@@ -3,7 +3,6 @@ package kalina.compiler.syntax.parser2;
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.syntax.build.TokenTag;
-import kalina.compiler.syntax.parser.ParseException;
 import kalina.compiler.syntax.parser2.oxmaClass.OxmaClassParser;
 import kalina.compiler.syntax.scanner.IScanner;
 import kalina.compiler.syntax.tokens.Token;

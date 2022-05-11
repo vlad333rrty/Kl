@@ -3,7 +3,7 @@ import java.io.IOException;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.codegen.CodeGenException;
-import kalina.compiler.syntax.parser.ParseException;
+import kalina.compiler.syntax.parser2.ParseException;
 
 /**
  * @author vlad333rrty

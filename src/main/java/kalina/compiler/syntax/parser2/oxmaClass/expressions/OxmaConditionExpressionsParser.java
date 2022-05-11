@@ -6,8 +6,8 @@ import java.util.List;
 import kalina.compiler.ast.expression.ASTCondExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.expressions.operations.ComparisonOperation;
-import kalina.compiler.syntax.parser.ParseException;
-import kalina.compiler.syntax.parser.ParseUtils;
+import kalina.compiler.syntax.parser2.ParseException;
+import kalina.compiler.syntax.parser2.ParseUtils;
 import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.scanner.IScanner;
 

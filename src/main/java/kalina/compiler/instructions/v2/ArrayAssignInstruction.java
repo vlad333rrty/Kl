@@ -5,7 +5,7 @@ import java.util.List;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.array.AbstractArrayExpression;
-import kalina.compiler.syntax.parser.data.VariableInfo;
+import kalina.compiler.syntax.parser2.data.VariableInfo;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 

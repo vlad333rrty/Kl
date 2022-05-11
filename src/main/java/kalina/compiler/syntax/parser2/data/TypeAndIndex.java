@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser.data;
+package kalina.compiler.syntax.parser2.data;
 
 import org.objectweb.asm.Type;
 
