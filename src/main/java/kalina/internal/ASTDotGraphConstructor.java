@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 /**
  * @author vlad333rrty
  */
-public final class DotGraphConstructor {
-    private static final Logger logger = LogManager.getLogger(DotGraphConstructor.class);
+public final class ASTDotGraphConstructor {
+    private static final Logger logger = LogManager.getLogger(ASTDotGraphConstructor.class);
 
     private static int counter = 0;
 

@@ -4,6 +4,7 @@ import java.util.List;
 
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ComparisonOperation;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -76,5 +77,10 @@ public class CondExpression extends Expression {
 
     public Label getLabel() {
         return label;
+    }
+
+    @Override
+    public String toString() {
+        return PrintUtils.complexExpressionToString(expressions, operations);
     }
 }

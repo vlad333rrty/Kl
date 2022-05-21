@@ -25,4 +25,9 @@ public class VariableExpression extends Expression {
     public Type getType() {
         return type;
     }
+
+    @Override
+    public String toString() {
+        return "variable with index " + index;
+    }
 }

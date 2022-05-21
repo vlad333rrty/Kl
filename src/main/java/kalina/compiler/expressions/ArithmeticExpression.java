@@ -5,6 +5,7 @@ import java.util.List;
 import kalina.compiler.codegen.typeCast.NumberTypesComparator;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ArithmeticOperation;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -56,7 +57,8 @@ public class ArithmeticExpression extends Expression {
         return type;
     }
 
-    public List<Term> getTerms() {
-        return terms;
+    @Override
+    public String toString() {
+        return PrintUtils.complexExpressionToString(terms, operations);
     }
 }

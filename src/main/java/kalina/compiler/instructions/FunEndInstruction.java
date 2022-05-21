@@ -1,5 +1,6 @@
 package kalina.compiler.instructions;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import kalina.compiler.codegen.CodeGenException;
@@ -41,5 +42,10 @@ public class FunEndInstruction extends Instruction {
         } else {
             throw new IllegalArgumentException();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "ret " + returnValueInfo.map(Objects::toString).orElse("");
     }
 }

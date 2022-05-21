@@ -2,8 +2,9 @@ package kalina.compiler.instructions.v2;
 
 import java.util.List;
 
-import kalina.compiler.expressions.Expression;
 import kalina.compiler.cfg.data.VariableInfo;
+import kalina.compiler.expressions.Expression;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -23,5 +24,11 @@ public class AssignInstruction extends AbstractAssignInstruction {
     @Override
     protected void visitStore(MethodVisitor mv, VariableInfo variableInfo) {
         mv.visitVarInsn(variableInfo.getType().getOpcode(Opcodes.ISTORE), variableInfo.getIndex());
+    }
+
+    @Override
+    public String toString() {
+        return PrintUtils.listToString(getLhs().stream().map(VariableInfo::getName).toList())
+                + " = " + PrintUtils.listToString(getRhs());
     }
 }

@@ -44,4 +44,9 @@ public class IfInstruction extends Instruction {
             throw new IllegalArgumentException();
         }
     }
+
+    @Override
+    public String toString() {
+        return "if " + condition + "then " + ifBranch + elseBranch.map(astMethodEntryNode -> " else " + astMethodEntryNode).orElse("");
+    }
 }

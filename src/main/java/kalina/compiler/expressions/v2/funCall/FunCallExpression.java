@@ -5,10 +5,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import kalina.compiler.bb.TypeAndName;
+import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.cfg.data.OxmaFunctionInfo;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -51,5 +52,10 @@ public class FunCallExpression extends AbstractFunCallExpression {
     @Override
     public Type getType() {
         return functionInfo.returnType();
+    }
+
+    @Override
+    public String toString() {
+        return funName + "(" + PrintUtils.listToString(arguments) + ")";
     }
 }

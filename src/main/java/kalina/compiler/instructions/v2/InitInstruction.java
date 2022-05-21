@@ -9,6 +9,7 @@ import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.ValueExpression;
 import kalina.compiler.expressions.VariableNameAndIndex;
 import kalina.compiler.instructions.Instruction;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -74,5 +75,10 @@ public class InitInstruction extends Instruction {
             case Type.OBJECT -> type.equals(Type.getType(String.class)) ? "" : null;
             default -> throw new IllegalArgumentException("Unexpected type");
         };
+    }
+
+    @Override
+    public String toString() {
+        return lhs.toString() + " = " + PrintUtils.listToString(rhs);
     }
 }

@@ -1,5 +1,6 @@
 package kalina.compiler.instructions;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import kalina.compiler.bb.AbstractBasicBlock;
@@ -32,5 +33,10 @@ public class DoInstruction extends Instruction {
         methodVisitor.visitLabel(label);
         TranslationUtils.translateBlock(entry, mv, cw);
         neg.translateToBytecode(mv.get());
+    }
+
+    @Override
+    public String toString() {
+        return "do {\n\t" + entry.map(Objects::toString).orElse("") + "\n}";
     }
 }

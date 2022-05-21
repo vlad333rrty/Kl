@@ -37,4 +37,9 @@ public class Factor extends Expression {
     public Type getType() {
         return expression.getType();
     }
+
+    @Override
+    public String toString() {
+        return (shouldNegate ? "-" : "") + expression.toString();
+    }
 }

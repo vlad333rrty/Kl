@@ -2,12 +2,15 @@ package kalina.compiler.ast.expression;
 
 import java.util.Optional;
 
+import kalina.compiler.ast.ASTBranchExpressionConversionFactory;
 import kalina.compiler.ast.ASTMethodEntryNode;
+import kalina.compiler.cfg.exceptions.CFGConversionException;
+import kalina.compiler.cfg.validator.IncompatibleTypesException;
 
 /**
  * @author vlad333rrty
  */
-public class ASTIfInstruction implements ASTExpression {
+public class ASTIfInstruction implements ASTExpression, ASTBranchExpression {
     private final ASTCondExpression condExpression;
     private final ASTMethodEntryNode thenBr;
     private final Optional<ASTMethodEntryNode> elseBr;
@@ -37,5 +40,10 @@ public class ASTIfInstruction implements ASTExpression {
 
     public Optional<ASTMethodEntryNode> elseBr() {
         return elseBr;
+    }
+
+    @Override
+    public <T> T convert(ASTBranchExpressionConversionFactory<T> conversionFactory) throws CFGConversionException, IncompatibleTypesException {
+        return conversionFactory.convertIf(this);
     }
 }

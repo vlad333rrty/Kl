@@ -1,26 +1,27 @@
-package kalina.compiler.instructions;
+package kalina.compiler.instructions.v2.br;
 
 import java.util.Optional;
 
 import kalina.compiler.codegen.CodeGenException;
-import kalina.compiler.expressions.CondExpression;
+import kalina.compiler.instructions.Instruction;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author vlad333rrty
  */
-public class CondInstruction extends Instruction {
-    private final CondExpression condExpression;
+public class DoBlockBeginInstruction extends Instruction {
+    private final Label blockBegin;
 
-    public CondInstruction(CondExpression condExpression) {
-        this.condExpression = condExpression;
+    public DoBlockBeginInstruction(Label blockBegin) {
+        this.blockBegin = blockBegin;
     }
 
     @Override
     public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
-            condExpression.translateToBytecode(mv.get());
+            mv.get().visitLabel(blockBegin);
         } else {
             throw new IllegalArgumentException();
         }
@@ -28,6 +29,6 @@ public class CondInstruction extends Instruction {
 
     @Override
     public String toString() {
-        return condExpression.toString();
+        return "do body start";
     }
 }

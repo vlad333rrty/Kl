@@ -6,6 +6,7 @@ import java.util.Optional;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.ValueExpression;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -45,5 +46,10 @@ public class PrintlnInstruction extends Instruction {
     private String getDescriptor(Type type) {
         String argumentDescriptor = type.getSort() == Type.SHORT ? Type.INT_TYPE.getDescriptor() : type.getDescriptor();
         return String.format("(%s)V", argumentDescriptor);
+    }
+
+    @Override
+    public String toString() {
+        return "println" + PrintUtils.listToString(expressions);
     }
 }

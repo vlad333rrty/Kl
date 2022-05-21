@@ -67,7 +67,7 @@ public class OxmaMethodParser extends OxmaMethodParserBase {
         Assert.assertTag(getNextToken(), TokenTag.SEMICOLON_TAG);
         Optional<ASTCondExpression> cond;
         if (peekNextToken().getTag() == TokenTag.SEMICOLON_TAG) {
-            cond = Optional.empty();
+            throw new IllegalArgumentException("Empty condition in for loop");
         } else {
             cond = Optional.of(conditionExpressionsParser.parse());
         }

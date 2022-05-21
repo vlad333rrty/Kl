@@ -21,4 +21,9 @@ public class ReturnValueInfo {
     public Expression getReturnValue() {
         return returnValue;
     }
+
+    @Override
+    public String toString() {
+        return returnValue.toString();
+    }
 }

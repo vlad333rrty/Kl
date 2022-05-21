@@ -27,4 +27,9 @@ public class SimpleInstruction extends Instruction {
             throw new IllegalArgumentException();
         }
     }
+
+    @Override
+    public String toString() {
+        return expression.toString();
+    }
 }

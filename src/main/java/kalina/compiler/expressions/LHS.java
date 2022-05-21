@@ -2,6 +2,7 @@ package kalina.compiler.expressions;
 
 import java.util.List;
 
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.Type;
 
 /**
@@ -26,5 +27,10 @@ public class LHS {
 
     public int size() {
         return vars.size();
+    }
+
+    @Override
+    public String toString() {
+        return type.getClassName() + " " + PrintUtils.listToString(vars.stream().map(VariableNameAndIndex::getName).toList());
     }
 }
