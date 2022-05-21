@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser2.data;
+package kalina.compiler.cfg.data;
 
 import java.util.Optional;
 

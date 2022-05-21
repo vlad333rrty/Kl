@@ -9,20 +9,21 @@ import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.ast.ASTNode;
 import kalina.compiler.ast.expression.ASTAssignInstruction;
 import kalina.compiler.ast.expression.ASTExpression;
-import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTInitInstruction;
-import kalina.compiler.ast.expression.ASTMethodCallExpression;
 import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTReturnInstruction;
+import kalina.compiler.ast.expression.ASTStandAloneFunCallExpression;
 import kalina.compiler.ast.expression.array.ASTArrayAssignInstruction;
 import kalina.compiler.ast.expression.array.ASTArrayLHS;
 import kalina.compiler.bb.TypeAndName;
+import kalina.compiler.cfg.data.OxmaFunctionInfo;
+import kalina.compiler.cfg.data.OxmaFunctionTable;
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser2.Assert;
+import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.ParseUtils;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
+import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
 import kalina.compiler.syntax.parser2.oxmaClass.entry.rhs.OxmaRHSParser;
 import kalina.compiler.syntax.parser2.oxmaClass.expressions.OxmaConditionExpressionsParser;
 import kalina.compiler.syntax.parser2.oxmaClass.expressions.OxmaExpressionsParser;
@@ -35,7 +36,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
+public abstract class OxmaMethodParserBase extends OxmaParserBase {
     private static final Logger logger = LogManager.getLogger(OxmaMethodParserBase.class);
 
     private static final String BEGIN_BLOCK_INNER_NAME = "main";
@@ -56,8 +57,13 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         this.rhsParser = rhsParser;
     }
 
-    @Override
-    public ASTMethodNode parse(boolean isStatic, String ownerClassName, OxmaFunctionTable functionTable) throws ParseException {
+    public ASTMethodNode parse(
+            boolean isStatic,
+            String ownerClassName,
+            OxmaFunctionTable functionTable,
+            ClassEntryUtils.AccessModifier accessModifier,
+            List<ClassEntryUtils.Modifier> modifiers) throws ParseException
+    {
         Token token = getNextToken();
         Assert.assertTag(token, TokenTag.IDENT_TAG);
         String name = token.getValue();
@@ -77,7 +83,7 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         OxmaFunctionInfo functionInfo = new OxmaFunctionInfo(args, returnType, ownerClassName,false, isStatic);
         functionTable.addFunction(name, functionInfo);
 
-        ASTMethodNode methodNode = new ASTMethodNode(name, args, returnType, isStatic, 0);
+        ASTMethodNode methodNode = new ASTMethodNode(name, args, returnType, isStatic, accessModifier, modifiers);
 
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
         parseFunEntry(returnType, methodNode);
@@ -87,15 +93,15 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         return methodNode;
     }
 
-    @Override
-    public ASTMethodNode parseBegin(String ownerClassName) throws ParseException {
+    public ASTMethodNode parseBegin() throws ParseException {
         Type returnType = Type.VOID_TYPE;
         ASTMethodNode methodNode = new ASTMethodNode(
                 BEGIN_BLOCK_INNER_NAME,
                 List.of(new TypeAndName(Type.getType(String[].class), "args")),
                 returnType,
                 true,
-                0);
+                ClassEntryUtils.AccessModifier.PUBLIC,
+                List.of(ClassEntryUtils.Modifier.STATIC));
 
         Assert.assertTag(getNextToken(), TokenTag.LBRACE_TAG);
         parseFunEntry(returnType, methodNode);
@@ -117,17 +123,31 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
                 String identName = token.getValue();
                 if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
                     expressionNode = parseFunCall(token.getValue());
-                } else if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
-                    getNextToken();
-                    expressionNode = parseMethodCall(identName, getNextToken().getValue());
+                    if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                        getNextToken();
+                        expressionNode = expressionsParser.parsePropertyCall(expressionNode);
+                    }
+                } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
+                    expressionNode = parseArrayAssignOrArrayElementAccess(identName);
+                    if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                        getNextToken();
+                        expressionNode = expressionsParser.parsePropertyCall(expressionNode);
+                    }
                 } else if (peekNextToken().getTag() == TokenTag.ASSIGN_TAG) {
                     expressionNode = parseAssign(token.getValue());
                 } else if (peekNextToken().getTag() == TokenTag.IDENT_TAG) {
                     expressionNode = parseVarDeclWithKnownType(token);
-                } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
-                    expressionNode = parseArrayAssignOrArrayElementAccess(identName);
                 } else {
                     throw new IllegalArgumentException("Unexpected token: " + token.getValue());
+                }
+            }
+            case THIS_TAG -> {
+                getNextToken();
+                if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                    getNextToken();
+                    expressionNode = expressionsParser.parsePropertyCallOfThis();
+                } else {
+                    throw new IllegalArgumentException("Unexpected token: " + peekNextToken());
                 }
             }
             case SHORT_TAG, INT_TAG, LONG_TAG, FLOAT_TAG, DOUBLE_TAG, STRING_TAG, BOOL_TAG, ARRAY_TYPE_TAG -> {
@@ -151,12 +171,12 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         parseFunEntry(returnType, methodNode);
     }
 
-    private ASTFunCallExpression parseFunCall(String funName) throws ParseException {
+    private ASTStandAloneFunCallExpression parseFunCall(String funName) throws ParseException {
         Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
         List<ASTExpression> args = parseFunCallArgs();
         Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
 
-        return new ASTFunCallExpression(funName, args);
+        return new ASTStandAloneFunCallExpression(funName, args);
     }
 
     private List<TypeAndName> parseFunArgs() throws ParseException {
@@ -206,14 +226,6 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         }
 
         return expressions;
-    }
-
-    private ASTMethodCallExpression parseMethodCall(String ownerObjectName, String funName) throws ParseException {
-        Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
-        List<ASTExpression> args = parseFunCallArgs();
-        Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
-
-        return new ASTMethodCallExpression(ownerObjectName, funName, args);
     }
 
     protected ASTAssignInstruction parseAssign(String firstVarName) throws ParseException {
@@ -332,6 +344,4 @@ public abstract class OxmaMethodParserBase extends AbstractOxmaMethodParser {
         List<ASTExpression> rhs = rhsParser.parseRHS(lhs.size());
         return new ASTArrayAssignInstruction(lhs, rhs);
     }
-
-
 }

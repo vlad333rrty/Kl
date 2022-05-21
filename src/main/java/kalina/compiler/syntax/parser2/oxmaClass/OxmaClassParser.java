@@ -1,12 +1,16 @@
 package kalina.compiler.syntax.parser2.oxmaClass;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import kalina.compiler.ast.ASTClassNode;
+import kalina.compiler.cfg.data.OxmaFunctionTable;
+import kalina.compiler.cfg.data.OxmaFunctionTableImpl;
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser2.Assert;
-import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.OxmaParserBase;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTableImpl;
+import kalina.compiler.syntax.parser2.ParseException;
+import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
 import kalina.compiler.syntax.parser2.oxmaClass.entry.OxmaFieldParser;
 import kalina.compiler.syntax.parser2.oxmaClass.entry.OxmaMethodParser;
 import kalina.compiler.syntax.parser2.oxmaClass.entry.OxmaMethodParserBase;
@@ -32,7 +36,7 @@ public class OxmaClassParser extends OxmaParserBase {
                 expressionsParser,
                 new OxmaConditionExpressionsParser(scanner, expressionsParser),
                 new OxmaRHSParser(scanner, expressionsParser));
-        this.fieldParser = new OxmaFieldParser(scanner);
+        this.fieldParser = new OxmaFieldParser(scanner, expressionsParser);
     }
 
     public ASTClassNode parse() throws ParseException {
@@ -67,19 +71,70 @@ public class OxmaClassParser extends OxmaParserBase {
         }
         getNextToken();
         switch (token.getTag()) {
-            case BEGIN_TAG -> classNode.addChild(methodParser.parseBegin(className));
-            case FUN_TAG -> classNode.addChild(methodParser.parse(false, className, functionTable));
-            case STATIC_TAG -> onStaticDetected(classNode, className, functionTable);
+            case BEGIN_TAG -> classNode.addChild(methodParser.parseBegin());
+            case FUN_TAG -> classNode.addChild(methodParser.parse(false, className, functionTable, ClassEntryUtils.AccessModifier.PUBLIC, List.of()));
+            case STATIC_TAG -> onStaticDetected(classNode, className, functionTable, ClassEntryUtils.AccessModifier.PUBLIC);
+            case PRIVATE_TAG -> onAccessModifierDetected(classNode, className, functionTable, ClassEntryUtils.AccessModifier.PRIVATE);
+            case PROTECTED_TAG -> onAccessModifierDetected(classNode, className, functionTable, ClassEntryUtils.AccessModifier.PROTECTED);
+            case FINAL_TAG -> onFinalDetected(classNode, className, functionTable, ClassEntryUtils.AccessModifier.PUBLIC, List.of());
+            default -> classNode.addChild(fieldParser.parseWithType(ClassEntryUtils.AccessModifier.PUBLIC, List.of(), token));
         }
         parseClassEntry(classNode, className, functionTable);
     }
 
-    private void onStaticDetected(ASTClassNode classNode, String className, OxmaFunctionTable functionTable) throws ParseException {
-        Token token = getNextToken();
+    private void onAccessModifierDetected(ASTClassNode classNode, String className, OxmaFunctionTable functionTable, ClassEntryUtils.AccessModifier accessModifier) throws ParseException {
+        Token token = peekNextToken();
+        switch (token.getTag()) {
+            case STATIC_TAG -> {
+                getNextToken();
+                onStaticDetected(classNode, className, functionTable, accessModifier);
+            }
+            case FINAL_TAG -> {
+                getNextToken();
+                onFinalDetected(classNode, className, functionTable, accessModifier, new ArrayList<>());
+            }
+            case FUN_TAG -> {
+                getNextToken();
+                classNode.addChild(methodParser.parse(false, className, functionTable, accessModifier, new ArrayList<>()));
+            }
+            case CONST_TAG -> {
+                getNextToken();
+                classNode.addChild(fieldParser.parse(accessModifier, List.of(ClassEntryUtils.Modifier.STATIC, ClassEntryUtils.Modifier.FINAL)));
+            }
+            default -> classNode.addChild(fieldParser.parse(accessModifier, List.of()));
+        }
+    }
+
+    private void onFinalDetected(
+            ASTClassNode classNode,
+            String className,
+            OxmaFunctionTable functionTable,
+            ClassEntryUtils.AccessModifier accessModifier,
+            List<ClassEntryUtils.Modifier> modifiers) throws ParseException
+    {
+        modifiers.add(ClassEntryUtils.Modifier.FINAL);
+        Token token = peekNextToken();
         if (token.getTag() == TokenTag.FUN_TAG) {
-            classNode.addChild(methodParser.parse(true, className, functionTable));
+            getNextToken();
+            classNode.addChild(methodParser.parse(false, className, functionTable, accessModifier, modifiers));
         } else {
-            throw new IllegalArgumentException();
+            classNode.addChild(fieldParser.parse(accessModifier, modifiers));
+        }
+    }
+
+    private void onStaticDetected(ASTClassNode classNode, String className, OxmaFunctionTable functionTable, ClassEntryUtils.AccessModifier accessModifier) throws ParseException {
+        List<ClassEntryUtils.Modifier> modifiers = new ArrayList<>(List.of(ClassEntryUtils.Modifier.STATIC));
+        Token token = peekNextToken();
+        switch (token.getTag()) {
+            case FUN_TAG -> {
+                getNextToken();
+                classNode.addChild(methodParser.parse(true, className, functionTable, accessModifier, modifiers));
+            }
+            case FINAL_TAG -> {
+                getNextToken();
+                onFinalDetected(classNode, className, functionTable, accessModifier, modifiers);
+            }
+            default -> classNode.addChild(fieldParser.parse(accessModifier, modifiers));
         }
     }
 }

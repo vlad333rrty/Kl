@@ -230,6 +230,10 @@ this            {
                     yylval->ident=yytext;
                     return THIS_TAG;
                 }
+final		{
+                    yylval->ident=yytext;
+                    return FINAL_TAG;
+		}
 &&		{
 			yylval->ident = yytext;
 			return BOOL_AND_TAG;
@@ -301,10 +305,6 @@ private		    {
 protected	    {
 			yylval->ident=yytext;
                         return PROTECTED_TAG;
-		    }
-public		    {
-			yylval->ident=yytext;
-                        return PUBLIC_TAG;
 		    }
 
 \?              {

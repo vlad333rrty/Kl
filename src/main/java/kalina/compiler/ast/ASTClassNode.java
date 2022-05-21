@@ -3,7 +3,7 @@ package kalina.compiler.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
+import kalina.compiler.cfg.data.OxmaFunctionTable;
 
 /**
  * @author vlad333rrty

@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser2.data;
+package kalina.compiler.cfg.data;
 
 import java.util.Optional;
 
@@ -61,5 +61,10 @@ public class LocalVariableTable extends AbstractLocalVariableTable {
             throw new IllegalArgumentException("No declaration found for variable " + name);
         }
         return info.get();
+    }
+
+    @Override
+    public AbstractLocalVariableTable createChildTable() {
+        return new LocalVariableTable(this);
     }
 }

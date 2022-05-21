@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser2.data;
+package kalina.compiler.cfg.data;
 
 /**
  * @author vlad333rrty

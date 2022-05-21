@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 /**
  * @author vlad333rrty
  */
-public final class ASTFunCallExpression implements ASTExpression {
+public class ASTFunCallExpression implements ASTExpression {
     private final String funName;
     private final List<ASTExpression> arguments;
 

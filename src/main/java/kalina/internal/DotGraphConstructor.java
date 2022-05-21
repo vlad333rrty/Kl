@@ -8,6 +8,7 @@ import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.parse.Parser;
 import kalina.compiler.ast.ASTClassNode;
+import kalina.compiler.ast.ASTFieldNode;
 import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.ast.expression.ASTExpression;
@@ -47,6 +48,9 @@ public final class DotGraphConstructor {
             int classNum = counter;
             addNodeWithLabel(counter++, classNode.toString(), builder);
             addEdge(rootNum, classNum, builder);
+            for (ASTFieldNode fieldNode : classNode.getFieldNodes()) {
+                traverseFieldNode(fieldNode, builder, classNum);
+            }
             for (ASTMethodNode methodNode : classNode.getMethodNodes()) {
                 traverseMethodNode(methodNode, builder, classNum);
             }
@@ -66,6 +70,12 @@ public final class DotGraphConstructor {
         }
         addNodeWithLabel(counter, stringBuilder.toString(), builder);
         addEdge(methodNum, counter, builder);
+        counter++;
+    }
+
+    private static void traverseFieldNode(ASTFieldNode node, StringBuilder builder, int parentClassNum) {
+        addNodeWithLabel(counter, node.toString(), builder);
+        addEdge(parentClassNum, counter, builder);
         counter++;
     }
 

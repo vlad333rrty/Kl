@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 import kalina.compiler.bb.TypeAndName;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
-import kalina.compiler.syntax.parser2.data.FunctionInfo;
+import kalina.compiler.cfg.data.FunctionInfo;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;

@@ -1,6 +1,8 @@
-package kalina.compiler.ast.expression;
+package kalina.compiler.ast.expression.method;
 
 import java.util.List;
+
+import kalina.compiler.ast.expression.ASTExpression;
 
 /**
  * @author vlad333rrty
@@ -13,7 +15,8 @@ public final class ASTMethodCallExpression implements ASTExpression {
     public ASTMethodCallExpression(
             String ownerObjectName,
             String funName,
-            List<ASTExpression> arguments) {
+            List<ASTExpression> arguments)
+    {
         this.ownerObjectName = ownerObjectName;
         this.funName = funName;
         this.arguments = arguments;

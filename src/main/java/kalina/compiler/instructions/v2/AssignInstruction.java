@@ -3,7 +3,7 @@ package kalina.compiler.instructions.v2;
 import java.util.List;
 
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.syntax.parser2.data.VariableInfo;
+import kalina.compiler.cfg.data.VariableInfo;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 

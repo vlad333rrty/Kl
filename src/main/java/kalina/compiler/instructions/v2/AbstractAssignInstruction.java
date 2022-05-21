@@ -6,7 +6,7 @@ import java.util.Optional;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.syntax.parser2.data.VariableInfo;
+import kalina.compiler.cfg.data.VariableInfo;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 

@@ -25,7 +25,7 @@ public final class ParseUtils {
         };
     }
 
-    public static Type convertRawType(String type) {
+    private static Type convertRawType(String type) {
         return switch (type) {
             case "void" -> Type.VOID_TYPE;
             case "short" -> Type.SHORT_TYPE;

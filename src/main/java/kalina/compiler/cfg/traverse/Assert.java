@@ -1,7 +1,7 @@
 package kalina.compiler.cfg.traverse;
 
 import kalina.compiler.cfg.data.TypeChecker;
-import kalina.compiler.syntax.parser2.data.AbstractLocalVariableTable;
+import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;

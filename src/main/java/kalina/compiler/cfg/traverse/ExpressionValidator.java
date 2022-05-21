@@ -11,7 +11,7 @@ import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.ArrayAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
-import kalina.compiler.syntax.parser2.data.VariableInfo;
+import kalina.compiler.cfg.data.VariableInfo;
 import org.objectweb.asm.Type;
 
 /**

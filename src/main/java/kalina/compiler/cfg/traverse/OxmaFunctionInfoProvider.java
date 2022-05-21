@@ -3,8 +3,8 @@ package kalina.compiler.cfg.traverse;
 import java.util.List;
 import java.util.Optional;
 
-import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionTable;
+import kalina.compiler.cfg.data.OxmaFunctionInfo;
+import kalina.compiler.cfg.data.OxmaFunctionTable;
 import org.objectweb.asm.Type;
 
 /**

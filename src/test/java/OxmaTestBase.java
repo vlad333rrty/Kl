@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Assertions;
  */
 abstract class OxmaTestBase {
     private static final int LEXER_ERROR_CODE = 255;
-    private static final int TIME_TO_WAIT_SECONDS = 5;
+    private static final int TIME_TO_WAIT_SECONDS = 7;
     private static final OxmaMain compiler = new OxmaMain();
 
     public void runLexer(String fileName) throws IOException, TimeoutException, InterruptedException {

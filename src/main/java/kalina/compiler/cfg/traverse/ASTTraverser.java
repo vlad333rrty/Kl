@@ -4,22 +4,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import kalina.compiler.ast.ASTClassNode;
+import kalina.compiler.ast.ASTFieldNode;
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.AbstractBasicBlock;
 import kalina.compiler.bb.ClassBasicBlock;
 import kalina.compiler.bb.RootBasicBlock;
-import kalina.compiler.cfg.converter.ASTExpressionConverter;
+import kalina.compiler.cfg.data.GetFieldInfoProvider;
+import kalina.compiler.cfg.data.GetFunctionInfoProvider;
+import kalina.compiler.cfg.data.ILocalVariableTableFactory;
+import kalina.compiler.cfg.data.LocalVariableTableFactory;
+import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.TypeDictionary;
 import kalina.compiler.cfg.data.TypeDictionaryImpl;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.instructions.DefaultConstructorInstruction;
-import kalina.compiler.syntax.parser2.data.ILocalVariableTableFactory;
-import kalina.compiler.syntax.parser2.data.LocalVariableTableFactory;
 
 /**
  * @author vlad333rrty
@@ -30,12 +35,12 @@ public class ASTTraverser {
         fillTypeDictionary(root, typeDictionary);
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
         GetFunctionInfoProvider getFunctionInfoProvider = createGetFunctionInfoProvider(root);
-        ASTExpressionConverter expressionConverter = new ASTExpressionConverter(getFunctionInfoProvider);
+        GetFieldInfoProvider fieldInfoProvider = createFieldInfoProvider(root);
         ClassTraverser classTraverser = new ClassTraverser(
                 localVariableTableFactory,
                 new TypeChecker(typeDictionary),
-                expressionConverter,
-                getFunctionInfoProvider
+                getFunctionInfoProvider,
+                fieldInfoProvider
         );
 
         List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();
@@ -49,9 +54,19 @@ public class ASTTraverser {
         return new RootBasicBlock(classBasicBlocks);
     }
 
-    private Map<String, OxmaFunctionInfoProvider> getClassNameToFunctionInfoProvider(ASTRootNode root) {
-        return root.getClassNodes().stream()
-                .collect(Collectors.toMap(ASTClassNode::getClassName, node -> new OxmaFunctionInfoProvider(node.getOxmaFunctionTable())));
+    private GetFieldInfoProvider createFieldInfoProvider(ASTRootNode root) {
+        return new GetFieldInfoProvider(root.getClassNodes().stream().collect(Collectors.toMap(
+                ASTClassNode::getClassName,
+                x -> getNameToFiledInfo(x.getFieldNodes(), x.getClassName())
+        )));
+    }
+
+    private Function<String, Optional<OxmaFieldInfo>> getNameToFiledInfo(List<ASTFieldNode> fieldNodes, String ownerName) {
+        Map<String, OxmaFieldInfo> infoMap = fieldNodes.stream().collect(Collectors.toMap(
+                ASTFieldNode::getName,
+                a -> new OxmaFieldInfo(a.getType(), a.getAccessModifier(), a.getModifiers(), ownerName)
+        ));
+        return name -> Optional.ofNullable(infoMap.get(name));
     }
 
     private GetFunctionInfoProvider createGetFunctionInfoProvider(ASTRootNode root) {

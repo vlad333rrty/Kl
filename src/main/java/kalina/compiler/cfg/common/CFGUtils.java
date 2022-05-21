@@ -1,5 +1,8 @@
 package kalina.compiler.cfg.common;
 
+import java.util.List;
+
+import kalina.compiler.expressions.Expression;
 import org.objectweb.asm.Type;
 
 /**
@@ -27,5 +30,9 @@ public final class CFGUtils {
 
     private static int getArrayDimension(Type type) {
         return (int)type.getDescriptor().chars().filter(c -> c == '[').count();
+    }
+
+    public static List<Type> getSignatureFromExpressions(List<Expression> expressions) {
+        return expressions.stream().map(Expression::getType).toList();
     }
 }

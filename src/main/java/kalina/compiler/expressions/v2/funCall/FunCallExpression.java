@@ -8,7 +8,7 @@ import kalina.compiler.bb.TypeAndName;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.syntax.parser2.data.OxmaFunctionInfo;
+import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -19,23 +19,25 @@ import org.objectweb.asm.Type;
 public class FunCallExpression extends AbstractFunCallExpression {
     private final String funName;
     private final OxmaFunctionInfo functionInfo;
-    private final Optional<Integer> variableIndex;
+    private final Optional<Expression> variableAccessExpression;
 
     public FunCallExpression(
             String funName,
             List<Expression> arguments,
             OxmaFunctionInfo functionInfo,
-            Optional<Integer> variableIndex)
+            Optional<Expression> variableAccessExpression)
     {
         super(arguments);
         this.funName = funName;
         this.functionInfo = functionInfo;
-        this.variableIndex = variableIndex;
+        this.variableAccessExpression = variableAccessExpression;
     }
 
     @Override
     public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
-        variableIndex.ifPresent(index -> mv.visitVarInsn(Opcodes.ALOAD, index));
+        if (variableAccessExpression.isPresent()) {
+            variableAccessExpression.get().translateToBytecode(mv);
+        }
         for (Expression expression : arguments) {
             expression.translateToBytecode(mv);
         }

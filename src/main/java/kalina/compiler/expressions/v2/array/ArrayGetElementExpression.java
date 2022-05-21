@@ -16,19 +16,19 @@ public class ArrayGetElementExpression extends Expression implements AbstractArr
     private final Type elementType;
     private final Type loweredType;
     private final Type initialType;
-    private final int index;
+    private final Expression variableAccessExpression;
 
-    public ArrayGetElementExpression(List<Expression> indices, Type elementType, Type loweredType, Type initialType, int index) {
+    public ArrayGetElementExpression(List<Expression> indices, Type elementType, Type loweredType, Type initialType, Expression variableAccessExpression) {
         this.indices = indices;
         this.elementType = elementType;
         this.loweredType = loweredType;
         this.initialType = initialType;
-        this.index = index;
+        this.variableAccessExpression = variableAccessExpression;
     }
 
     @Override
     public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
-        expressionCodeGen.loadVariable(mv, initialType.getOpcode(Opcodes.ILOAD), index);
+        variableAccessExpression.translateToBytecode(mv);
         translateElementsAccess(mv, indices);
         mv.visitInsn(elementType.getOpcode(Opcodes.IALOAD));
     }
@@ -44,10 +44,6 @@ public class ArrayGetElementExpression extends Expression implements AbstractArr
 
     public Type getInitialType() {
         return initialType;
-    }
-
-    public int getIndex() {
-        return index;
     }
 
     public Type getElementType() {

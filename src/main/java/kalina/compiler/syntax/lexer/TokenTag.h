@@ -71,8 +71,7 @@
 #define CONST_TAG 66
 #define PRIVATE_TAG 67
 #define PROTECTED_TAG 68
-#define PUBLIC_TAG 69
-
+#define FINAL_TAG 69
 #define ARRAY_TYPE_TAG 70
 
 #define END_TAG -1

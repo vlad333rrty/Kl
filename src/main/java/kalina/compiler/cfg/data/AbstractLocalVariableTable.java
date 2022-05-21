@@ -1,4 +1,4 @@
-package kalina.compiler.syntax.parser2.data;
+package kalina.compiler.cfg.data;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +33,8 @@ public abstract class AbstractLocalVariableTable {
     public abstract boolean hasVariable(String name);
 
     public abstract boolean hasVariableGlobal(String name);
+
+    public abstract AbstractLocalVariableTable createChildTable();
 
     protected TypeAndIndex get(String name) {
         return variableTable.get(name);

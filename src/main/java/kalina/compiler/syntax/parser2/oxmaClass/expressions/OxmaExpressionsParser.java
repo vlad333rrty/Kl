@@ -3,23 +3,28 @@ package kalina.compiler.syntax.parser2.oxmaClass.expressions;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Nullable;
+
 import kalina.compiler.ast.expression.ASTArithmeticExpression;
-import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
-import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
+import kalina.compiler.ast.expression.ASTClassPropertyCallExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTFactor;
 import kalina.compiler.ast.expression.ASTFunCallExpression;
-import kalina.compiler.ast.expression.ASTMethodCallExpression;
 import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTTerm;
+import kalina.compiler.ast.expression.ASTThisExpression;
+import kalina.compiler.ast.expression.method.ASTUnknownOwnerMethodCall;
 import kalina.compiler.ast.expression.ASTValueExpression;
 import kalina.compiler.ast.expression.ASTVariableExpression;
+import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
+import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
+import kalina.compiler.ast.expression.field.ASTUnknownOwnerFieldExpression;
 import kalina.compiler.expressions.operations.ArithmeticOperation;
 import kalina.compiler.syntax.build.TokenTag;
 import kalina.compiler.syntax.parser2.Assert;
+import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.parser2.ParseUtils;
-import kalina.compiler.syntax.parser2.OxmaParserBase;
 import kalina.compiler.syntax.scanner.IScanner;
 import kalina.compiler.syntax.tokens.Token;
 import org.objectweb.asm.Type;
@@ -99,23 +104,30 @@ public class OxmaExpressionsParser extends OxmaParserBase {
         }
         if (token.getTag() == TokenTag.IDENT_TAG) {
             String name = token.getValue();
+            final ASTExpression expression;
             if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
-                ASTExpression funCallExpression = parseFunCall(name);
-                return ASTFactor.createFactor(funCallExpression);
-            } else if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
-                getNextToken();
-                Token methodName = getNextToken();
-                Assert.assertTag(methodName, TokenTag.IDENT_TAG);
-
-                ASTExpression methodCall = parseMethodCall(name, methodName.getValue());
-                return ASTFactor.createFactor(methodCall);
+                expression = parseFunCall(name);
             } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
                 List<ASTExpression> indices = parseArrayGetElement();
-                ASTExpression getElementExpression = new ASTArrayGetElementExpression(name, indices);
-                return ASTFactor.createFactor(getElementExpression);
+                expression = new ASTArrayGetElementExpression(name, indices);
+            } else {
+                expression = new ASTVariableExpression(name);
+            }
+            if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                getNextToken();
+                ASTClassPropertyCallExpression propertyCallExpression = parsePropertyCall(expression);
+                return ASTFactor.createFactor(propertyCallExpression);
             }
 
-            return ASTFactor.createFactor(new ASTVariableExpression(name));
+            return ASTFactor.createFactor(expression);
+        }
+        if (token.getTag() == TokenTag.THIS_TAG) {
+            if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
+                getNextToken();
+                return ASTFactor.createFactor(parsePropertyCallOfThis());
+            } else {
+                throw new IllegalArgumentException("Unexpected token: " + peekNextToken());
+            }
         }
         if (token.getTag() == TokenTag.LPAREN_TAG) {
             ASTExpression expression = parseAr();
@@ -177,16 +189,8 @@ public class OxmaExpressionsParser extends OxmaParserBase {
         return new ASTFunCallExpression(funName, args);
     }
 
-    private ASTMethodCallExpression parseMethodCall(String ownerObjectName, String funName) throws ParseException {
-        Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
-        List<ASTExpression> args = parseFunArgs();
-        Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
-
-        return new ASTMethodCallExpression(ownerObjectName, funName, args);
-    }
-
     public List<ASTExpression> parseArrayGetElement() throws ParseException {
-        List<ASTExpression>indices = new ArrayList<>();
+        List<ASTExpression> indices = new ArrayList<>();
         while (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
             getNextToken(); // skip `[`
             ASTExpression index = parse();
@@ -195,5 +199,52 @@ public class OxmaExpressionsParser extends OxmaParserBase {
         }
 
         return indices;
+    }
+
+    public ASTClassPropertyCallExpression parsePropertyCall(ASTExpression firstExpression) throws ParseException {
+        List<ASTExpression> expressions = new ArrayList<>(List.of(firstExpression));
+        do {
+            ASTExpression expression = parsePropertyCallInternal();
+            if (expression == null) {
+                break;
+            }
+            expressions.add(expression);
+            if (peekNextToken().getTag() != TokenTag.DOT_TAG) {
+                break;
+            }
+            getNextToken();
+        } while (true);
+        return new ASTClassPropertyCallExpression(expressions);
+    }
+
+    public ASTClassPropertyCallExpression parsePropertyCallOfThis() throws ParseException {
+        return parsePropertyCall(new ASTThisExpression());
+    }
+
+    @Nullable
+    public ASTExpression parsePropertyCallInternal() throws ParseException {
+        Token token = peekNextToken();
+        if (token.getTag() == TokenTag.IDENT_TAG) {
+            getNextToken();
+            String name = token.getValue();
+            if (peekNextToken().getTag() == TokenTag.LPAREN_TAG) {
+                return parseUnknownOwnerMethodCall(name);
+            } else if (peekNextToken().getTag() == TokenTag.LEFT_SQ_BR_TAG) {
+                List<ASTExpression> indices = parseArrayGetElement();
+                return new ASTArrayGetElementExpression(name, indices);
+            } else {
+                return new ASTUnknownOwnerFieldExpression(name);
+            }
+        }
+
+        return null;
+    }
+
+    private ASTExpression parseUnknownOwnerMethodCall(String funName) throws ParseException {
+        Assert.assertTag(getNextToken(), TokenTag.LPAREN_TAG);
+        List<ASTExpression> args = parseFunArgs();
+        Assert.assertTag(getNextToken(), TokenTag.RPAREN_TAG);
+
+        return new ASTUnknownOwnerMethodCall(funName, args);
     }
 }

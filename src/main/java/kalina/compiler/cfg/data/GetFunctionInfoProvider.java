@@ -1,7 +1,9 @@
-package kalina.compiler.cfg.traverse;
+package kalina.compiler.cfg.data;
 
 import java.util.Map;
 import java.util.Optional;
+
+import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
 
 /**
  * @author vlad333rrty
