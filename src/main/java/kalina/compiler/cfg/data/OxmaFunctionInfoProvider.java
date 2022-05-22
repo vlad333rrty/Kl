@@ -1,10 +1,8 @@
-package kalina.compiler.cfg.traverse;
+package kalina.compiler.cfg.data;
 
 import java.util.List;
 import java.util.Optional;
 
-import kalina.compiler.cfg.data.OxmaFunctionInfo;
-import kalina.compiler.cfg.data.OxmaFunctionTable;
 import org.objectweb.asm.Type;
 
 /**

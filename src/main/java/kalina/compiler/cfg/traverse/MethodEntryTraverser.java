@@ -25,6 +25,7 @@ import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.AssignArrayVariableInfo;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeAndIndex;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.VariableInfo;

@@ -11,6 +11,7 @@ import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.MutableGraph;
 import guru.nidi.graphviz.model.MutableNode;
+import kalina.compiler.bb.v2.ClassBasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +26,17 @@ public class CFGDotGraphConstructor {
     private static final Logger logger = LogManager.getLogger(ASTDotGraphConstructor.class);
 
     private static Set<Integer> traversedNodes;
+
+    public static void plotMany(List<ClassBasicBlock> classBasicBlock) {
+        int j = 0;
+        for (var classBB : classBasicBlock) {
+            int i = 0;
+            for (var fun : classBB.getEntry()) {
+                plotGraph(fun.getCfgRoot(), "cfg" + j + "_" + i++ + ".png");
+            }
+            j++;
+        }
+    }
 
     public static void plotGraph(AbstractCFGNode rootNode, String fileName) {
         traversedNodes = new HashSet<>();

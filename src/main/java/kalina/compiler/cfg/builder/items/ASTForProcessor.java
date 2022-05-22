@@ -15,7 +15,7 @@ import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.instructions.Instruction;
@@ -48,34 +48,39 @@ public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForIns
             MethodEntryCFGTraverser traverser) throws CFGConversionException, IncompatibleTypesException
     {
         Label start = new Label();
-        ForHeaderAnLabel forHeaderAnLabel = createForHeaderInstruction(forInstruction, localVariableTable, start);
-        bbEntryConsumer.accept(forHeaderAnLabel.forHeaderInstruction);
-        var endInstruction = new ForEntryEndInstruction(start, forHeaderAnLabel.label);
-        AbstractCFGNode thenNode = traverser.traverseScope(forInstruction.entry(), localVariableTable,
+        AbstractLocalVariableTable childTable = localVariableTable.createChildTable();
+        ForHeaderAndLabel forHeaderAndLabel = createForHeaderInstruction(forInstruction, childTable, start);
+        bbEntryConsumer.accept(forHeaderAndLabel.forHeaderInstruction);
+        Optional<Instruction> action = forInstruction.action().isPresent()
+                ? Optional.of(instructionBuilder.constructInstruction(forInstruction.action().get(), childTable))
+                : Optional.empty();
+        var endInstruction = new ForEntryEndInstruction(start, forHeaderAndLabel.label, action);
+        AbstractCFGNode thenNode = traverser.traverse(
+                forInstruction.entry().getExpressions().iterator(),
+                childTable,
                 bbs -> bbs.add(endInstruction));
         AbstractCFGNode elseNode = traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider);
 
         return new ThenAndElseNodes(thenNode, elseNode);
     }
 
-    private ForHeaderAnLabel createForHeaderInstruction(
+    private ForHeaderAndLabel createForHeaderInstruction(
             ASTForInstruction forInstruction,
             AbstractLocalVariableTable localVariableTable,
             Label start) throws CFGConversionException, IncompatibleTypesException
     {
-        AbstractLocalVariableTable childTable = localVariableTable.createChildTable();
         Optional<Instruction> declarations = forInstruction.declarations().isPresent()
-                ? Optional.of(instructionBuilder.constructInstruction(forInstruction.declarations().get(), childTable))
+                ? Optional.of(instructionBuilder.constructInstruction(forInstruction.declarations().get(), localVariableTable))
                 : Optional.empty();
         Optional<CondExpression> condition = forInstruction.condition().isPresent()
-                ? Optional.of(expressionConverter.convertCondExpression(forInstruction.condition().get(), childTable, functionInfoProvider, fieldInfoProvider))
+                ? Optional.of(expressionConverter.convertCondExpression(forInstruction.condition().get(), localVariableTable, functionInfoProvider, fieldInfoProvider))
                 : Optional.empty();
-        return new ForHeaderAnLabel(new ForHeaderInstruction(
+        return new ForHeaderAndLabel(new ForHeaderInstruction(
                 declarations,
                 condition,
                 start
         ), condition.get().getLabel());
     }
 
-    private static record ForHeaderAnLabel(ForHeaderInstruction forHeaderInstruction, Label label) {}
+    private static record ForHeaderAndLabel(ForHeaderInstruction forHeaderInstruction, Label label) {}
 }

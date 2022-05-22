@@ -31,6 +31,6 @@ public class LHS {
 
     @Override
     public String toString() {
-        return type.getClassName() + " " + PrintUtils.listToString(vars.stream().map(VariableNameAndIndex::getName).toList());
+        return type.getClassName() + " " + PrintUtils.listToString(vars.stream().map(VariableNameAndIndex::toString).toList());
     }
 }

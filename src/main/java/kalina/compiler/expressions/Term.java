@@ -61,4 +61,13 @@ public class Term extends Expression {
     public String toString() {
         return PrintUtils.complexExpressionToString(factors, operations);
     }
+
+    public List<Factor> getFactors() {
+        return factors;
+    }
+
+    public Term withFactors(List<Factor> factors) {
+        assert this.factors.size() == factors.size();
+        return new Term(factors, operations);
+    }
 }

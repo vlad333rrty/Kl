@@ -27,8 +27,14 @@ public class AssignInstruction extends AbstractAssignInstruction {
     }
 
     @Override
+    public AbstractAssignInstruction withRHS(List<Expression> rhs) {
+        assert getRhs().size() == rhs.size();
+        return new AssignInstruction(getLhs(), rhs);
+    }
+
+    @Override
     public String toString() {
-        return PrintUtils.listToString(getLhs().stream().map(VariableInfo::getName).toList())
+        return PrintUtils.listToString(getLhs().stream().map(VariableInfo::toString).toList())
                 + " = " + PrintUtils.listToString(getRhs());
     }
 }

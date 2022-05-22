@@ -13,4 +13,10 @@ public abstract class AbstractFunCallExpression extends Expression {
     public AbstractFunCallExpression(List<Expression> arguments) {
         this.arguments = arguments;
     }
+
+    public abstract AbstractFunCallExpression substituteArguments(List<Expression> arguments);
+
+    public List<Expression> getArguments() {
+        return arguments;
+    }
 }

@@ -1,8 +1,10 @@
 package kalina.compiler.cfg.builder;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.Stack;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -62,7 +64,7 @@ public class MethodEntryCFGTraverser {
                 );
 
                 BasicBlock bb = BasicBlockFactory.createBasicBlock(bbEntry);
-                AbstractCFGNode node = new CFGNodeWithBranch(bb, thenAndElseNodes.thenNode(), thenAndElseNodes.elseNode());
+                CFGNodeWithBranch node = new CFGNodeWithBranch(bb, thenAndElseNodes.thenNode(), thenAndElseNodes.elseNode());
                 linkNodes(thenAndElseNodes, branchExpression, node, () -> {
                     try {
                         return traverse(iterator, localVariableTable, blockEndInstructionProvider);
@@ -91,16 +93,17 @@ public class MethodEntryCFGTraverser {
     private void linkNodes(
             ThenAndElseNodes thenAndElseNodes,
             ASTBranchExpression branchExpression,
-            AbstractCFGNode node,
+            CFGNodeWithBranch node,
             Supplier<AbstractCFGNode> nextNodeAccessor)
     {
-        AbstractCFGNode thenLastNode = findLastNode(thenAndElseNodes.thenNode());
+        AbstractCFGNode thenLastNode = DFSImpl.findLastNode(thenAndElseNodes.thenNode());
         if (branchExpression instanceof ASTIfInstruction ifInstruction) {
             if (ifInstruction.elseBr().isPresent()) {
-                AbstractCFGNode elseLastNode = findLastNode(thenAndElseNodes.elseNode());
+                AbstractCFGNode elseLastNode = DFSImpl.findLastNode(thenAndElseNodes.elseNode());
                 AbstractCFGNode nextNode = nextNodeAccessor.get();
                 thenLastNode.addChild(nextNode);
                 elseLastNode.addChild(nextNode);
+                node.setAfterThenElseNode(nextNode);
             } else {
                 thenLastNode.addChild(thenAndElseNodes.elseNode());
             }
@@ -115,27 +118,36 @@ public class MethodEntryCFGTraverser {
         }
     }
 
-    private AbstractCFGNode findLastNode(AbstractCFGNode node) {
-        Stack<NodeWithDepth> stack = new Stack<>();
-        int maxDepth = 0;
-        stack.add(new NodeWithDepth(node, 0));
-        AbstractCFGNode current = node;
-        while (!stack.empty()) {
-            NodeWithDepth nodeWithDepth = stack.pop();
-            int depth = nodeWithDepth.depth;
-            AbstractCFGNode cfgNode = nodeWithDepth.node;
-            if (cfgNode.getChildren().isEmpty()) {
-                if (depth > maxDepth) {
-                    maxDepth = depth;
-                    current = cfgNode;
+    private static class DFSImpl {
+        private static Set<Integer> traversedNodes;
+
+        public static AbstractCFGNode findLastNode(AbstractCFGNode node) {
+            traversedNodes = new HashSet<>();
+            Stack<NodeWithDepth> stack = new Stack<>();
+            int maxDepth = 0;
+            stack.add(new NodeWithDepth(node, 0));
+            traversedNodes.add(node.getId());
+            AbstractCFGNode current = node;
+            while (!stack.empty()) {
+                NodeWithDepth nodeWithDepth = stack.pop();
+                int depth = nodeWithDepth.depth;
+                AbstractCFGNode cfgNode = nodeWithDepth.node;
+                if (cfgNode.getChildren().isEmpty()) {
+                    if (depth > maxDepth) {
+                        maxDepth = depth;
+                        current = cfgNode;
+                    }
+                } else {
+                    stack.addAll(cfgNode.getChildren().stream()
+                            .filter(child -> !traversedNodes.contains(child.getId()))
+                            .map(n -> new NodeWithDepth(n, depth + 1))
+                            .toList());
                 }
-            } else {
-                stack.addAll(cfgNode.getChildren().stream().map(n -> new NodeWithDepth(n, depth + 1)).toList());
             }
+
+            return current;
         }
 
-        return current;
+        private static record NodeWithDepth(AbstractCFGNode node, int depth) {}
     }
-
-    private static record NodeWithDepth(AbstractCFGNode node, int depth) {}
 }

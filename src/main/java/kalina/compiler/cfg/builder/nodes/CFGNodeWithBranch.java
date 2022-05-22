@@ -1,12 +1,14 @@
 package kalina.compiler.cfg.builder.nodes;
 
 import java.util.List;
+import java.util.Optional;
 
 import kalina.compiler.cfg.bb.BasicBlock;
 
 public class CFGNodeWithBranch extends AbstractCFGNode {
     private final AbstractCFGNode thenNode;
     private final AbstractCFGNode elseNode;
+    private Optional<AbstractCFGNode> afterThenElseNode = Optional.empty();
 
     public CFGNodeWithBranch(
             BasicBlock bb,
@@ -27,5 +29,21 @@ public class CFGNodeWithBranch extends AbstractCFGNode {
     @Override
     public void addChild(AbstractCFGNode node) {
         throw new UnsupportedOperationException();
+    }
+
+    public AbstractCFGNode getThenNode() {
+        return thenNode;
+    }
+
+    public AbstractCFGNode getElseNode() {
+        return elseNode;
+    }
+
+    public void setAfterThenElseNode(AbstractCFGNode afterThenElseNode) {
+        this.afterThenElseNode = Optional.of(afterThenElseNode);
+    }
+
+    public Optional<AbstractCFGNode> getAfterThenElseNode() {
+        return afterThenElseNode;
     }
 }

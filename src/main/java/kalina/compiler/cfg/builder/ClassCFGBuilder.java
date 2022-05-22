@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTMethodNode;
-import kalina.compiler.bb.FunBasicBlock;
+import kalina.compiler.bb.v2.FunBasicBlock;
 import kalina.compiler.cfg.builder.items.ASTDoProcessor;
 import kalina.compiler.cfg.builder.items.ASTForProcessor;
 import kalina.compiler.cfg.builder.items.ASTIfProcessor;
@@ -20,7 +20,7 @@ import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.ILocalVariableTableFactory;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,20 +48,10 @@ public class ClassCFGBuilder {
         this.getFieldInfoProvider = getFieldInfoProvider;
     }
 
-    public List<AbstractCFGNode> traverse(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
-        List<AbstractCFGNode> result = new ArrayList<>();
+    public List<FunBasicBlock> traverse(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
+        List<FunBasicBlock> result = new ArrayList<>();
         OxmaFunctionInfoProvider functionInfoProvider = getFunctionInfoProvider.getFunctionTable(classNode.getClassName()).orElseThrow();
-//        for (ASTFieldNode node : classNode.getFieldNodes()) {
-//            FieldInitInstruction fieldInitInstruction = new FieldInitInstruction(
-//                    node.getName(),
-//                    node.getType(),
-//                    node.getAccessModifier(),
-//                    node.getModifiers());
-//            result.add(new BasicBlock(fieldInitInstruction));
-//        }
         for (ASTMethodNode node : classNode.getMethodNodes()) {
-            FunBasicBlock funBasicBlock =
-                    new FunBasicBlock(node.getName(), node.getArgs(), Optional.of(node.getReturnType()), node.isStatic());
             AbstractLocalVariableTable localVariableTable = node.isStatic()
                     ? localVariableTableFactory.createLocalVariableTableForStatic()
                     : localVariableTableFactory.createLocalVariableTableForNonStatic();
@@ -69,7 +59,13 @@ public class ClassCFGBuilder {
 
             MethodEntryCFGBuilder methodEntryCFGBuilder = getMethodEntryCFGBuilder(node, classNode.getClassName(), functionInfoProvider);
             AbstractCFGNode root = methodEntryCFGBuilder.build(node.getExpressions(), localVariableTable);
-            result.add(root);
+            FunBasicBlock funBasicBlock = new FunBasicBlock(
+                    node.getName(),
+                    node.getArgs(),
+                    Optional.of(node.getReturnType()),
+                    node.isStatic(),
+                    root);
+            result.add(funBasicBlock);
         }
 
         return result;

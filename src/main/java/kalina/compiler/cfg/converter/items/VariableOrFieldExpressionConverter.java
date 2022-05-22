@@ -19,7 +19,7 @@ public class VariableOrFieldExpressionConverter {
                 getVariableOrField.getVariableOrFieldInfoOrElseThrow(variableExpression.name());
         if (variableOrFieldInfo.typeAndIndex.isPresent()) {
             TypeAndIndex typeAndIndex = variableOrFieldInfo.typeAndIndex.get();
-            return new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType());
+            return new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType(), variableExpression.name());
         }
         OxmaFieldInfo fieldInfo = variableOrFieldInfo.fieldInfo.get();
         return new FieldAccessExpression(

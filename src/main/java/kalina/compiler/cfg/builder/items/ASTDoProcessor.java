@@ -14,7 +14,7 @@ import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.instructions.Instruction;

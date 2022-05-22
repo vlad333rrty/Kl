@@ -12,12 +12,14 @@ public class VariableInfo {
     private final int index;
     private final Type type;
     private final Optional<AssignArrayVariableInfo> arrayVariableInfo;
+    private final SSAVariableInfo ssaVariableInfo;
 
     public VariableInfo(String name, int index, Type type) {
         this.name = name;
         this.index = index;
         this.type = type;
         this.arrayVariableInfo = Optional.empty();
+        ssaVariableInfo = new SSAVariableInfo(name);
     }
 
     public VariableInfo(String name, int index, Type type, AssignArrayVariableInfo arrayVariableInfo) {
@@ -25,6 +27,7 @@ public class VariableInfo {
         this.index = index;
         this.type = type;
         this.arrayVariableInfo = Optional.of(arrayVariableInfo);
+        ssaVariableInfo = new SSAVariableInfo(name);
     }
 
     public String getName() {
@@ -41,5 +44,14 @@ public class VariableInfo {
 
     public AssignArrayVariableInfo getArrayVariableInfoOrElseThrow() {
         return arrayVariableInfo.orElseThrow();
+    }
+
+    @Override
+    public String toString() {
+        return type.getClassName() + " " + name + "_" + ssaVariableInfo.getCfgIndex();
+    }
+
+    public SSAVariableInfo getSsaVariableInfo() {
+        return ssaVariableInfo;
     }
 }

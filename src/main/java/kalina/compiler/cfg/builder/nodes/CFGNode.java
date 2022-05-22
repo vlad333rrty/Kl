@@ -9,26 +9,26 @@ import kalina.compiler.cfg.bb.BasicBlock;
  * @author vlad333rrty
  */
 public class CFGNode extends AbstractCFGNode {
-    private final List<AbstractCFGNode> childrenAndBackEdgeNodes;
+    private final List<AbstractCFGNode> childrenAndBackEdgeNode;
 
     public CFGNode(BasicBlock bb) {
         super(bb);
-        this.childrenAndBackEdgeNodes = new ArrayList<>();
+        this.childrenAndBackEdgeNode = new ArrayList<>();
     }
 
     @Override
     public List<? extends AbstractCFGNode> getChildren() {
-        return childrenAndBackEdgeNodes;
+        return childrenAndBackEdgeNode;
     }
 
     @Override
     public void setBackEdgeNode(AbstractCFGNode backEdgeNode) {
         super.setBackEdgeNode(backEdgeNode);
-        childrenAndBackEdgeNodes.add(backEdgeNode);
+        childrenAndBackEdgeNode.add(backEdgeNode);
     }
 
     @Override
     public void addChild(AbstractCFGNode node) {
-        childrenAndBackEdgeNodes.add(node);
+        childrenAndBackEdgeNode.add(node);
     }
 }

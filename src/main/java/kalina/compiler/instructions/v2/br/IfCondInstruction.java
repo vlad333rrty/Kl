@@ -14,11 +14,9 @@ import org.objectweb.asm.MethodVisitor;
  */
 public class IfCondInstruction extends Instruction {
     private final CondExpression condition;
-    private final Label label;
 
     public IfCondInstruction(CondExpression condition) {
         this.condition = condition;
-        this.label = condition.getLabel();
     }
 
     @Override
@@ -32,11 +30,15 @@ public class IfCondInstruction extends Instruction {
     }
 
     public Label getLabel() {
-        return label;
+        return condition.getLabel();
     }
 
     @Override
     public String toString() {
         return condition.toString();
+    }
+
+    public CondExpression getCondition() {
+        return condition;
     }
 }

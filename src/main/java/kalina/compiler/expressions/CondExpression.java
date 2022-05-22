@@ -83,4 +83,13 @@ public class CondExpression extends Expression {
     public String toString() {
         return PrintUtils.complexExpressionToString(expressions, operations);
     }
+
+    public List<Expression> getExpressions() {
+        return expressions;
+    }
+
+    public CondExpression substituteExpressions(List<Expression> expressions) {
+        assert this.expressions.size() == expressions.size();
+        return new CondExpression(expressions, operations, label, invert);
+    }
 }

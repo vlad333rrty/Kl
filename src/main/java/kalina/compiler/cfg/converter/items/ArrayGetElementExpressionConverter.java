@@ -34,7 +34,7 @@ public class ArrayGetElementExpressionConverter {
                     CFGUtils.getArrayElementType(type),
                     CFGUtils.lowArrayDimension(type, getElementExpression.getIndices().size()),
                     type,
-                    new VariableExpression(typeAndIndex.getIndex(), type)
+                    new VariableExpression(typeAndIndex.getIndex(), type, name)
             );
         } else {
             OxmaFieldInfo fieldInfo = variableInfo.fieldInfo.get();

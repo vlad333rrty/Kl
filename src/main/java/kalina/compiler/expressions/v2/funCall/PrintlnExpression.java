@@ -27,4 +27,9 @@ public class PrintlnExpression extends PrintExpression {
     public String toString() {
         return PrintUtils.listToString(arguments);
     }
+
+    @Override
+    public AbstractFunCallExpression substituteArguments(List<Expression> arguments) {
+        return new PrintlnExpression(arguments);
+    }
 }

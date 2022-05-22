@@ -9,7 +9,6 @@ import kalina.compiler.instructions.Instruction;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
 
 /**
  * @author vlad333rrty
@@ -39,8 +38,6 @@ public class ForHeaderInstruction extends Instruction {
                 methodVisitor.visitLabel(start);
                 condExpression.translateToBytecode(methodVisitor);
             }
-
-            methodVisitor.visitJumpInsn(Opcodes.GOTO, start);
         } else {
             throw new IllegalArgumentException();
         }

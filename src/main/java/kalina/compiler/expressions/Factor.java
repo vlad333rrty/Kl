@@ -42,4 +42,12 @@ public class Factor extends Expression {
     public String toString() {
         return (shouldNegate ? "-" : "") + expression.toString();
     }
+
+    public Expression getExpression() {
+        return expression;
+    }
+
+    public Factor withExpression(Expression expression) {
+        return new Factor(expression, shouldNegate);
+    }
 }

@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTFieldNode;
 import kalina.compiler.ast.ASTRootNode;
-import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.bb.v2.ClassBasicBlock;
+import kalina.compiler.bb.v2.FunBasicBlock;
 import kalina.compiler.cfg.data.GetFieldInfoProvider;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.ILocalVariableTableFactory;
@@ -21,14 +22,15 @@ import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.TypeDictionary;
 import kalina.compiler.cfg.data.TypeDictionaryImpl;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
+import kalina.compiler.instructions.DefaultConstructorInstruction;
 
 /**
  * @author vlad333rrty
  */
 public class CFGBuilder {
-    public List<AbstractCFGNode> build(ASTRootNode root) throws CFGConversionException, IncompatibleTypesException {
+    public List<ClassBasicBlock> build(ASTRootNode root) throws CFGConversionException, IncompatibleTypesException {
         TypeDictionary typeDictionary = new TypeDictionaryImpl();
         fillTypeDictionary(root, typeDictionary);
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
@@ -41,12 +43,15 @@ public class CFGBuilder {
                 fieldInfoProvider
         );
 
-        List<AbstractCFGNode> classBasicBlocks = new ArrayList<>();
+        List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();
         for (ASTClassNode classNode : root.getClassNodes()) {
-            List<AbstractCFGNode> bbs = classCFGBuilder.traverse(classNode);
-            classBasicBlocks.addAll(bbs);
+            List<FunBasicBlock> funBasicBlocks = classCFGBuilder.traverse(classNode);
+            ClassBasicBlock classBasicBlock = new ClassBasicBlock(
+                    new DefaultConstructorInstruction(classNode.getClassName(), classNode.getParentClassName()),
+                    funBasicBlocks
+            );
+            classBasicBlocks.add(classBasicBlock);
         }
-
         return classBasicBlocks;
     }
 

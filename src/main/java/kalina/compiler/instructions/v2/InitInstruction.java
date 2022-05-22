@@ -81,4 +81,9 @@ public class InitInstruction extends Instruction {
     public String toString() {
         return lhs.toString() + " = " + PrintUtils.listToString(rhs);
     }
+
+    public InitInstruction withRHS(List<Expression> expressions) {
+        assert this.rhs.size() == expressions.size();
+        return new InitInstruction(lhs, rhs);
+    }
 }

@@ -11,9 +11,21 @@ public class VariableExpression extends Expression {
     private final int index;
     private final Type type;
 
-    public VariableExpression(int index, Type type) {
+    private final String name;
+    private final int cfgIndex;
+
+    public VariableExpression(int index, Type type, String name) {
         this.index = index;
         this.type = type;
+        this.name = name;
+        this.cfgIndex = 0;
+    }
+
+    public VariableExpression(int index, Type type, String name, int cfgIndex) {
+        this.index = index;
+        this.type = type;
+        this.name = name;
+        this.cfgIndex = cfgIndex;
     }
 
     @Override
@@ -28,6 +40,14 @@ public class VariableExpression extends Expression {
 
     @Override
     public String toString() {
-        return "variable with index " + index;
+        return name + "_" + cfgIndex;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public VariableExpression withCfgIndex(int cfgIndex) {
+        return new VariableExpression(index, type, name, cfgIndex);
     }
 }

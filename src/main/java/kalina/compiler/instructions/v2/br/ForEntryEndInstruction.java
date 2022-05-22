@@ -15,16 +15,21 @@ import org.objectweb.asm.Opcodes;
 public class ForEntryEndInstruction extends Instruction {
     private final Label start;
     private final Label end;
+    private final Optional<Instruction> action;
 
-    public ForEntryEndInstruction(Label start, Label end) {
+    public ForEntryEndInstruction(Label start, Label end, Optional<Instruction> action) {
         this.start = start;
         this.end = end;
+        this.action = action;
     }
 
     @Override
     public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
+            if (action.isPresent()) {
+                action.get().translateToBytecode(mv, cw);
+            }
             methodVisitor.visitJumpInsn(Opcodes.GOTO, start);
             methodVisitor.visitLabel(end);
         } else {
@@ -34,6 +39,6 @@ public class ForEntryEndInstruction extends Instruction {
 
     @Override
     public String toString() {
-        return "for body end";
+        return "for body end, action: " + (action.isPresent() ? action.get().toString() : "none");
     }
 }

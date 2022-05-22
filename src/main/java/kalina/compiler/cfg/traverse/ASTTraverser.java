@@ -19,6 +19,7 @@ import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.ILocalVariableTableFactory;
 import kalina.compiler.cfg.data.LocalVariableTableFactory;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.TypeDictionary;
 import kalina.compiler.cfg.data.TypeDictionaryImpl;

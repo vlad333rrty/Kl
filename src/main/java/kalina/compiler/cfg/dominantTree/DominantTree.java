@@ -8,30 +8,30 @@ import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Function;
 
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
-import kalina.compiler.cfg.builder.nodes.CFGNodeWithBranch;
 
 public class DominantTree {
     private final Vertex root;
     private final List<Vertex> vertices = new ArrayList<>();
     private final Map<Integer, Vertex> idToVertex = new HashMap<>();
-    private final Map<Integer, CFGNodeWithBranch> bbToNode = new HashMap<>();
+    private final Map<Integer, AbstractCFGNode> bbToNode = new HashMap<>();
 
     private int time = 1;
 
-    public DominantTree(List<CFGNodeWithBranch> nodes, CFGNodeWithBranch root) {
-        for (CFGNodeWithBranch n : nodes) {
+    public DominantTree(List<AbstractCFGNode> nodes, AbstractCFGNode root) {
+        for (AbstractCFGNode n : nodes) {
             Vertex v = new Vertex(n.getBasicBlock());
             vertices.add(v);
-            idToVertex.put(n.getBasicBlock().getId(), v);
-            bbToNode.put(n.getBasicBlock().getId(), n);
+            idToVertex.put(n.getId(), v);
+            bbToNode.put(n.getId(), n);
         }
 
-        for (CFGNodeWithBranch n : nodes) {
-            Vertex v = idToVertex.get(n.getBasicBlock().getId());
+        for (AbstractCFGNode n : nodes) {
+            Vertex v = idToVertex.get(n.getId());
             for (AbstractCFGNode child : n.getChildren()) {
-                v.getChildren().add(idToVertex.get(child.getBasicBlock().getId()));
+                v.getChildren().add(idToVertex.get(child.getId()));
                 idToVertex.get(child.getBasicBlock().getId()).getAncestors().add(v);
             }
         }
@@ -40,8 +40,8 @@ public class DominantTree {
         findDominators();
     }
 
-    public Map<Integer, Set<CFGNodeWithBranch>> getDominanceFrontier() {
-        Map<Integer, Set<CFGNodeWithBranch>> dominanceFrontier = new HashMap<>();
+    public Function<Integer, Set<AbstractCFGNode>> getDominanceFrontierProvider() {
+        Map<Integer, Set<AbstractCFGNode>> dominanceFrontier = new HashMap<>();
         for (Vertex v : vertices) {
             dominanceFrontier.put(v.getBasicBlock().getId(), new HashSet<>());
         }
@@ -58,7 +58,7 @@ public class DominantTree {
             }
         }
 
-        return dominanceFrontier;
+        return dominanceFrontier::get;
     }
 
     private void findSemiDominators() {
@@ -90,7 +90,9 @@ public class DominantTree {
         Stack<Vertex> stack = new Stack<>();
         while (!queue.isEmpty()) {
             Vertex w = queue.poll();
-            if (w == root) continue;
+            if (w == root) {
+                continue;
+            }
             stack.push(w);
             for (Vertex v : w.getAncestors()) {
                 Vertex u = findMin(v);
@@ -107,8 +109,12 @@ public class DominantTree {
 
         while (!stack.empty()) {
             Vertex w = stack.pop();
-            if (w == root) continue;
-            if (w.getDom() != w.getsDom()) w.setDom(w.getDom().getDom());
+            if (w == root) {
+                continue;
+            }
+            if (w.getDom() != w.getsDom()) {
+                w.setDom(w.getDom().getDom());
+            }
         }
         root.setDom(null);
     }

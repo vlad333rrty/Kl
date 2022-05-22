@@ -12,7 +12,7 @@ import kalina.compiler.cfg.data.GetVariableOrField;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import kalina.compiler.cfg.data.TypeAndIndex;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.VariableExpression;
 import kalina.compiler.expressions.v2.field.FieldAccessExpression;
@@ -67,7 +67,7 @@ public class MethodCallExpressionConverter {
             if (variableOrFieldInfo.typeAndIndex.isPresent()) {
                 TypeAndIndex typeAndIndex = variableOrFieldInfo.typeAndIndex.get();
                 otherClassFunctionTable = getFunctionInfoProvider.getFunctionTable(typeAndIndex.getType().getClassName());
-                expr = new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType());
+                expr = new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType(), null);
             } else {
                 OxmaFieldInfo fieldInfo = variableOrFieldInfo.fieldInfo.get();
                 otherClassFunctionTable = getFunctionInfoProvider.getFunctionTable(fieldInfo.ownerClassName());

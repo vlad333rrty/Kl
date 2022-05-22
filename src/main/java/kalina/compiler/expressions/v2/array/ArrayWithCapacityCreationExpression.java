@@ -4,6 +4,7 @@ import java.util.List;
 
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -53,5 +54,10 @@ public class ArrayWithCapacityCreationExpression extends Expression implements A
     @Override
     public Type getType() {
         return arrayType;
+    }
+
+    @Override
+    public String toString() {
+        return type + PrintUtils.listToString(capacities);
     }
 }

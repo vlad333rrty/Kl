@@ -11,18 +11,9 @@ import kalina.compiler.cfg.bb.BasicBlock;
 public abstract class AbstractCFGNode {
     private final BasicBlock bb;
     private Optional<AbstractCFGNode> backEdgeNode = Optional.empty();
-    private boolean mark;
 
     public AbstractCFGNode(BasicBlock bb) {
         this.bb = bb;
-    }
-
-    public boolean isMarked() {
-        return mark;
-    }
-
-    public void setMark(boolean mark) {
-        this.mark = mark;
     }
 
     public BasicBlock getBasicBlock() {

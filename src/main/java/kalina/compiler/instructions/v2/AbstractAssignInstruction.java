@@ -30,11 +30,6 @@ public abstract class AbstractAssignInstruction extends Instruction {
                 Expression expression = rhs.get(i);
                 visitBeforeRHS(methodVisitor, lhs.get(i));
                 expression.translateToBytecode(methodVisitor);
-//                Type type = lhs.get(i).getType();
-//                Type expressionType = expression.getType();
-//                if (!type.equals(expressionType)) {
-//                    expressionCodeGen.cast(expressionType, type, methodVisitor);
-//                }
             }
             for (int i = lhs.size() - 1; i >= 0; i--) {
                 VariableInfo variableInfo = lhs.get(i);
@@ -56,4 +51,6 @@ public abstract class AbstractAssignInstruction extends Instruction {
     protected abstract void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo) throws CodeGenException;
 
     protected abstract void visitStore(MethodVisitor mv, VariableInfo variableInfo);
+
+    public abstract AbstractAssignInstruction withRHS(List<Expression> rhs);
 }

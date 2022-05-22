@@ -39,14 +39,9 @@ public class ArithmeticExpression extends Expression {
             }
             if (i > 0) {
                 switch (operations.get(i - 1)) {
-                    case PLUS:
-                        mv.visitInsn(type.getOpcode(Opcodes.IADD));
-                        break;
-                    case MINUS:
-                        mv.visitInsn(type.getOpcode(Opcodes.ISUB));
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unexpected operation in Ar Expr: " + operations.get(i - 1));
+                    case PLUS -> mv.visitInsn(type.getOpcode(Opcodes.IADD));
+                    case MINUS -> mv.visitInsn(type.getOpcode(Opcodes.ISUB));
+                    default -> throw new IllegalArgumentException("Unexpected operation in Ar Expr: " + operations.get(i - 1));
                 }
             }
         }
@@ -60,5 +55,14 @@ public class ArithmeticExpression extends Expression {
     @Override
     public String toString() {
         return PrintUtils.complexExpressionToString(terms, operations);
+    }
+
+    public List<Term> getTerms() {
+        return terms;
+    }
+
+    public ArithmeticExpression withTerms(List<Term> terms) {
+        assert this.terms.size() == terms.size();
+        return new ArithmeticExpression(terms, operations);
     }
 }

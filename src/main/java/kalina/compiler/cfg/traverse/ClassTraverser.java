@@ -15,6 +15,7 @@ import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.GetFieldInfoProvider;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.ILocalVariableTableFactory;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;

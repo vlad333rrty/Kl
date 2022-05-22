@@ -37,7 +37,7 @@ import kalina.compiler.cfg.data.GetVariableOrField;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.cfg.validator.Validator;
 import kalina.compiler.expressions.ArithmeticExpression;

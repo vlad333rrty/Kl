@@ -5,6 +5,7 @@ import java.util.List;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.ValueExpression;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -47,5 +48,15 @@ public class PrintExpression extends AbstractFunCallExpression {
             default -> type.getDescriptor();
         };
         return String.format("(%s)V", descriptor);
+    }
+
+    @Override
+    public String toString() {
+        return "print" + PrintUtils.listToString(arguments);
+    }
+
+    @Override
+    public AbstractFunCallExpression substituteArguments(List<Expression> arguments) {
+        return new PrintExpression(arguments);
     }
 }

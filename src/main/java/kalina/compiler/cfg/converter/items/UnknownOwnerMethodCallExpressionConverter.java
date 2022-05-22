@@ -9,7 +9,7 @@ import kalina.compiler.ast.expression.method.ASTUnknownOwnerMethodCall;
 import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.OxmaFunctionInfo;
-import kalina.compiler.cfg.traverse.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.funCall.FunCallExpression;
 import org.apache.logging.log4j.LogManager;

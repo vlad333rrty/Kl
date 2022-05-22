@@ -58,4 +58,9 @@ public class FunCallExpression extends AbstractFunCallExpression {
     public String toString() {
         return funName + "(" + PrintUtils.listToString(arguments) + ")";
     }
+
+    @Override
+    public AbstractFunCallExpression substituteArguments(List<Expression> arguments) {
+        return new FunCallExpression(funName, arguments, functionInfo, variableAccessExpression);
+    }
 }

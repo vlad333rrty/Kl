@@ -6,6 +6,7 @@ import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.array.AbstractArrayExpression;
 import kalina.compiler.cfg.data.VariableInfo;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -26,5 +27,16 @@ public class ArrayAssignInstruction extends AbstractAssignInstruction implements
     @Override
     protected void visitStore(MethodVisitor mv, VariableInfo variableInfo) {
         mv.visitInsn(variableInfo.getArrayVariableInfoOrElseThrow().getElementType().getOpcode(Opcodes.IASTORE));
+    }
+
+    @Override
+    public AbstractAssignInstruction withRHS(List<Expression> rhs) {
+        assert getRhs().size() == rhs.size();
+        return new ArrayAssignInstruction(getLhs(), rhs);
+    }
+
+    @Override
+    public String toString() {
+        return PrintUtils.complexExpressionToString(getLhs(), getRhs());
     }
 }
