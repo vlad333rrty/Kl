@@ -40,7 +40,7 @@ public class CFGDotGraphConstructor {
 
     public static void plotGraph(AbstractCFGNode rootNode, String fileName) {
         traversedNodes = new HashSet<>();
-        MutableGraph graph = mutGraph().setDirected(true).graphAttrs().add(Rank.dir(Rank.RankDir.LEFT_TO_RIGHT));
+        MutableGraph graph = mutGraph().setDirected(true).graphAttrs().add(Rank.dir(Rank.RankDir.TOP_TO_BOTTOM));
         buildGraph(rootNode, graph);
         try {
             logger.info("Trying to plot graph");

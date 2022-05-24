@@ -1,5 +1,6 @@
 package kalina.compiler.cfg.builder.nodes;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,6 +9,7 @@ import kalina.compiler.cfg.bb.BasicBlock;
 public class CFGNodeWithBranch extends AbstractCFGNode {
     private final AbstractCFGNode thenNode;
     private final AbstractCFGNode elseNode;
+    private final List<AbstractCFGNode> ancestors;
     private Optional<AbstractCFGNode> afterThenElseNode = Optional.empty();
 
     public CFGNodeWithBranch(
@@ -18,6 +20,9 @@ public class CFGNodeWithBranch extends AbstractCFGNode {
         super(bb);
         this.thenNode = thenNode;
         this.elseNode = elseNode;
+        this.ancestors = new ArrayList<>();
+        thenNode.addAncestor(this);
+        elseNode.addAncestor(this);
     }
 
     public List<AbstractCFGNode> getChildren() {
@@ -29,6 +34,16 @@ public class CFGNodeWithBranch extends AbstractCFGNode {
     @Override
     public void addChild(AbstractCFGNode node) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<AbstractCFGNode> getAncestors() {
+        return ancestors;
+    }
+
+    @Override
+    public void addAncestor(AbstractCFGNode node) {
+        ancestors.add(node);
     }
 
     public AbstractCFGNode getThenNode() {

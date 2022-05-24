@@ -18,4 +18,12 @@ public class PhiFunction {
     public String toString() {
         return "φ(" + arguments.toString() + ")";
     }
+
+    void updateArgument(int cfgIndex, int argPos) {
+        arguments.get(argPos).setCfgIndex(cfgIndex);
+    }
+
+    public List<SSAVariableInfo> getArguments() {
+        return arguments;
+    }
 }

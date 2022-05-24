@@ -19,7 +19,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class InitInstruction extends Instruction {
+public class InitInstruction extends Instruction implements WithExpressions {
     private final LHS lhs;
     private final List<Expression> rhs;
 
@@ -84,6 +84,11 @@ public class InitInstruction extends Instruction {
 
     public InitInstruction withRHS(List<Expression> expressions) {
         assert this.rhs.size() == expressions.size();
-        return new InitInstruction(lhs, rhs);
+        return new InitInstruction(lhs, expressions);
+    }
+
+    @Override
+    public List<Expression> getExpressions() {
+        return rhs;
     }
 }

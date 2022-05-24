@@ -5,6 +5,7 @@ import java.util.Optional;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.instructions.Instruction;
+import kalina.compiler.instructions.v2.WithCondition;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -12,7 +13,7 @@ import org.objectweb.asm.MethodVisitor;
 /**
  * @author vlad333rrty
  */
-public class IfCondInstruction extends Instruction {
+public class IfCondInstruction extends Instruction implements WithCondition {
     private final CondExpression condition;
 
     public IfCondInstruction(CondExpression condition) {
@@ -40,5 +41,10 @@ public class IfCondInstruction extends Instruction {
 
     public CondExpression getCondition() {
         return condition;
+    }
+
+    @Override
+    public CondExpression getCondExpression() {
+        return getCondition();
     }
 }

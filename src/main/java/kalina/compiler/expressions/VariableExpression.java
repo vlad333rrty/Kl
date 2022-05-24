@@ -1,5 +1,6 @@
 package kalina.compiler.expressions;
 
+import kalina.compiler.cfg.data.SSAVariableInfo;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -11,21 +12,21 @@ public class VariableExpression extends Expression {
     private final int index;
     private final Type type;
 
+    private final SSAVariableInfo ssaVariableInfo;
     private final String name;
-    private final int cfgIndex;
 
     public VariableExpression(int index, Type type, String name) {
         this.index = index;
         this.type = type;
         this.name = name;
-        this.cfgIndex = 0;
+        this.ssaVariableInfo = new SSAVariableInfo(name);
     }
 
     public VariableExpression(int index, Type type, String name, int cfgIndex) {
         this.index = index;
         this.type = type;
         this.name = name;
-        this.cfgIndex = cfgIndex;
+        this.ssaVariableInfo = new SSAVariableInfo(name, cfgIndex);
     }
 
     @Override
@@ -40,11 +41,15 @@ public class VariableExpression extends Expression {
 
     @Override
     public String toString() {
-        return name + "_" + cfgIndex;
+        return ssaVariableInfo.toString();
     }
 
     public String getName() {
         return name;
+    }
+
+    public SSAVariableInfo getSsaVariableInfo() {
+        return ssaVariableInfo;
     }
 
     public VariableExpression withCfgIndex(int cfgIndex) {

@@ -11,6 +11,11 @@ public class SSAVariableInfo {
         this.name = name;
     }
 
+    public SSAVariableInfo(String name, int cfgIndex) {
+        this.cfgIndex = cfgIndex;
+        this.name = name;
+    }
+
     public int getCfgIndex() {
         return cfgIndex;
     }
@@ -21,6 +26,10 @@ public class SSAVariableInfo {
 
     public String getName() {
         return name;
+    }
+
+    public String getIR() {
+        return name + "_" + cfgIndex;
     }
 
     @Override

@@ -81,7 +81,7 @@ public class CondExpression extends Expression {
 
     @Override
     public String toString() {
-        return PrintUtils.complexExpressionToString(expressions, operations);
+        return PrintUtils.complexExpressionToString(expressions, operations) + " ?";
     }
 
     public List<Expression> getExpressions() {

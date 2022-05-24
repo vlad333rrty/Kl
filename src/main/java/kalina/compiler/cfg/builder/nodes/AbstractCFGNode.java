@@ -10,10 +10,11 @@ import kalina.compiler.cfg.bb.BasicBlock;
  */
 public abstract class AbstractCFGNode {
     private final BasicBlock bb;
-    private Optional<AbstractCFGNode> backEdgeNode = Optional.empty();
+    private Optional<AbstractCFGNode> backEdgeNode;
 
     public AbstractCFGNode(BasicBlock bb) {
         this.bb = bb;
+        this.backEdgeNode = Optional.empty();
     }
 
     public BasicBlock getBasicBlock() {
@@ -35,4 +36,8 @@ public abstract class AbstractCFGNode {
     public abstract List<? extends AbstractCFGNode> getChildren();
 
     public abstract void addChild(AbstractCFGNode node);
+
+    public abstract List<AbstractCFGNode> getAncestors();
+
+    public abstract void addAncestor(AbstractCFGNode node);
 }

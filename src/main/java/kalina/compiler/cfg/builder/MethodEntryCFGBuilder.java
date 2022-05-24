@@ -1,6 +1,8 @@
 package kalina.compiler.cfg.builder;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
@@ -23,6 +25,34 @@ public class MethodEntryCFGBuilder {
     }
 
     public AbstractCFGNode build(List<ASTExpression> methodEntry, AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException {
-        return traverser.traverse(methodEntry.iterator(), localVariableTable);
+        var root = traverser.traverse(methodEntry.iterator(), localVariableTable);
+        indexNodesInTraverseOrder(root);
+        return root;
+    }
+
+    private void indexNodesInTraverseOrder(AbstractCFGNode root) {
+        indexNodesInTraverseOrderInt(root, new HashSet<>(), new Counter());
+    }
+
+    private void indexNodesInTraverseOrderInt(
+            AbstractCFGNode node,
+            Set<Integer> usedNodes,
+            Counter counter)
+    {
+        usedNodes.add(node.getId());
+        node.getBasicBlock().setNewId(counter.getNext());
+        for (var child : node.getChildren()) {
+            if (!usedNodes.contains(child.getBasicBlock().getOldId())) {
+                indexNodesInTraverseOrderInt(child, usedNodes, counter);
+            }
+        }
+    }
+
+    private static class Counter {
+        private int index;
+
+        public int getNext() {
+            return index++;
+        }
     }
 }

@@ -4,7 +4,10 @@ import java.util.List;
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.v2.ClassBasicBlock;
 import kalina.compiler.cfg.builder.CFGBuilder;
+import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
+import kalina.compiler.cfg.optimizations.OptimizationManager;
+import kalina.compiler.cfg.optimizations.OptimizationManagerFactory;
 import kalina.compiler.cfg.ssa.SSAFormBuilder;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.codegen.CodeGenException;
@@ -29,8 +32,13 @@ public class OxmaMain {
         CFGBuilder cfgBuilder = new CFGBuilder();
         List<ClassBasicBlock> bbs = cfgBuilder.build(result);
 
+        AbstractCFGNode root = bbs.get(0).getEntry().get(0).getCfgRoot();
         SSAFormBuilder formBuilder = new SSAFormBuilder();
-        formBuilder.buildSSA(bbs.get(0).getEntry().get(0).getCfgRoot());
+        formBuilder.buildSSA(root);
+
+        OptimizationManager optimizationManager = OptimizationManagerFactory.create(root);
+        optimizationManager.optimize();
+
         CFGDotGraphConstructor.plotMany(bbs);
 
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager(new CFGByteCodeTranslator());

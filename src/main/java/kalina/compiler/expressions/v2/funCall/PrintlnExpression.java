@@ -25,7 +25,7 @@ public class PrintlnExpression extends PrintExpression {
 
     @Override
     public String toString() {
-        return PrintUtils.listToString(arguments);
+        return "println(" + PrintUtils.listToString(arguments) + ")";
     }
 
     @Override
