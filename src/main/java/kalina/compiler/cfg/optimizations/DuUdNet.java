@@ -8,29 +8,29 @@ import java.util.function.Function;
  * @author vlad333rrty
  */
 public class DuUdNet {
-    private final Map<Definition, List<UseCoordinates>> du;
-    private final Map<Use, List<DefinitionCoordinates>> ud;
+    private final Map<Definition, List<InstructionCoordinates>> du;
+    private final Map<Use, List<InstructionCoordinates>> ud;
 
-    public DuUdNet(Map<Definition, List<UseCoordinates>> du, Map<Use, List<DefinitionCoordinates>> ud) {
+    public DuUdNet(Map<Definition, List<InstructionCoordinates>> du, Map<Use, List<InstructionCoordinates>> ud) {
         this.du = du;
         this.ud = ud;
     }
 
-    public Function<Definition, List<UseCoordinates>> getDuChainProvider() {
+    public Function<Definition, List<InstructionCoordinates>> getDuChainProvider() {
         return du::get;
     }
 
-    public Function<Use, List<DefinitionCoordinates>> getUdChainProvider() {
+    public Function<Use, List<InstructionCoordinates>> getUdChainProvider() {
         return ud::get;
     }
 
     // for tests
-    public Map<Definition, List<UseCoordinates>> getDu() {
+    public Map<Definition, List<InstructionCoordinates>> getDu() {
         return du;
     }
 
-    // fot tests
-    public Map<Use, List<DefinitionCoordinates>> getUd() {
+    // for tests
+    public Map<Use, List<InstructionCoordinates>> getUd() {
         return ud;
     }
 
@@ -38,12 +38,10 @@ public class DuUdNet {
 
     public record Definition(String varName, int blockId, int instructionIndex) {}
 
-    public static record UseCoordinates(int blockId, int instructionIndex) {}
+    public static record InstructionCoordinates(int blockId, int instructionIndex) {}
 
 
     // ------------- UD -------------
 
     public static record Use(String varName, int blockId, int instructionIndex) {}
-
-    public static record DefinitionCoordinates(int blockId, int instructionIndex) {}
 }

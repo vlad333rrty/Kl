@@ -5,6 +5,6 @@ import kalina.compiler.expressions.CondExpression;
 /**
  * @author vlad333rrty
  */
-public interface WithCondition {
+public interface WithCondition extends WithExpressions {
     CondExpression getCondExpression();
 }

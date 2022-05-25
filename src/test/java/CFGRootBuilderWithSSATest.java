@@ -3,6 +3,7 @@ import java.util.List;
 
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.v2.ClassBasicBlock;
+import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.builder.CFGBuilder;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
@@ -25,7 +26,7 @@ public class CFGRootBuilderWithSSATest {
 
         AbstractCFGNode root = bbs.get(0).getEntry().get(0).getCfgRoot();
         SSAFormBuilder formBuilder = new SSAFormBuilder();
-        formBuilder.buildSSA(root);
+        formBuilder.buildSSA(ControlFlowGraph.fromRoot(root));
 
         CFGDotGraphConstructor.plotMany(bbs);
 

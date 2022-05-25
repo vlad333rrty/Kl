@@ -19,24 +19,25 @@ import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.AssignArrayVariableInfo;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
+import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeAndIndex;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.traverse.Assert;
 import kalina.compiler.cfg.traverse.ExpressionValidator;
-import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.ReturnValueInfo;
 import kalina.compiler.expressions.VariableNameAndIndex;
+import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.SimpleInstruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.ArrayAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -91,8 +92,8 @@ public class InstructionCFGBuilder {
             ASTFunCallExpression funCallExpression,
             AbstractLocalVariableTable localVariableTable)
     {
-        Expression funCall = expressionConverter.convert(funCallExpression, localVariableTable, functionInfoProvider, fieldInfoProvider);
-        return new SimpleInstruction(funCall);
+        AbstractFunCallExpression funCall = (AbstractFunCallExpression)expressionConverter.convert(funCallExpression, localVariableTable, functionInfoProvider, fieldInfoProvider);
+        return new FunCallInstruction(funCall);
     }
 
     private Instruction constructFunEndBasicBlock(

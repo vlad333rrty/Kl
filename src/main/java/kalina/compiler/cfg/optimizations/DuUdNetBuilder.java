@@ -12,17 +12,10 @@ import java.util.stream.Collectors;
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.data.SSAVariableInfo;
-import kalina.compiler.expressions.ArithmeticExpression;
-import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.expressions.Factor;
-import kalina.compiler.expressions.Term;
-import kalina.compiler.expressions.VariableExpression;
-import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
-import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.br.ForHeaderInstruction;
 
@@ -30,15 +23,13 @@ import kalina.compiler.instructions.v2.br.ForHeaderInstruction;
  * @author vlad333rrty
  */
 public class DuUdNetBuilder {
-    private static final Map<DuUdNet.Use, List<DuUdNet.DefinitionCoordinates>> useToUdChain = new HashMap<>();
-
     public static DuUdNet buildDuUdNet(AbstractCFGNode root) {
         Map<String, DuUdNet.Definition> nameToDefinition = DefinitionMetaProvider.getNameToDefinition(root);
-        Map<DuUdNet.Definition, List<DuUdNet.UseCoordinates>> defToDuChain = new HashMap<>();
+        Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> defToDuChain = new HashMap<>();
         for (var entry : nameToDefinition.entrySet()) {
             defToDuChain.put(entry.getValue(), new ArrayList<>());
         }
-        Map<DuUdNet.Use, List<DuUdNet.DefinitionCoordinates>> useToUdChain = new HashMap<>();
+        Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> useToUdChain = new HashMap<>();
         DuUdChainEnricher enricher = new DuUdChainEnricher(nameToDefinition, defToDuChain, useToUdChain);
         fillDuUdChains(root, enricher, new HashSet<>());
 
@@ -66,19 +57,15 @@ public class DuUdNetBuilder {
         List<Instruction> instructions = node.getBasicBlock().getInstructions();
         int j = 0;
         for (var entry : node.getBasicBlock().getVarInfoToPhiFun().entrySet()) {
-            var du = new DuUdNet.UseCoordinates(node.getId(), j++);
+            var du = new DuUdNet.InstructionCoordinates(node.getId(), j++);
             entry.getValue().getArguments().forEach(x -> duUdChainEnricher.putForIR(x, du));
         }
         int offset = node.getBasicBlock().getVarInfoToPhiFun().size();
         for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
             Instruction instruction = instructions.get(i);
-            var du = new DuUdNet.UseCoordinates(node.getId(), i + offset);
+            var du = new DuUdNet.InstructionCoordinates(node.getId(), i + offset);
             if (instruction instanceof WithExpressions withExpressions) {
                 withExpressions.getExpressions()
-                        .forEach(x -> duUdChainEnricher.putForExpression(x, du));
-            }
-            if (instruction instanceof WithCondition withCondition) {
-                withCondition.getCondExpression().getExpressions()
                         .forEach(x -> duUdChainEnricher.putForExpression(x, du));
             }
         }
@@ -86,46 +73,36 @@ public class DuUdNetBuilder {
 
     private static class DuUdChainEnricher {
         private final Map<String, DuUdNet.Definition> nameToDefinition;
-        private final Map<DuUdNet.Definition, List<DuUdNet.UseCoordinates>> defToDuChain;
-        private final Map<DuUdNet.Use, List<DuUdNet.DefinitionCoordinates>> useToUdChain;
+        private final Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> defToDuChain;
+        private final Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> useToUdChain;
 
         public DuUdChainEnricher(
                 Map<String, DuUdNet.Definition> nameToDefinition,
-                Map<DuUdNet.Definition, List<DuUdNet.UseCoordinates>> defToDuChain,
-                Map<DuUdNet.Use, List<DuUdNet.DefinitionCoordinates>> useToUdChain)
+                Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> defToDuChain,
+                Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> useToUdChain)
         {
             this.nameToDefinition = nameToDefinition;
             this.defToDuChain = defToDuChain;
             this.useToUdChain = useToUdChain;
         }
 
-        public void putForIR(SSAVariableInfo ssaVariableInfo, DuUdNet.UseCoordinates useCoordinates) {
+        public void putForIR(SSAVariableInfo ssaVariableInfo, DuUdNet.InstructionCoordinates instructionCoordinates) {
             var def = nameToDefinition.get(ssaVariableInfo.getIR());
-            putDuUdChains(def, useCoordinates);
+            putDuUdChains(def, instructionCoordinates);
         }
 
-        public void putForExpression(Expression expression, DuUdNet.UseCoordinates useCoordinates) {
-            if (expression instanceof VariableExpression variableExpression) {
-                DuUdNet.Definition def = nameToDefinition.get(variableExpression.getSsaVariableInfo().getIR());
-                putDuUdChains(def, useCoordinates);
-            } else if (expression instanceof ArithmeticExpression arithmeticExpression) {
-                arithmeticExpression.getTerms().forEach(x -> putForExpression(x, useCoordinates));
-            } else if (expression instanceof Term term) {
-                term.getFactors().forEach(x -> putForExpression(x, useCoordinates));
-            } else if(expression instanceof Factor factor) {
-                putForExpression(factor.getExpression(), useCoordinates);
-            } else if (expression instanceof AbstractFunCallExpression funCallExpression) {
-                funCallExpression.getArguments().forEach(x -> putForExpression(x, useCoordinates));
-            } else if (expression instanceof CondExpression condExpression) {
-                condExpression.getExpressions().forEach(x -> putForExpression(x, useCoordinates));
-            }
+        public void putForExpression(Expression expression, DuUdNet.InstructionCoordinates instructionCoordinates) {
+            ExpressionUnwrapper.unwrapExpression(expression, ve -> {
+                DuUdNet.Definition def = nameToDefinition.get(ve.getSsaVariableInfo().getIR());
+                putDuUdChains(def, instructionCoordinates);
+            });
         }
 
-        private void putDuUdChains(DuUdNet.Definition definition, DuUdNet.UseCoordinates useCoordinates) {
-            defToDuChain.get(definition).add(useCoordinates);
-            var use = new DuUdNet.Use(definition.varName(), useCoordinates.blockId(), useCoordinates.instructionIndex());
+        private void putDuUdChains(DuUdNet.Definition definition, DuUdNet.InstructionCoordinates instructionCoordinates) {
+            defToDuChain.get(definition).add(instructionCoordinates);
+            var use = new DuUdNet.Use(definition.varName(), instructionCoordinates.blockId(), instructionCoordinates.instructionIndex());
             useToUdChain.computeIfAbsent(use, k -> new ArrayList<>())
-                    .add(new DuUdNet.DefinitionCoordinates(definition.blockId(), definition.instructionIndex()));
+                    .add(new DuUdNet.InstructionCoordinates(definition.blockId(), definition.instructionIndex()));
         }
     }
 

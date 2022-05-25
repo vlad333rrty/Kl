@@ -1,30 +1,29 @@
-package kalina.compiler.instructions.v2.br;
+package kalina.compiler.instructions.v2;
 
 import java.util.List;
 import java.util.Optional;
 
 import kalina.compiler.codegen.CodeGenException;
-import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
+import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.WithCondition;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author vlad333rrty
  */
-public class DoBlockEndInstruction extends Instruction implements WithCondition {
-    private final CondExpression condition;
+public class FunCallInstruction extends Instruction implements WithExpressions {
+    private final AbstractFunCallExpression expression;
 
-    public DoBlockEndInstruction(CondExpression condition) {
-        this.condition = condition;
+    public FunCallInstruction(AbstractFunCallExpression expression) {
+        this.expression = expression;
     }
 
     @Override
     public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
-            condition.translateToBytecode(mv.get());
+            expression.translateToBytecode(mv.get());
         } else {
             throw new IllegalArgumentException();
         }
@@ -32,21 +31,20 @@ public class DoBlockEndInstruction extends Instruction implements WithCondition 
 
     @Override
     public String toString() {
-        return "while " + condition.toString();
+        return expression.toString();
     }
 
-    @Override
-    public CondExpression getCondExpression() {
-        return condition;
+    public Expression getExpression() {
+        return expression;
     }
 
     @Override
     public List<Expression> getExpressions() {
-        return List.of(condition);
+        return expression.getArguments();
     }
 
     @Override
     public Instruction substituteExpressions(List<Expression> expressions) {
-        return new DoBlockEndInstruction((CondExpression) expressions.stream().findFirst().orElseThrow());
+        return new FunCallInstruction(expression.substituteArguments(expressions));
     }
 }

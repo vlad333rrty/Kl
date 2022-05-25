@@ -1,11 +1,13 @@
 package kalina.compiler.instructions;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.ReturnValueInfo;
+import kalina.compiler.instructions.v2.WithExpressions;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -14,7 +16,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class FunEndInstruction extends Instruction {
+public class FunEndInstruction extends Instruction implements WithExpressions {
     private final Optional<ReturnValueInfo> returnValueInfo;
 
     public FunEndInstruction(Optional<ReturnValueInfo> returnValueInfo) {
@@ -47,5 +49,20 @@ public class FunEndInstruction extends Instruction {
     @Override
     public String toString() {
         return "ret " + returnValueInfo.map(Objects::toString).orElse("");
+    }
+
+    public Optional<ReturnValueInfo> getReturnValueInfo() {
+        return returnValueInfo;
+    }
+
+    @Override
+    public List<Expression> getExpressions() {
+        return returnValueInfo.map(ReturnValueInfo::getReturnValue).stream().toList();
+    }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        return new FunEndInstruction(returnValueInfo
+                .map(x -> new ReturnValueInfo(x.getReturnType(), expressions.stream().findFirst().orElseThrow())));
     }
 }

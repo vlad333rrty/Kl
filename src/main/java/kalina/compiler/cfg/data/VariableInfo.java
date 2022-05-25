@@ -7,7 +7,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class VariableInfo {
+public class VariableInfo implements WithIR {
     private final String name;
     private final int index;
     private final Type type;
@@ -53,5 +53,10 @@ public class VariableInfo {
 
     public SSAVariableInfo getSsaVariableInfo() {
         return ssaVariableInfo;
+    }
+
+    @Override
+    public String getIR() {
+        return ssaVariableInfo.getIR();
     }
 }

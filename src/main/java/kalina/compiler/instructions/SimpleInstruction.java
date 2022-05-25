@@ -12,6 +12,7 @@ import org.objectweb.asm.MethodVisitor;
  *
  * @author vlad333rrty
  */
+@Deprecated(forRemoval = true)
 public class SimpleInstruction extends Instruction {
     private final Expression expression;
 

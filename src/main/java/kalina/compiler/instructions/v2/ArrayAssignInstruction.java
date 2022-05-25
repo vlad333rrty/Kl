@@ -6,6 +6,7 @@ import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.array.AbstractArrayExpression;
 import kalina.compiler.cfg.data.VariableInfo;
+import kalina.compiler.instructions.Instruction;
 import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -38,5 +39,11 @@ public class ArrayAssignInstruction extends AbstractAssignInstruction implements
     @Override
     public String toString() {
         return PrintUtils.complexExpressionToString(getLhs(), getRhs());
+    }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        assert getRhs().size() == expressions.size();
+        return new ArrayAssignInstruction(getLhs(), expressions);
     }
 }

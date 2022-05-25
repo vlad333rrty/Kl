@@ -4,6 +4,7 @@ import java.util.List;
 
 import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.expressions.Expression;
+import kalina.compiler.instructions.Instruction;
 import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -36,5 +37,11 @@ public class AssignInstruction extends AbstractAssignInstruction {
     public String toString() {
         return PrintUtils.listToString(getLhs().stream().map(VariableInfo::toString).toList())
                 + " = " + PrintUtils.listToString(getRhs());
+    }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        assert getRhs().size() == expressions.size();
+        return new AssignInstruction(getLhs(), expressions);
     }
 }

@@ -17,7 +17,7 @@ import org.objectweb.asm.MethodVisitor;
 /**
  * @author vlad333rrty
  */
-public class ForHeaderInstruction extends Instruction implements WithCondition, WithExpressions {
+public class ForHeaderInstruction extends Instruction implements WithCondition {
     private final Optional<Instruction> declarations;
     private final Optional<CondExpression> condition;
     private final Label start;
@@ -66,6 +66,11 @@ public class ForHeaderInstruction extends Instruction implements WithCondition, 
             return ((WithExpressions) declarations.get()).getExpressions();
         }
         return List.of();
+    }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        throw new UnsupportedOperationException();
     }
 
     public Optional<Instruction> getDeclarations() {

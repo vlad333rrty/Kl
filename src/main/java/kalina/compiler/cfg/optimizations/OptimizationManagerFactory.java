@@ -1,6 +1,6 @@
 package kalina.compiler.cfg.optimizations;
 
-import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.optimizations.dce.DeadCodeEliminator;
 
 /**
@@ -8,7 +8,7 @@ import kalina.compiler.cfg.optimizations.dce.DeadCodeEliminator;
  */
 public class OptimizationManagerFactory {
 
-    public static OptimizationManager create(AbstractCFGNode root) {
-        return new OptimizationManager(root, new DeadCodeEliminator());
+    public static OptimizationManager create(ControlFlowGraph controlFlowGraph) {
+        return new OptimizationManager(controlFlowGraph, new DeadCodeEliminator());
     }
 }

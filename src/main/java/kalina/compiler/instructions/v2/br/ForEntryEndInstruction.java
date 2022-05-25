@@ -55,4 +55,9 @@ public class ForEntryEndInstruction extends Instruction implements WithExpressio
         }
         return List.of();
     }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        throw new UnsupportedOperationException();
+    }
 }

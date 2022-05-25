@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.function.Function;
 
+import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.bb.PhiFunction;
 import kalina.compiler.cfg.bb.PhiFunctionHolder;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
@@ -30,6 +31,7 @@ import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
+import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.br.IfCondInstruction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,8 +42,9 @@ import org.apache.logging.log4j.Logger;
 public class SSAFormBuilder {
     private static final Logger logger = LogManager.getLogger(SSAFormBuilder.class);
 
-    public void buildSSA(AbstractCFGNode root) {
-        List<AbstractCFGNode> nodes = DFSImpl.gatherNodes(root);
+    public void buildSSA(ControlFlowGraph controlFlowGraph) {
+        AbstractCFGNode root = controlFlowGraph.root();
+        List<AbstractCFGNode> nodes = controlFlowGraph.nodes();
         DominantTree dominantTree = new DominantTree(nodes, root);
         PhiFunPlacer phiFunPlacer = new PhiFunPlacer(nodes, dominantTree.getDominanceFrontierProvider());
         Set<String> variableInfos = new HashSet<>();
@@ -106,7 +109,7 @@ public class SSAFormBuilder {
                             .forEach(lhs -> updateVersion(lhs.getSsaVariableInfo()));
                 } else if (instruction instanceof WithCondition ifCondInstruction) {
                     CondExpression condExpression = (CondExpression)substituteExpression(ifCondInstruction.getCondExpression(), varName);
-                    instructions.add(new IfCondInstruction(condExpression));
+                    instructions.add(new IfCondInstruction(condExpression)); // todo
                 } else if (instruction instanceof InitInstruction initInstruction) {
                     List<Expression> expressions = initInstruction.getRhs().stream()
                             .map(x -> substituteExpression(x, varName))
@@ -115,6 +118,11 @@ public class SSAFormBuilder {
                     initInstruction.getLhs().getVars().stream()
                             .filter(x -> x.getName().equals(varName))
                             .forEach(var -> updateVersion(var.getSsaVariableInfo()));
+                } else if (instruction instanceof WithExpressions withExpressions) {
+                    List<Expression> expressions = withExpressions.getExpressions().stream()
+                            .map(expr -> substituteExpression(expr, varName))
+                            .toList();
+                    instructions.add(withExpressions.substituteExpressions(expressions));
                 }
                 else {
                     instructions.add(instruction);
@@ -179,12 +187,6 @@ public class SSAFormBuilder {
             varInfo.setCfgIndex(i);
             varInfoToVersionStack.get(varInfo.getName()).push(i);
             varInfoToCounter.put(varInfo.getName(), i + 1);
-        }
-
-        private void updateVersion(String varName) {
-            int i = varInfoToCounter.get(varName);
-            varInfoToVersionStack.get(varName).push(i);
-            varInfoToCounter.put(varName, i + 1);
         }
 
         private void fillVarInfoToCounter() {
@@ -288,25 +290,6 @@ public class SSAFormBuilder {
 
         private boolean containsVarAssign(InitInstruction instruction, String varName) {
             return instruction.getLhs().getVars().stream().anyMatch(var -> var.getName().equals(varName));
-        }
-    }
-
-    private static class DFSImpl {
-        public static List<AbstractCFGNode> gatherNodes(AbstractCFGNode root) {
-            Set<Integer> traversedNodes = new HashSet<>();
-            Stack<AbstractCFGNode> stack = new Stack<>();
-            stack.push(root);
-            List<AbstractCFGNode> nodes = new ArrayList<>();
-            while (!stack.isEmpty()) {
-                AbstractCFGNode v = stack.pop();
-                nodes.add(v);
-                traversedNodes.add(v.getId());
-                v.getChildren().stream()
-                        .filter(child -> !traversedNodes.contains(child.getId()))
-                        .forEach(stack::push);
-            }
-
-            return nodes;
         }
     }
 }

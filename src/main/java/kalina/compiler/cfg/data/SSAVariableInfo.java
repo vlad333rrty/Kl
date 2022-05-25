@@ -3,7 +3,7 @@ package kalina.compiler.cfg.data;
 /**
  * @author vlad333rrty
  */
-public class SSAVariableInfo {
+public class SSAVariableInfo implements WithIR {
     private int cfgIndex = 0;
     private final String name;
 
@@ -28,6 +28,7 @@ public class SSAVariableInfo {
         return name;
     }
 
+    @Override
     public String getIR() {
         return name + "_" + cfgIndex;
     }

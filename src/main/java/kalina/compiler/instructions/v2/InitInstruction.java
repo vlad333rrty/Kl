@@ -91,4 +91,9 @@ public class InitInstruction extends Instruction implements WithExpressions {
     public List<Expression> getExpressions() {
         return rhs;
     }
+
+    @Override
+    public Instruction substituteExpressions(List<Expression> expressions) {
+        return new InitInstruction(lhs, expressions);
+    }
 }
