@@ -3,6 +3,7 @@ package kalina.compiler.instructions.v2;
 import java.util.List;
 import java.util.Optional;
 
+import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
@@ -19,7 +20,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class InitInstruction extends Instruction implements WithExpressions {
+public class InitInstruction extends Instruction implements WithExpressions, WithLHS {
     private final LHS lhs;
     private final List<Expression> rhs;
 
@@ -95,5 +96,10 @@ public class InitInstruction extends Instruction implements WithExpressions {
     @Override
     public Instruction substituteExpressions(List<Expression> expressions) {
         return new InitInstruction(lhs, expressions);
+    }
+
+    @Override
+    public List<SSAVariableInfo> getVariableInfos() {
+        return lhs.getVars().stream().map(VariableNameAndIndex::getSsaVariableInfo).toList();
     }
 }

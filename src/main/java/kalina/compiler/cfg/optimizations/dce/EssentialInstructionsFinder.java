@@ -40,7 +40,7 @@ class EssentialInstructionsFinder {
         int nodeId = node.getId();
         List<DuUdNet.InstructionCoordinates> blockEssentialInstructions = new ArrayList<>();
         List<Instruction> instructions = node.getBasicBlock().getInstructions();
-        int offset = node.getBasicBlock().getVarInfoToPhiFun().size();
+        int offset = node.getBasicBlock().getPhiFunInstructions().size();
         for (int i = 0; i < instructions.size(); i++) {
             Instruction instruction = instructions.get(i);
             int finalI = i + offset;

@@ -1,31 +1,25 @@
-package kalina.compiler.instructions.v2.br;
+package kalina.compiler.instructions.v2.br._for;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
+import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.codegen.CodeGenException;
-import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
+import kalina.compiler.instructions.v2.WithLHS;
 import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author vlad333rrty
  */
-public class ForHeaderInstruction extends Instruction implements WithCondition {
+public class ForDeclarationInstruction extends ForExtremeInstructionBase implements WithLHS {
     private final Optional<Instruction> declarations;
-    private final Optional<CondExpression> condition;
-    private final Label start;
 
-    public ForHeaderInstruction(Optional<Instruction> declarations, Optional<CondExpression> condition, Label start) {
+    public ForDeclarationInstruction(Optional<Instruction> declarations) {
         this.declarations = declarations;
-        this.condition = condition;
-        this.start = start;
     }
 
     @Override
@@ -36,25 +30,9 @@ public class ForHeaderInstruction extends Instruction implements WithCondition {
                 Instruction instruction = declarations.get();
                 instruction.translateToBytecode(mv, cw);
             }
-
-            if (condition.isPresent()) {
-                CondExpression condExpression = condition.get();
-                methodVisitor.visitLabel(start);
-                condExpression.translateToBytecode(methodVisitor);
-            }
         } else {
             throw new IllegalArgumentException();
         }
-    }
-
-    @Override
-    public String toString() {
-        return declarations.map(Objects::toString).orElse("") + "\n" + condition.map(CondExpression::toString).orElse("");
-    }
-
-    @Override
-    public CondExpression getCondExpression() {
-        return condition.get();
     }
 
     @Override
@@ -62,18 +40,40 @@ public class ForHeaderInstruction extends Instruction implements WithCondition {
         if (declarations.isEmpty()) {
             return List.of();
         }
-        if (declarations.get() instanceof WithExpressions) {
-            return ((WithExpressions) declarations.get()).getExpressions();
+        if (declarations.get() instanceof WithExpressions withExpressions) {
+            return withExpressions.getExpressions();
         }
         return List.of();
     }
 
     @Override
     public Instruction substituteExpressions(List<Expression> expressions) {
-        throw new UnsupportedOperationException();
+        if (declarations.isEmpty()) {
+            return this;
+        }
+        Instruction instruction = substituteInstruction(declarations.get(), expressions);
+        return new ForDeclarationInstruction(Optional.of(instruction));
+    }
+
+    @Override
+    public String toString() {
+        return declarations.isPresent() ? declarations.get().toString() : "";
     }
 
     public Optional<Instruction> getDeclarations() {
+        return declarations;
+    }
+
+    @Override
+    public List<SSAVariableInfo> getVariableInfos() {
+        if (declarations.isEmpty()) {
+            return List.of();
+        }
+        return getVariableInfos(declarations.get());
+    }
+
+    @Override
+    public Optional<Instruction> getInstruction() {
         return declarations;
     }
 }

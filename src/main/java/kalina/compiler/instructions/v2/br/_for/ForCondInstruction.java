@@ -1,4 +1,4 @@
-package kalina.compiler.instructions.v2.br;
+package kalina.compiler.instructions.v2.br._for;
 
 import java.util.Optional;
 
@@ -13,43 +13,38 @@ import org.objectweb.asm.MethodVisitor;
 /**
  * @author vlad333rrty
  */
-public class IfCondInstruction extends Instruction implements WithCondition {
+public class ForCondInstruction extends Instruction implements WithCondition {
     private final CondExpression condition;
+    private final Label start;
 
-    public IfCondInstruction(CondExpression condition) {
+    public ForCondInstruction(CondExpression condition, Label start) {
         this.condition = condition;
+        this.start = start;
     }
 
     @Override
     public void translateToBytecode(Optional<MethodVisitor> mv, Optional<ClassWriter> cw) throws CodeGenException {
         if (mv.isPresent()) {
             MethodVisitor methodVisitor = mv.get();
+            methodVisitor.visitLabel(start);
             condition.translateToBytecode(methodVisitor);
         } else {
             throw new IllegalArgumentException();
         }
     }
 
-    public Label getLabel() {
-        return condition.getLabel();
+    @Override
+    public CondExpression getCondExpression() {
+        return condition;
+    }
+
+    @Override
+    public Instruction substituteCondExpression(CondExpression expression) {
+        return new ForCondInstruction(expression, start);
     }
 
     @Override
     public String toString() {
         return condition.toString();
-    }
-
-    public CondExpression getCondition() {
-        return condition;
-    }
-
-    @Override
-    public CondExpression getCondExpression() {
-        return getCondition();
-    }
-
-    @Override
-    public Instruction substituteCondExpression(CondExpression expression) {
-        return new IfCondInstruction(expression);
     }
 }

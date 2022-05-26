@@ -1,23 +1,21 @@
-package kalina.compiler.instructions.v2;
+package kalina.compiler.instructions.v2.fake;
 
 import java.util.List;
 import java.util.Optional;
 
 import kalina.compiler.cfg.data.WithIR;
 import kalina.compiler.codegen.CodeGenException;
-import kalina.compiler.expressions.VariableExpression;
-import kalina.compiler.instructions.Instruction;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 /**
  * @author vlad333rrty
  */
-public class PhiFunInstruction extends Instruction {
-    private final List<VariableExpression> arguments;
+public class PhiFunInstruction extends FakeInstruction {
+    private final List<PhiArgumentExpression> arguments;
     private final String lhsIR;
 
-    public PhiFunInstruction(List<VariableExpression> arguments, String lhsIR) {
+    public PhiFunInstruction(List<PhiArgumentExpression> arguments, String lhsIR) {
         this.arguments = arguments;
         this.lhsIR = lhsIR;
     }
@@ -27,16 +25,16 @@ public class PhiFunInstruction extends Instruction {
         throw new UnsupportedOperationException();
     }
 
-    public List<VariableExpression> getArguments() {
+    public List<PhiArgumentExpression> getArguments() {
         return arguments;
     }
 
     public WithIR getLhsIR() {
-        return new WithIR() {
-            @Override
-            public String getIR() {
-                return lhsIR;
-            }
-        };
+        return () -> lhsIR;
+    }
+
+    @Override
+    public String toString() {
+        return lhsIR + " = φ(" + arguments.toString() + ")";
     }
 }

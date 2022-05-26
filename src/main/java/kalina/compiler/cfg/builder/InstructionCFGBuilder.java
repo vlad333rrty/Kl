@@ -24,8 +24,6 @@ import kalina.compiler.cfg.data.TypeAndIndex;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.traverse.Assert;
-import kalina.compiler.cfg.traverse.ExpressionValidator;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;

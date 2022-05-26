@@ -16,8 +16,8 @@ import org.objectweb.asm.MethodVisitor;
 public class CodeGenerationManager {
     private final CFGByteCodeTranslator cfgByteCodeTranslator;
 
-    public CodeGenerationManager(CFGByteCodeTranslator cfgByteCodeTranslator) {
-        this.cfgByteCodeTranslator = cfgByteCodeTranslator;
+    public CodeGenerationManager() {
+        this.cfgByteCodeTranslator = new CFGByteCodeTranslator();
     }
 
     public List<CodeGenerationResult> generateByteCode(ClassBasicBlock classBasicBlock) throws CodeGenException {

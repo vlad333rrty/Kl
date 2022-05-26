@@ -6,6 +6,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
+import kalina.compiler.OxmaCompiler;
 import kalina.compiler.utils.FileUtils;
 import org.junit.jupiter.api.Assertions;
 
@@ -16,6 +17,7 @@ abstract class OxmaTestBase {
     private static final int LEXER_ERROR_CODE = 255;
     private static final int TIME_TO_WAIT_SECONDS = 7;
     private static final OxmaMain compiler = new OxmaMain();
+    private static final String ERROR_DURING_EXECUTION_MESSAGE_FORMAT = "Error during execution of the generated java program. Log:\n%s";
 
     public void runLexer(String fileName) throws IOException, TimeoutException, InterruptedException {
         URL url = OxmaTests.class.getResource(fileName);
@@ -48,7 +50,7 @@ abstract class OxmaTestBase {
         }
     }
 
-    public void runTest(String fileName) {
+    public void runTestAndLogResult(String fileName) {
         runTest(fileName, true);
     }
 
@@ -56,10 +58,10 @@ abstract class OxmaTestBase {
         runTest(fileName, false);
     }
 
-    private void runTest(String fileName, boolean isLoggingEnabled) {
+    private void runTest(String fileName, boolean isLoggingEnabled) { // todo refactor
         try {
             runLexer(fileName);
-            compiler.run("data/output.kl");
+            getCompiler().run("data/output.kl");
             String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
             String resultFile = "results/" + fileNameWithoutExtension + ".txt";
             executeCommand(
@@ -72,6 +74,23 @@ abstract class OxmaTestBase {
             if (isLoggingEnabled) {
                 compareResults(sampleFile, resultFile);
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String runTestAndGetResult(String fileName) {
+        try {
+            runLexer(fileName);
+            getCompiler().run("data/output.kl");
+            StringBuilder builder = new StringBuilder();
+            executeCommand(
+                    "java Test",
+                    ERROR_DURING_EXECUTION_MESSAGE_FORMAT,
+                    1,
+                    builder::append
+            );
+            return builder.toString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -103,5 +122,9 @@ abstract class OxmaTestBase {
                 throw new RuntimeException(e);
             }
         };
+    }
+
+    protected OxmaCompiler getCompiler() {
+        return compiler;
     }
 }

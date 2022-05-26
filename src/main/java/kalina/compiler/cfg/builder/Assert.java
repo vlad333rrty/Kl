@@ -1,4 +1,4 @@
-package kalina.compiler.cfg.traverse;
+package kalina.compiler.cfg.builder;
 
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;

@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.IntStream;
-
-import javax.annotation.Nullable;
 
 import kalina.compiler.cfg.data.SSAVariableInfo;
 
@@ -27,22 +25,21 @@ public class PhiFunctionHolder {
         varInfoToPhiFun.put(variableInfo, new PhiFunction(args));
     }
 
-    @Nullable
-    public PhiFunction getForVar(String varName) {
+    public Optional<PhiFunction> getForVar(String varName) {
         SSAVariableInfo variableInfo = nameToSSAInfo.get(varName);
-        return varInfoToPhiFun.get(variableInfo);
+        return Optional.ofNullable(varInfoToPhiFun.get(variableInfo));
     }
 
-    public Map<SSAVariableInfo, PhiFunction> getVarNameToPhiFun() {
+    public Map<SSAVariableInfo, PhiFunction> getVarInfoToPhiFun() {
         return varInfoToPhiFun;
     }
 
-    public void updateArgument(String varName, int cfgIndex, int parentBlockId) {
+    public void updatePhiFunArgument(String varName, int cfgIndex, int parentBlockId) {
         int argPos = blockIdToPhiArgPos.getOrDefault(parentBlockId, -1);
         if (argPos < 0) {
             return;
         }
-        Objects.requireNonNull(getForVar(varName)).updateArgument(cfgIndex, argPos);
+        getForVar(varName).orElseThrow().updateArgument(cfgIndex, argPos);
     }
 
     public void putBlockIdToPhiFunArg(int blockId, int argPos) {

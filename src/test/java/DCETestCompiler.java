@@ -10,14 +10,7 @@ import kalina.compiler.cfg.ssa.SSAFormBuilder;
 /**
  * @author vlad333rrty
  */
-public class OxmaMain extends OxmaCompiler {
-
-    public OxmaMain() {
-    }
-
-    public OxmaMain(OxmaCompilerSettings compilerSettings) {
-        super(compilerSettings);
-    }
+public class DCETestCompiler extends OxmaCompiler {
 
     @Override
     protected void performOptimizations(List<ClassBasicBlock> classBasicBlocks) {

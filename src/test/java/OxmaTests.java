@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 public class OxmaTests extends OxmaTestBase {
     @Test
     public void testMultipleAssign() {
-        runTest("assign_test.ox");
+        runTestAndLogResult("assign_test.ox");
     }
 
     @Test
@@ -16,11 +16,11 @@ public class OxmaTests extends OxmaTestBase {
 
     @Test
     public void testBubbleSort() {
-        runTest("bubble_sort.ox");
+        runTestAndLogResult("bubble_sort.ox");
     }
 
     @Test
     public void testForCycle() {
-        runTest("for_cycle_test.ox");
+        runTestAndLogResult("for_cycle_test.ox");
     }
 }

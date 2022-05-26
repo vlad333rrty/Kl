@@ -27,12 +27,16 @@ public class CFGDotGraphConstructor {
 
     private static Set<Integer> traversedNodes;
 
-    public static void plotMany(List<ClassBasicBlock> classBasicBlock) {
+    public static void plotMany(List<ClassBasicBlock> classBasicBlocks) {
+        plotMany(classBasicBlocks, "cfg");
+    }
+
+    public static void plotMany(List<ClassBasicBlock> classBasicBlocks, String relativePath) {
         int j = 0;
-        for (var classBB : classBasicBlock) {
+        for (var classBB : classBasicBlocks) {
             int i = 0;
             for (var fun : classBB.getEntry()) {
-                plotGraph(fun.getCfgRoot(), "cfg" + j + "_" + i++ + ".png");
+                plotGraph(fun.getCfgRoot(), relativePath + j + "_" + i++ + ".png");
             }
             j++;
         }

@@ -14,13 +14,14 @@ import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
-import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.br.ForEntryEndInstruction;
-import kalina.compiler.instructions.v2.br.ForHeaderInstruction;
+import kalina.compiler.instructions.v2.br._for.ForCondInstruction;
+import kalina.compiler.instructions.v2.br._for.ForDeclarationInstruction;
+import kalina.compiler.instructions.v2.br._for.ForEntryEndInstruction;
 import org.objectweb.asm.Label;
 
 /**
@@ -50,7 +51,8 @@ public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForIns
         Label start = new Label();
         AbstractLocalVariableTable childTable = localVariableTable.createChildTable();
         ForHeaderAndLabel forHeaderAndLabel = createForHeaderInstruction(forInstruction, childTable, start);
-        bbEntryConsumer.accept(forHeaderAndLabel.forHeaderInstruction);
+        bbEntryConsumer.accept(forHeaderAndLabel.forDeclarationInstruction);
+        bbEntryConsumer.accept(forHeaderAndLabel.forCondInstruction);
         Optional<Instruction> action = forInstruction.action().isPresent()
                 ? Optional.of(instructionBuilder.constructInstruction(forInstruction.action().get(), childTable))
                 : Optional.empty();
@@ -75,12 +77,13 @@ public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForIns
         Optional<CondExpression> condition = forInstruction.condition().isPresent()
                 ? Optional.of(expressionConverter.convertCondExpression(forInstruction.condition().get(), localVariableTable, functionInfoProvider, fieldInfoProvider))
                 : Optional.empty();
-        return new ForHeaderAndLabel(new ForHeaderInstruction(
-                declarations,
-                condition,
-                start
-        ), condition.get().getLabel());
+        ForDeclarationInstruction forDeclarationInstruction = new ForDeclarationInstruction(declarations);
+        ForCondInstruction forCondInstruction = new ForCondInstruction(condition.get(), start);
+        return new ForHeaderAndLabel(forDeclarationInstruction, forCondInstruction, condition.get().getLabel());
     }
 
-    private static record ForHeaderAndLabel(ForHeaderInstruction forHeaderInstruction, Label label) {}
+    private static record ForHeaderAndLabel(
+            ForDeclarationInstruction forDeclarationInstruction,
+            ForCondInstruction forCondInstruction,
+            Label label) {}
 }

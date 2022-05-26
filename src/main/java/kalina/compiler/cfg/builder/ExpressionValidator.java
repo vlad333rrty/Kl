@@ -1,4 +1,4 @@
-package kalina.compiler.cfg.traverse;
+package kalina.compiler.cfg.builder;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +19,9 @@ import org.objectweb.asm.Type;
  */
 public final class ExpressionValidator {
     public static void validateInitExpression(InitInstruction instruction) throws IncompatibleTypesException {
+        if (instruction.getRhs().isEmpty()) {
+            return;
+        }
         Optional<Type> maxType = TypesComparator.getMax(instruction.getRhs().stream().map(Expression::getType).toList());
         Validator.validateTypesCompatible(instruction.getLhs().getType(), maxType.orElseThrow());
     }

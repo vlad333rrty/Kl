@@ -16,8 +16,9 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
+import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
-import kalina.compiler.instructions.v2.br.ForHeaderInstruction;
+import kalina.compiler.instructions.v2.br._for.ForExtremeInstructionBase;
 
 /**
  * @author vlad333rrty
@@ -56,17 +57,19 @@ public class DuUdNetBuilder {
     {
         List<Instruction> instructions = node.getBasicBlock().getInstructions();
         int j = 0;
-        for (var entry : node.getBasicBlock().getVarInfoToPhiFun().entrySet()) {
+        for (var phiFunInstruction : node.getBasicBlock().getPhiFunInstructions()) {
             var du = new DuUdNet.InstructionCoordinates(node.getId(), j++);
-            entry.getValue().getArguments().forEach(x -> duUdChainEnricher.putForIR(x, du));
+            phiFunInstruction.getArguments().forEach(x -> duUdChainEnricher.putForIR(x.getSsaVariableInfo(), du));
         }
-        int offset = node.getBasicBlock().getVarInfoToPhiFun().size();
+        int offset = node.getBasicBlock().getPhiFunInstructions().size();
         for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
             Instruction instruction = instructions.get(i);
             var du = new DuUdNet.InstructionCoordinates(node.getId(), i + offset);
             if (instruction instanceof WithExpressions withExpressions) {
                 withExpressions.getExpressions()
                         .forEach(x -> duUdChainEnricher.putForExpression(x, du));
+            } else if (instruction instanceof WithCondition withCondition) {
+                duUdChainEnricher.putForExpression(withCondition.getCondExpression(), du);
             }
         }
     }
@@ -133,10 +136,10 @@ public class DuUdNetBuilder {
             List<Instruction> instructions = bb.getInstructions();
             int blockId = bb.getId();
             int j = 0;
-            for (var entry : bb.getVarInfoToPhiFun().entrySet()) {
-                nameToDefinitionMeta.put(entry.getKey().getIR(), new BlockIdAndInstructionIndex(blockId, j++));
+            for (var phiFunInstruction : bb.getPhiFunInstructions()) {
+                nameToDefinitionMeta.put(phiFunInstruction.getLhsIR().getIR(), new BlockIdAndInstructionIndex(blockId, j++));
             }
-            final int offset = bb.getVarInfoToPhiFun().size();
+            final int offset = bb.getPhiFunInstructions().size();
             for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
                 Instruction instruction = instructions.get(i);
                 final int finalI = i + offset;
@@ -173,8 +176,8 @@ public class DuUdNetBuilder {
                                 )
                         );
             }
-            if (instruction instanceof ForHeaderInstruction forHeaderInstruction) {
-                forHeaderInstruction.getDeclarations()
+            if (instruction instanceof ForExtremeInstructionBase forExtremeInstructionBase) {
+                forExtremeInstructionBase.getInstruction()
                         .ifPresent(x -> traverseInstruction(x, nameToDefinitionMeta, blockId, instructionIndex));
             }
         }
