@@ -8,9 +8,11 @@ import java.util.function.Function;
 
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTForInstruction;
+import kalina.compiler.cfg.bb.BasicBlockFactory;
 import kalina.compiler.cfg.builder.InstructionCFGBuilder;
 import kalina.compiler.cfg.builder.MethodEntryCFGTraverser;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.cfg.builder.nodes.CFGNodeWithBranch;
 import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
@@ -40,19 +42,21 @@ public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForIns
         this.instructionBuilder = instructionCFGBuilder;
     }
 
+    @Override
     public ThenAndElseNodes process(
             ASTForInstruction forInstruction,
             Iterator<ASTExpression> iterator,
             AbstractLocalVariableTable localVariableTable,
             Consumer<Instruction> bbEntryConsumer,
             Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider,
             MethodEntryCFGTraverser traverser) throws CFGConversionException, IncompatibleTypesException
     {
         Label start = new Label();
         AbstractLocalVariableTable childTable = localVariableTable.createChildTable();
         ForHeaderAndLabel forHeaderAndLabel = createForHeaderInstruction(forInstruction, childTable, start);
         bbEntryConsumer.accept(forHeaderAndLabel.forDeclarationInstruction);
-        bbEntryConsumer.accept(forHeaderAndLabel.forCondInstruction);
+       // bbEntryConsumer.accept(forHeaderAndLabel.forCondInstruction);
         Optional<Instruction> action = forInstruction.action().isPresent()
                 ? Optional.of(instructionBuilder.constructInstruction(forInstruction.action().get(), childTable))
                 : Optional.empty();
@@ -60,10 +64,16 @@ public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForIns
         AbstractCFGNode thenNode = traverser.traverse(
                 forInstruction.entry().getExpressions().iterator(),
                 childTable,
-                bbs -> bbs.add(endInstruction));
-        AbstractCFGNode elseNode = traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider);
+                bbs -> bbs.add(endInstruction),
+                blockStartInstructionProvider);
+        AbstractCFGNode elseNode = traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider, blockStartInstructionProvider);
 
-        return new ThenAndElseNodes(thenNode, elseNode);
+        CFGNodeWithBranch condNode = new CFGNodeWithBranch(
+                BasicBlockFactory.createBasicBlock(List.of(forHeaderAndLabel.forCondInstruction)),
+                thenNode,
+                elseNode
+        );
+        return new ThenAndElseNodes(thenNode, elseNode, Optional.of(condNode));
     }
 
     private ForHeaderAndLabel createForHeaderInstruction(

@@ -33,13 +33,14 @@ public class ASTIfProcessor extends AbstractBranchExpressionProcessor<ASTIfInstr
     {
         super(expressionConverter, functionInfoProvider, fieldInfoProvider);
     }
-
+    @Override
     public ThenAndElseNodes process(
             ASTIfInstruction ifInstruction,
             Iterator<ASTExpression> iterator,
             AbstractLocalVariableTable localVariableTable,
             Consumer<Instruction> bbEntryConsumer,
             Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider,
             MethodEntryCFGTraverser traverser) throws CFGConversionException, IncompatibleTypesException
     {
         IfCondInstruction ifCondInstruction = createIfCondInstruction(ifInstruction, localVariableTable);
@@ -47,17 +48,19 @@ public class ASTIfProcessor extends AbstractBranchExpressionProcessor<ASTIfInstr
         Label end = new Label();
         AbstractCFGNode thenNode = traverser.traverseScope(ifInstruction.thenBr(),
                 localVariableTable,
-                bbs -> bbs.add(new IfThenEndInstruction(ifCondInstruction.getLabel(), end, ifInstruction.elseBr().isPresent())));
+                bbs -> bbs.add(new IfThenEndInstruction(ifCondInstruction.getLabel(), end, ifInstruction.elseBr().isPresent())),
+                blockStartInstructionProvider);
         Optional<AbstractCFGNode> elseNodeO = ifInstruction.elseBr().isPresent()
                 ? Optional.of(traverser.traverseScope(ifInstruction.elseBr().get(),
                 localVariableTable,
-                bbs -> bbs.add(new IfElseEndInstruction(end))))
+                bbs -> bbs.add(new IfElseEndInstruction(end)),
+                blockStartInstructionProvider))
                 : Optional.empty();
         AbstractCFGNode elseNode = elseNodeO.isPresent()
                 ? elseNodeO.get()
-                : traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider);
+                : traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider, blockStartInstructionProvider);
 
-        return new ThenAndElseNodes(thenNode, elseNode);
+        return new ThenAndElseNodes(thenNode, elseNode, Optional.empty());
     }
 
     private IfCondInstruction createIfCondInstruction(ASTIfInstruction ifInstruction, AbstractLocalVariableTable localVariableTable) throws CFGConversionException {

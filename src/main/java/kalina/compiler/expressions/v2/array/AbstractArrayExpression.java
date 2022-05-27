@@ -26,16 +26,4 @@ public interface AbstractArrayExpression {
         }
         indices.get(indices.size() - 1).translateToBytecode(mv);
     }
-
-    default void visitIndexInstruction(MethodVisitor mv, int index) {
-        if (index <= 5) {
-            mv.visitInsn(Opcodes.ICONST_0 + index);
-        } else if (index <= 127) {
-            mv.visitIntInsn(Opcodes.BIPUSH, index);
-        } else if (index <= 32767) {
-            mv.visitIntInsn(Opcodes.SIPUSH, index);
-        } else {
-            mv.visitLdcInsn(index);
-        }
-    }
 }

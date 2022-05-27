@@ -4,6 +4,7 @@ import java.util.List;
 
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ComparisonOperation;
+import kalina.compiler.expressions.v2.WithSubstitutableExpressions;
 import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -13,7 +14,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class CondExpression extends Expression {
+public class CondExpression extends Expression implements WithSubstitutableExpressions<Expression> {
     private final List<Expression> expressions;
     private final List<ComparisonOperation> operations;
     private final Label label;
@@ -88,6 +89,7 @@ public class CondExpression extends Expression {
         return expressions;
     }
 
+    @Override
     public CondExpression substituteExpressions(List<Expression> expressions) {
         assert this.expressions.size() == expressions.size();
         return new CondExpression(expressions, operations, label, invert);

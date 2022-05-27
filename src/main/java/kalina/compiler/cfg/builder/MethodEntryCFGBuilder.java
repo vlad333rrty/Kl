@@ -24,8 +24,12 @@ public class MethodEntryCFGBuilder {
         this.traverser = traverser;
     }
 
-    public AbstractCFGNode build(List<ASTExpression> methodEntry, AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException {
-        var root = traverser.traverse(methodEntry.iterator(), localVariableTable);
+    public AbstractCFGNode build(
+            List<ASTExpression> methodEntry,
+            AbstractLocalVariableTable localVariableTable,
+            List<String> funArgsNames) throws CFGConversionException, IncompatibleTypesException
+    {
+        var root = traverser.traverse(methodEntry.iterator(), localVariableTable, funArgsNames);
         indexNodesInTraverseOrder(root);
         return root;
     }

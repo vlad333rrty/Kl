@@ -14,8 +14,8 @@ import org.objectweb.asm.Opcodes;
 /**
  * @author vlad333rrty
  */
-public class ArrayAssignInstruction extends AbstractAssignInstruction implements AbstractArrayExpression {
-    public ArrayAssignInstruction(List<VariableInfo> lhs, List<Expression> rhs) {
+public class ArrayElementAssignInstruction extends AbstractAssignInstruction implements AbstractArrayExpression {
+    public ArrayElementAssignInstruction(List<VariableInfo> lhs, List<Expression> rhs) {
         super(lhs, rhs);
     }
 
@@ -33,7 +33,7 @@ public class ArrayAssignInstruction extends AbstractAssignInstruction implements
     @Override
     public AbstractAssignInstruction withRHS(List<Expression> rhs) {
         assert getRhs().size() == rhs.size();
-        return new ArrayAssignInstruction(getLhs(), rhs);
+        return new ArrayElementAssignInstruction(getLhs(), rhs);
     }
 
     @Override
@@ -44,6 +44,6 @@ public class ArrayAssignInstruction extends AbstractAssignInstruction implements
     @Override
     public Instruction substituteExpressions(List<Expression> expressions) {
         assert getRhs().size() == expressions.size();
-        return new ArrayAssignInstruction(getLhs(), expressions);
+        return new ArrayElementAssignInstruction(getLhs(), expressions);
     }
 }

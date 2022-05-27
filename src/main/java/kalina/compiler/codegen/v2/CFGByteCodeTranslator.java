@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.cfg.builder.nodes.CFGNode;
 import kalina.compiler.cfg.builder.nodes.CFGNodeWithBranch;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.instructions.Instruction;
@@ -24,6 +25,12 @@ public class CFGByteCodeTranslator {
             if (node.getAfterThenElseNode().isPresent()) {
                 translateCFGToByteCode(node.getAfterThenElseNode().get(), mv);
             }
+        } else if (root instanceof CFGNode node) {
+            if (node.getNext().isPresent()) {
+                translateCFGToByteCode(node.getNext().get(), mv);
+            }
+        } else {
+            throw new IllegalArgumentException("Unexpected cfg node: " + root);
         }
     }
 }

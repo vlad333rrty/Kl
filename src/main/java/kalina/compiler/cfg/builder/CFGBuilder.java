@@ -25,12 +25,17 @@ import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.instructions.DefaultConstructorInstruction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 public class CFGBuilder {
+    private static final Logger logger = LogManager.getLogger(CFGBuilder.class);
+
     public List<ClassBasicBlock> build(ASTRootNode root) throws CFGConversionException, IncompatibleTypesException {
+        logger.info("Start building cfg");
         TypeDictionary typeDictionary = new TypeDictionaryImpl();
         fillTypeDictionary(root, typeDictionary);
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
@@ -52,6 +57,8 @@ public class CFGBuilder {
             );
             classBasicBlocks.add(classBasicBlock);
         }
+
+        logger.info("Successfully built cfg");
         return classBasicBlocks;
     }
 

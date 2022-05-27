@@ -41,5 +41,6 @@ public abstract class AbstractBranchExpressionProcessor<T extends ASTBranchExpre
             AbstractLocalVariableTable localVariableTable,
             Consumer<Instruction> bbEntryConsumer,
             Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider,
             MethodEntryCFGTraverser traverser) throws CFGConversionException, IncompatibleTypesException;
 }

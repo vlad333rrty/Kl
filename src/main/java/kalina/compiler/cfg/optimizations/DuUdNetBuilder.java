@@ -14,11 +14,9 @@ import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
-import kalina.compiler.instructions.v2.br._for.ForExtremeInstructionBase;
+import kalina.compiler.instructions.v2.WithLHS;
 
 /**
  * @author vlad333rrty
@@ -159,26 +157,14 @@ public class DuUdNetBuilder {
                 int blockId,
                 int instructionIndex)
         {
-            if (instruction instanceof AbstractAssignInstruction assignInstruction) {
-                assignInstruction.getLhs()
+            if (instruction instanceof WithLHS withLHS) {
+                withLHS.getVariableInfos()
                         .forEach(var -> nameToDefinitionMeta
                                 .put(
-                                        var.getSsaVariableInfo().getIR(),
+                                        var.getIR(),
                                         new BlockIdAndInstructionIndex(blockId, instructionIndex)
                                 )
                         );
-            } else if (instruction instanceof InitInstruction initInstruction) {
-                initInstruction.getLhs().getVars()
-                        .forEach(var -> nameToDefinitionMeta
-                                .put(
-                                        var.getSsaVariableInfo().getIR(),
-                                        new BlockIdAndInstructionIndex(blockId, instructionIndex)
-                                )
-                        );
-            }
-            if (instruction instanceof ForExtremeInstructionBase forExtremeInstructionBase) {
-                forExtremeInstructionBase.getInstruction()
-                        .ifPresent(x -> traverseInstruction(x, nameToDefinitionMeta, blockId, instructionIndex));
             }
         }
     }

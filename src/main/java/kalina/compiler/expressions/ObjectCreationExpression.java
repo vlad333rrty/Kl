@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenUtils;
+import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -37,5 +38,10 @@ public class ObjectCreationExpression extends Expression {
     @Override
     public Type getType() {
         return Type.getObjectType(className);
+    }
+
+    @Override
+    public String toString() {
+        return className + "(" + PrintUtils.listToString(arguments) + ")";
     }
 }

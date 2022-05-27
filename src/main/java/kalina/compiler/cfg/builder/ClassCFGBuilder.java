@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTMethodNode;
+import kalina.compiler.bb.TypeAndName;
 import kalina.compiler.bb.v2.FunBasicBlock;
 import kalina.compiler.cfg.builder.items.ASTDoProcessor;
 import kalina.compiler.cfg.builder.items.ASTForProcessor;
@@ -58,7 +59,10 @@ public class ClassCFGBuilder {
             node.getArgs().forEach(arg -> localVariableTable.addVariable(arg.getName(), arg.getType()));
 
             MethodEntryCFGBuilder methodEntryCFGBuilder = getMethodEntryCFGBuilder(node, classNode.getClassName(), functionInfoProvider);
-            AbstractCFGNode root = methodEntryCFGBuilder.build(node.getExpressions(), localVariableTable);
+            AbstractCFGNode root = methodEntryCFGBuilder.build(
+                    node.getExpressions(),
+                    localVariableTable,
+                    node.getArgs().stream().map(TypeAndName::getName).toList());
             FunBasicBlock funBasicBlock = new FunBasicBlock(
                     node.getName(),
                     node.getArgs(),

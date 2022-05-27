@@ -33,7 +33,7 @@ import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.ArrayAssignInstruction;
+import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
@@ -146,7 +146,7 @@ public class InstructionCFGBuilder {
         return instruction;
     }
 
-    private ArrayAssignInstruction constructArrayAssignInstruction(
+    private ArrayElementAssignInstruction constructArrayAssignInstruction(
             ASTArrayAssignInstruction assignInstruction,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
@@ -171,7 +171,7 @@ public class InstructionCFGBuilder {
                 })
                 .toList();
 
-        ArrayAssignInstruction instruction = new ArrayAssignInstruction(
+        ArrayElementAssignInstruction instruction = new ArrayElementAssignInstruction(
                 variableInfos,
                 assignInstruction.getRHS().stream()
                         .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))

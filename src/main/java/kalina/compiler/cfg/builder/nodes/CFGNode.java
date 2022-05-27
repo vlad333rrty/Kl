@@ -2,6 +2,7 @@ package kalina.compiler.cfg.builder.nodes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import kalina.compiler.cfg.bb.BasicBlock;
 
@@ -11,6 +12,7 @@ import kalina.compiler.cfg.bb.BasicBlock;
 public class CFGNode extends AbstractCFGNode {
     private final List<AbstractCFGNode> childrenAndBackEdgeNode;
     private final List<AbstractCFGNode> ancestors;
+    private Optional<AbstractCFGNode> next = Optional.empty();
 
     public CFGNode(BasicBlock bb) {
         super(bb);
@@ -49,5 +51,13 @@ public class CFGNode extends AbstractCFGNode {
     @Override
     public void addAncestor(AbstractCFGNode node) {
         ancestors.add(node);
+    }
+
+    public Optional<AbstractCFGNode> getNext() {
+        return next;
+    }
+
+    public void setNext(AbstractCFGNode node) {
+        this.next = Optional.of(node);
     }
 }

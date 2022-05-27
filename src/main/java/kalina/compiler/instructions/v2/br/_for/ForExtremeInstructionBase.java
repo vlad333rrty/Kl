@@ -6,7 +6,7 @@ import java.util.Optional;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
+import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithExpressions;
 
@@ -24,7 +24,7 @@ public abstract class ForExtremeInstructionBase extends Instruction implements W
         if (instruction instanceof InitInstruction initInstruction) {
             return initInstruction.getVariableInfos();
         }
-        if (instruction instanceof AbstractAssignInstruction assignInstruction) {
+        if (instruction instanceof AssignInstruction assignInstruction) {
             return assignInstruction.getVariableInfos();
         }
         throw new IllegalArgumentException();

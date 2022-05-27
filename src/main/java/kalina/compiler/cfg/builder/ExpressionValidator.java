@@ -8,7 +8,7 @@ import kalina.compiler.cfg.validator.TypesComparator;
 import kalina.compiler.cfg.validator.Validator;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.ArrayAssignInstruction;
+import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.cfg.data.VariableInfo;
@@ -31,7 +31,7 @@ public final class ExpressionValidator {
         List<Expression> rhs = assignInstruction.getRhs();
         if (assignInstruction instanceof AssignInstruction) {
             validateAssignExpression(lhs, rhs);
-        } else if (assignInstruction instanceof ArrayAssignInstruction) {
+        } else if (assignInstruction instanceof ArrayElementAssignInstruction) {
             validateArrayAssignExpression(lhs, rhs);
         } else {
             throw new IllegalArgumentException("Unexpected expression " + assignInstruction);

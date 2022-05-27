@@ -15,9 +15,10 @@ public class Main2 {
     {
         new OxmaMain(new OxmaCompiler.OxmaCompilerSettings(
                 true,
-                true,
+                false,
                 "cfg",
-                ""
+                "",
+                true
         )).run("data/output.kl");
     }
 }

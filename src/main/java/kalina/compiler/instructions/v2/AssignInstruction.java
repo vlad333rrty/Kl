@@ -2,6 +2,7 @@ package kalina.compiler.instructions.v2;
 
 import java.util.List;
 
+import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
@@ -12,7 +13,7 @@ import org.objectweb.asm.Opcodes;
 /**
  * @author vlad333rrty
  */
-public class AssignInstruction extends AbstractAssignInstruction {
+public class AssignInstruction extends AbstractAssignInstruction implements WithLHS {
     public AssignInstruction(List<VariableInfo> lhs, List<Expression> rhs) {
         super(lhs, rhs);
     }
@@ -43,5 +44,10 @@ public class AssignInstruction extends AbstractAssignInstruction {
     public Instruction substituteExpressions(List<Expression> expressions) {
         assert getRhs().size() == expressions.size();
         return new AssignInstruction(getLhs(), expressions);
+    }
+
+    @Override
+    public List<SSAVariableInfo> getVariableInfos() {
+        return getLhs().stream().map(VariableInfo::getSsaVariableInfo).toList();
     }
 }

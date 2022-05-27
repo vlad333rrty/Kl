@@ -26,6 +26,7 @@ import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.instructions.Instruction;
+import kalina.compiler.instructions.v2.fake.FunArgsInitInstruction;
 
 /**
  * @author vlad333rrty
@@ -39,18 +40,28 @@ public class MethodEntryCFGTraverser {
         this.branchExpressionConverter = branchExpressionConverter;
     }
 
-    public AbstractCFGNode traverse(Iterator<ASTExpression> iterator, AbstractLocalVariableTable localVariableTable)
-            throws CFGConversionException, IncompatibleTypesException
+    public AbstractCFGNode traverse(
+            Iterator<ASTExpression> iterator,
+            AbstractLocalVariableTable localVariableTable,
+            List<String> funArgsNames) throws CFGConversionException, IncompatibleTypesException
     {
-        return traverse(iterator, localVariableTable, x -> {});
+        CFGNode funArgsNode = new CFGNode(
+                BasicBlockFactory.createBasicBlock(List.of(new FunArgsInitInstruction(funArgsNames)))
+        );
+        AbstractCFGNode root = traverse(iterator, localVariableTable, x -> {}, x -> {});
+        funArgsNode.setNext(root);
+        funArgsNode.addChild(root);
+        return funArgsNode;
     }
 
     public AbstractCFGNode traverse(
             Iterator<ASTExpression> iterator,
             AbstractLocalVariableTable localVariableTable,
-            Consumer<List<Instruction>> blockEndInstructionProvider) throws CFGConversionException, IncompatibleTypesException
+            Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider) throws CFGConversionException, IncompatibleTypesException
     {
         List<Instruction> bbEntry = new ArrayList<>();
+        blockStartInstructionProvider.accept(bbEntry);
         while (iterator.hasNext()) {
             ASTExpression expression = iterator.next();
             if (expression instanceof ASTBranchExpression branchExpression) {
@@ -60,19 +71,18 @@ public class MethodEntryCFGTraverser {
                         localVariableTable,
                         bbEntry::add,
                         blockEndInstructionProvider,
+                        blockStartInstructionProvider,
                         this
                 );
 
                 BasicBlock bb = BasicBlockFactory.createBasicBlock(bbEntry);
-                CFGNodeWithBranch node = new CFGNodeWithBranch(bb, thenAndElseNodes.thenNode(), thenAndElseNodes.elseNode());
-                linkNodes(thenAndElseNodes, branchExpression, node, () -> {
+                return linkNodes(thenAndElseNodes, branchExpression, bb, () -> {
                     try {
-                        return traverse(iterator, localVariableTable, blockEndInstructionProvider);
+                        return traverse(iterator, localVariableTable, blockEndInstructionProvider, blockStartInstructionProvider);
                     } catch (CFGConversionException | IncompatibleTypesException e) {
                         throw new RuntimeException(e);
                     }
                 });
-                return node;
             } else {
                 bbEntry.add(instructionBuilder.constructInstruction(expression, localVariableTable));
             }
@@ -84,19 +94,37 @@ public class MethodEntryCFGTraverser {
     public AbstractCFGNode traverseScope(
             ASTMethodEntryNode node,
             AbstractLocalVariableTable localVariableTable,
-            Consumer<List<Instruction>> blockEndInstructionProvider) throws CFGConversionException, IncompatibleTypesException
+            Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider) throws CFGConversionException, IncompatibleTypesException
     {
         AbstractLocalVariableTable childTable = localVariableTable.createChildTable();
-        return traverse(node.getExpressions().iterator(), childTable, blockEndInstructionProvider);
+        return traverse(node.getExpressions().iterator(), childTable, blockEndInstructionProvider, blockStartInstructionProvider);
     }
 
-    private void linkNodes(
+    private AbstractCFGNode linkNodes(
             ThenAndElseNodes thenAndElseNodes,
             ASTBranchExpression branchExpression,
-            CFGNodeWithBranch node,
+            BasicBlock basicBlock,
             Supplier<AbstractCFGNode> nextNodeAccessor)
     {
         AbstractCFGNode thenLastNode = DFSImpl.findLastNode(thenAndElseNodes.thenNode());
+        if (branchExpression instanceof ASTForInstruction) {
+            if (thenAndElseNodes.condNode().isPresent()) {
+                CFGNode node = new CFGNode(basicBlock);
+                AbstractCFGNode condNode = thenAndElseNodes.condNode().get();
+                node.addChild(condNode);
+                node.setNext(condNode);
+                thenLastNode.addChild(thenAndElseNodes.elseNode());
+                thenLastNode.setBackEdgeNode(thenAndElseNodes.condNode().get());
+                return node;
+            } else {
+                AbstractCFGNode node = new CFGNodeWithBranch(basicBlock, thenAndElseNodes.thenNode(), thenAndElseNodes.elseNode());
+                thenLastNode.addChild(thenAndElseNodes.elseNode());
+                thenLastNode.setBackEdgeNode(node);
+                return node;
+            }
+        }
+        CFGNodeWithBranch node = new CFGNodeWithBranch(basicBlock, thenAndElseNodes.thenNode(), thenAndElseNodes.elseNode());
         if (branchExpression instanceof ASTIfInstruction ifInstruction) {
             if (ifInstruction.elseBr().isPresent()) {
                 AbstractCFGNode elseLastNode = DFSImpl.findLastNode(thenAndElseNodes.elseNode());
@@ -107,15 +135,14 @@ public class MethodEntryCFGTraverser {
             } else {
                 thenLastNode.addChild(thenAndElseNodes.elseNode());
             }
-        }
-        if (branchExpression instanceof ASTForInstruction) {
-            thenLastNode.addChild(thenAndElseNodes.elseNode());
-            thenLastNode.setBackEdgeNode(node);
+            return node;
         }
         if (branchExpression instanceof ASTDoInstruction) {
             thenLastNode.setBackEdgeNode(node);
             thenLastNode.addChild(thenAndElseNodes.elseNode());
         }
+
+        return node;
     }
 
     private static class DFSImpl {
@@ -130,6 +157,7 @@ public class MethodEntryCFGTraverser {
             AbstractCFGNode current = node;
             while (!stack.empty()) {
                 NodeWithDepth nodeWithDepth = stack.pop();
+                traversedNodes.add(nodeWithDepth.node.getId());
                 int depth = nodeWithDepth.depth;
                 AbstractCFGNode cfgNode = nodeWithDepth.node;
                 if (cfgNode.getChildren().isEmpty()) {

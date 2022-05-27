@@ -5,6 +5,7 @@ import java.util.List;
 
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.v2.ClassBasicBlock;
+import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.builder.CFGBuilder;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
@@ -16,11 +17,15 @@ import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.syntax.scanner.Scanner;
 import kalina.compiler.utils.FileUtils;
 import kalina.internal.CFGDotGraphConstructor;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 public abstract class OxmaCompiler {
+    private static final Logger logger = LogManager.getLogger(OxmaCompiler.class);
+
     private final OxmaCompilerSettings settings;
 
     public OxmaCompiler() {
@@ -39,8 +44,8 @@ public abstract class OxmaCompiler {
         CFGBuilder cfgBuilder = new CFGBuilder();
         List<ClassBasicBlock> classBasicBlocks = cfgBuilder.build(result);
 
-        if (settings.shouldPerformOptimizations) {
-            performOptimizations(classBasicBlocks);
+        if (settings.shouldPerformOptimizations || settings.shouldBuildSSAForm) {
+            performCodeTransformations(classBasicBlocks);
         }
         if (settings.shouldPlotCFGs) {
             CFGDotGraphConstructor.plotMany(classBasicBlocks, settings.cfgPictureRelativePathBase);
@@ -58,16 +63,38 @@ public abstract class OxmaCompiler {
         }
     }
 
-    protected abstract void performOptimizations(List<ClassBasicBlock> classBasicBlocks);
+    private void performCodeTransformations(List<ClassBasicBlock> classBasicBlocks) {
+        for (var classBb : classBasicBlocks) {
+            for (var funBb : classBb.getEntry()) {
+                ControlFlowGraph controlFlowGraph = ControlFlowGraph.fromRoot(funBb.getCfgRoot());
+                logger.info("Starting building SSA form");
+                buildSSAForm(controlFlowGraph);
+                if (settings.shouldPerformOptimizations) {
+                    logger.info("Starting applying optimizations");
+                    performOptimizations(controlFlowGraph);
+                }
+            }
+        }
+    }
+
+    protected abstract void performOptimizations(ControlFlowGraph controlFlowGraph);
+
+    protected abstract void buildSSAForm(ControlFlowGraph controlFlowGraph);
 
     public record OxmaCompilerSettings(
             boolean shouldPlotCFGs,
             boolean shouldPerformOptimizations,
             String cfgPictureRelativePathBase,
-            String compiledClassesDestinationDirectory)
+            String compiledClassesDestinationDirectory,
+            boolean shouldBuildSSAForm)
     {
         public static OxmaCompilerSettings defaultSettings() {
-            return new OxmaCompilerSettings(true, true, "cfg", "");
+            return new OxmaCompilerSettings(
+                    true,
+                    true,
+                    "cfg",
+                    "",
+                    true);
         }
     }
 }

@@ -17,7 +17,6 @@ public class BasicBlock {
     // после создания cfg нумеруем ноды в порядке обхода, новый индекс пишется сюда. todo пересоздавать?
     private Optional<Integer> newId = Optional.empty();
 
-    private final PhiFunctionHolder phiFunctionHolder = new PhiFunctionHolder();
     private List<PhiFunInstruction> phiFunInstructions = List.of();
 
     public BasicBlock(int id, List<Instruction> instructions) {

@@ -22,18 +22,19 @@ public class DuUdNetBuilderTest extends OxmaTestBase {
     @Test
     public void testCase1() throws CFGConversionException, IncompatibleTypesException, ParseException, IOException, InterruptedException, TimeoutException {
         Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> du = Map.of(
-                new DuUdNet.Definition("a_0", 0, 0), List.of(new DuUdNet.InstructionCoordinates(0, 1)),
-                new DuUdNet.Definition("a_1", 1, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
-                new DuUdNet.Definition("a_3", 3, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
-                new DuUdNet.Definition("a_2", 2, 0), List.of(new DuUdNet.InstructionCoordinates(2, 1)),
-                new DuUdNet.Definition("b_0", 2, 1), List.of()
+                new DuUdNet.Definition("a_0", 1, 0), List.of(new DuUdNet.InstructionCoordinates(1, 1)),
+                new DuUdNet.Definition("a_1", 2, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
+                new DuUdNet.Definition("a_3", 4, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
+                new DuUdNet.Definition("a_2", 3, 0), List.of(new DuUdNet.InstructionCoordinates(3, 1)),
+                new DuUdNet.Definition("b_0", 3, 1), List.of(),
+                new DuUdNet.Definition("args_0", 0, 0), List.of()
         );
 
         Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> ud = Map.of(
-                new DuUdNet.Use("a_0", 0, 1), List.of(new DuUdNet.InstructionCoordinates(0, 0)),
-                new DuUdNet.Use("a_1", 2, 0), List.of(new DuUdNet.InstructionCoordinates(1, 0)),
-                new DuUdNet.Use("a_3", 2, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
-                new DuUdNet.Use("a_2", 2, 1), List.of(new DuUdNet.InstructionCoordinates(2, 0))
+                new DuUdNet.Use("a_0", 1, 1), List.of(new DuUdNet.InstructionCoordinates(1, 0)),
+                new DuUdNet.Use("a_1", 3, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
+                new DuUdNet.Use("a_3", 3, 0), List.of(new DuUdNet.InstructionCoordinates(4, 0)),
+                new DuUdNet.Use("a_2", 3, 1), List.of(new DuUdNet.InstructionCoordinates(3, 0))
         );
 
         compareDuUd(new DuUdNet(du, ud), "/test_case_1.ox");
@@ -42,18 +43,19 @@ public class DuUdNetBuilderTest extends OxmaTestBase {
     @Test
     public void testCase2() throws CFGConversionException, IncompatibleTypesException, IOException, ParseException, InterruptedException, TimeoutException {
         Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> du = Map.of(
-                new DuUdNet.Definition("a_0", 0, 0), List.of(),
-                new DuUdNet.Definition("b_0", 0, 1), List.of(new DuUdNet.InstructionCoordinates(0, 2)),
-                new DuUdNet.Definition("b_1", 1, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
-                new DuUdNet.Definition("b_3", 3, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
-                new DuUdNet.Definition("b_2", 2, 0), List.of(new DuUdNet.InstructionCoordinates(2, 1))
+                new DuUdNet.Definition("a_0", 1, 0), List.of(),
+                new DuUdNet.Definition("b_0", 1, 1), List.of(new DuUdNet.InstructionCoordinates(1, 2)),
+                new DuUdNet.Definition("b_1", 2, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
+                new DuUdNet.Definition("b_3", 4, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
+                new DuUdNet.Definition("b_2", 3, 0), List.of(new DuUdNet.InstructionCoordinates(3, 1)),
+                new DuUdNet.Definition("args_0", 0, 0), List.of()
         );
 
         Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> ud = Map.of(
-                new DuUdNet.Use("b_0", 0, 2), List.of(new DuUdNet.InstructionCoordinates(0, 1)),
-                new DuUdNet.Use("b_1", 2, 0), List.of(new DuUdNet.InstructionCoordinates(1, 0)),
-                new DuUdNet.Use("b_3", 2, 0), List.of(new DuUdNet.InstructionCoordinates(3, 0)),
-                new DuUdNet.Use("b_2", 2, 1), List.of(new DuUdNet.InstructionCoordinates(2, 0))
+                new DuUdNet.Use("b_0", 1, 2), List.of(new DuUdNet.InstructionCoordinates(1, 1)),
+                new DuUdNet.Use("b_1", 3, 0), List.of(new DuUdNet.InstructionCoordinates(2, 0)),
+                new DuUdNet.Use("b_3", 3, 0), List.of(new DuUdNet.InstructionCoordinates(4, 0)),
+                new DuUdNet.Use("b_2", 3, 1), List.of(new DuUdNet.InstructionCoordinates(3, 0))
         );
 
         compareDuUd(new DuUdNet(du, ud), "/test_case_2.ox");

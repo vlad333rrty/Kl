@@ -27,6 +27,7 @@ public abstract class AbstractCFGNode {
 
     public void setBackEdgeNode(AbstractCFGNode backEdgeNode) {
         this.backEdgeNode = Optional.of(backEdgeNode);
+        backEdgeNode.addAncestor(this);
     }
 
     public int getId() {

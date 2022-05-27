@@ -40,6 +40,7 @@ public class ASTDoProcessor extends AbstractBranchExpressionProcessor<ASTDoInstr
             AbstractLocalVariableTable localVariableTable,
             Consumer<Instruction> bbEntryConsumer,
             Consumer<List<Instruction>> blockEndInstructionProvider,
+            Consumer<List<Instruction>> blockStartInstructionProvider,
             MethodEntryCFGTraverser traverser) throws CFGConversionException, IncompatibleTypesException
     {
         CondExpression condExpression = expressionConverter.convertCondExpression(
@@ -55,10 +56,11 @@ public class ASTDoProcessor extends AbstractBranchExpressionProcessor<ASTDoInstr
         AbstractCFGNode thenNode = traverser.traverseScope(
                 item.entry(),
                 localVariableTable,
-                bbs -> bbs.add(doBlockEndInstruction)
+                bbs -> bbs.add(doBlockEndInstruction),
+                blockStartInstructionProvider
         );
 
-        AbstractCFGNode elseNode = traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider);
-        return new ThenAndElseNodes(thenNode, elseNode);
+        AbstractCFGNode elseNode = traverser.traverse(iterator, localVariableTable, blockEndInstructionProvider, blockStartInstructionProvider);
+        return new ThenAndElseNodes(thenNode, elseNode, Optional.empty());
     }
 }

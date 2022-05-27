@@ -19,6 +19,11 @@ public class DCETest {
         runTest("dce/dce_test_case_2.ox");
     }
 
+    @Test
+    public void testCase3() {
+        runTest("dce/dce_test_case_3.ox");
+    }
+
     private void runTest(String fileName) {
         String withDCEResult = testWithDCEPerformer.runTestAndGetResult(fileName);
         String withoutDCEResult = testWithoutOptimizationsPerformer.runTestAndGetResult(fileName);

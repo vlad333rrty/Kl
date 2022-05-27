@@ -5,6 +5,7 @@ import java.util.List;
 import kalina.compiler.codegen.typeCast.NumberTypesComparator;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.operations.ArithmeticOperation;
+import kalina.compiler.expressions.v2.WithSubstitutableExpressions;
 import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -13,7 +14,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class Term extends Expression {
+public class Term extends Expression implements WithSubstitutableExpressions<Factor> {
     private final List<Factor> factors;
     private final List<ArithmeticOperation> operations;
     private Type type;
@@ -69,5 +70,11 @@ public class Term extends Expression {
     public Term withFactors(List<Factor> factors) {
         assert this.factors.size() == factors.size();
         return new Term(factors, operations);
+    }
+
+    @Override
+    public Expression substituteExpressions(List<Factor> expressions) {
+        assert this.factors.size() == expressions.size();
+        return new Term(expressions, operations);
     }
 }

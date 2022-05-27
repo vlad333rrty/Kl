@@ -21,7 +21,6 @@ import kalina.compiler.cfg.bb.PhiFunction;
 import kalina.compiler.cfg.bb.PhiFunctionHolder;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.data.SSAVariableInfo;
-import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.cfg.dominantTree.DominantTree;
 import kalina.compiler.expressions.ArithmeticExpression;
 import kalina.compiler.expressions.CondExpression;
@@ -29,17 +28,16 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.Factor;
 import kalina.compiler.expressions.Term;
 import kalina.compiler.expressions.VariableExpression;
-import kalina.compiler.expressions.VariableNameAndIndex;
+import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
+import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.InitInstruction;
-import kalina.compiler.instructions.v2.fake.PhiArgumentExpression;
-import kalina.compiler.instructions.v2.fake.PhiFunInstruction;
+import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
-import kalina.compiler.instructions.v2.br._for.ForDeclarationInstruction;
+import kalina.compiler.instructions.v2.fake.PhiArgumentExpression;
+import kalina.compiler.instructions.v2.fake.PhiFunInstruction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -93,13 +91,8 @@ public class SSAFormBuilder {
 
     private Set<String> getVariableNames(Instruction instruction) {
         Set<String> variableNames = new HashSet<>();
-        if (instruction instanceof InitInstruction initInstruction) {
-            variableNames.addAll(initInstruction.getLhs().getVars().stream().map(VariableNameAndIndex::getName).toList());
-        } else if (instruction instanceof AbstractAssignInstruction assignInstruction) {
-            variableNames.addAll(assignInstruction.getLhs().stream().map(VariableInfo::getName).toList());
-        } else if (instruction instanceof ForDeclarationInstruction forDeclarationInstruction) {
-            Optional<Instruction> declarations = forDeclarationInstruction.getDeclarations();
-            declarations.ifPresent(value -> variableNames.addAll(getVariableNames(value)));
+        if (instruction instanceof WithLHS withLHS) {
+            variableNames.addAll(withLHS.getVariableInfos().stream().map(SSAVariableInfo::getName).toList());
         }
         return variableNames;
     }
@@ -156,6 +149,14 @@ public class SSAFormBuilder {
                             .filter(info -> info.getName().equals(varName))
                             .forEach(this::updateVersion);
                 }
+                if (instruction instanceof ArrayElementAssignInstruction assignInstruction) {
+                    assignInstruction.getLhs().stream()
+                            .filter(info -> info.getName().equals(varName))
+                            .forEach(info -> {
+                                int i = varInfoToVersionStack.get(info.getName()).peek();
+                                info.getSsaVariableInfo().setCfgIndex(i);
+                            });
+                }
             }
             node.getBasicBlock().setInstructions(instructions);
             int nextVersion = stack.peek();
@@ -207,6 +208,16 @@ public class SSAFormBuilder {
                         .map(x -> substituteExpression(x, varName))
                         .toList();
                 return funCallExpression.substituteArguments(arguments);
+            } else if (expression instanceof ArrayGetElementExpression arrayGetElementExpression) {
+                List<Expression> indices = arrayGetElementExpression.getIndices().stream()
+                        .map(x -> substituteExpression(x, varName))
+                        .toList();
+                return arrayGetElementExpression.substituteExpressions(indices);
+            } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
+                List<Expression> capacities = arrayWithCapacityCreationExpression.getCapacities().stream()
+                        .map(x -> substituteExpression(x, varName))
+                        .toList();
+                return arrayWithCapacityCreationExpression.substituteExpressions(capacities);
             }
 
             return expression;
@@ -245,9 +256,7 @@ public class SSAFormBuilder {
             Queue<AbstractCFGNode> queue = new ArrayDeque<>();
             nodes.stream()
                     .filter(node -> node.getBasicBlock().getInstructions().stream()
-                            .anyMatch(instruction -> instruction instanceof AbstractAssignInstruction assignInstruction
-                                    && assignInstruction.getLhs().stream()
-                                    .map(VariableInfo::getName).anyMatch(x -> x.equals(varName))))
+                            .anyMatch(instruction -> getAssignInstructionsFilter(instruction, varName)))
                     .forEach(node -> {
                         processedNodes.add(node.getId());
                         queue.add(node);
@@ -259,7 +268,7 @@ public class SSAFormBuilder {
                     PhiFunctionHolder phiFunctionHolder = blockIdToPhiFunHolder.get(frontierNode.getId());
                     Optional<PhiFunction> phiFunO = phiFunctionHolder.getForVar(varName);
                     if (phiFunO.isEmpty()) {
-                        int dim = calcPhiFunDimension(frontierNode, varName);
+                        int dim = calcPhiFunDimensionAndSetArgCorrespondance(frontierNode);
                         if (dim > 1) { // no need to make phi fun if there is no "chose" between variables in cfg
                             phiFunctionHolder.addPhiFun(varName, dim);
                         }
@@ -272,49 +281,40 @@ public class SSAFormBuilder {
             processedVars.add(varName);
         }
 
-        private int calcPhiFunDimension(AbstractCFGNode node, String varName) {
+        private boolean getAssignInstructionsFilter(Instruction instruction, String varName) {
+            if (instruction instanceof WithLHS withLHS) {
+                return withLHS.getVariableInfos().stream()
+                        .map(SSAVariableInfo::getName)
+                        .anyMatch(x -> x.equals(varName));
+            }
+            return false;
+        }
+
+        private int calcPhiFunDimensionAndSetArgCorrespondance(AbstractCFGNode node) {
             int dim = 0;
             PhiFunctionHolder phiFunHolder = blockIdToPhiFunHolder.get(node.getId());
             for (var ancestor : node.getAncestors()) {
-                int blockId = ancestor.getId();
-                boolean flag = false;
-                for (Instruction instruction : ancestor.getBasicBlock().getInstructions()) {
-                    if (instruction instanceof AbstractAssignInstruction assignInstruction
-                            && containsVarAssign(assignInstruction, varName)) {
-                        phiFunHolder.putBlockIdToPhiFunArg(blockId, dim);
-                        dim++;
-                        flag = true;
-                        break;
-                    } else if (instruction instanceof InitInstruction initInstruction
-                            && containsVarAssign(initInstruction, varName)) {
-                        phiFunHolder.putBlockIdToPhiFunArg(blockId, dim);
-                        dim++;
-                        flag = true;
-                        break;
-                    }
-                }
-                if (flag) {
-                    continue;
-                }
-                PhiFunctionHolder ancestorPhiFunHolder = blockIdToPhiFunHolder.get(ancestor.getId());
-                for (var entry : ancestorPhiFunHolder.getVarInfoToPhiFun().entrySet()) {
-                    if (entry.getKey().getName().equals(varName)) {
-                        phiFunHolder.putBlockIdToPhiFunArg(blockId, dim);
-                        dim++;
-                        break;
-                    }
-                }
+                phiFunHolder.putBlockIdToPhiFunArg(ancestor.getId(), dim);
+                dim++;
             }
 
             return dim;
         }
 
-        private boolean containsVarAssign(AbstractAssignInstruction assignInstruction, String varName) {
-            return assignInstruction.getLhs().stream().anyMatch(x -> x.getName().equals(varName));
+        private boolean hasPhiFunForVar(AbstractCFGNode ancestor, String varName) {
+            PhiFunctionHolder ancestorPhiFunHolder = blockIdToPhiFunHolder.get(ancestor.getId());
+            for (var entry : ancestorPhiFunHolder.getVarInfoToPhiFun().entrySet()) {
+                if (entry.getKey().getName().equals(varName)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
-        private boolean containsVarAssign(InitInstruction instruction, String varName) {
-            return instruction.getLhs().getVars().stream().anyMatch(var -> var.getName().equals(varName));
+        private boolean hasAssign(List<Instruction> instructions, String varName) {
+            return instructions.stream()
+                    .anyMatch(instruction -> instruction instanceof WithLHS withLHS
+                            && withLHS.getVariableInfos().stream().anyMatch(x -> x.getName().equals(varName)));
         }
     }
 }
