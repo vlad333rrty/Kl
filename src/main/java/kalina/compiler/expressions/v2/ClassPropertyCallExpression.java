@@ -1,6 +1,5 @@
 package kalina.compiler.expressions.v2;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,16 +37,11 @@ public class ClassPropertyCallExpression extends Expression implements WithSubst
     }
 
     public List<Expression> getExpressions() {
-        return expressions.stream().findFirst().stream().toList();
+        return expressions;
     }
 
     @Override
     public ClassPropertyCallExpression substituteExpressions(List<Expression> expressions) {
-        if (expressions.size() > 1) {
-            throw new IllegalArgumentException();
-        }
-        List<Expression> newExpressions = new ArrayList<>(this.expressions);
-        expressions.stream().findFirst().map(x -> newExpressions.set(0, x));
-        return new ClassPropertyCallExpression(newExpressions);
+        return new ClassPropertyCallExpression(expressions);
     }
 }
