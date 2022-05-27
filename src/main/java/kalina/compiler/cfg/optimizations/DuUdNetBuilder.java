@@ -94,7 +94,7 @@ public class DuUdNetBuilder {
 
         public void putForExpression(Expression expression, DuUdNet.InstructionCoordinates instructionCoordinates) {
             ExpressionUnwrapper.unwrapExpression(expression, ve -> {
-                DuUdNet.Definition def = nameToDefinition.get(ve.getSsaVariableInfo().getIR());
+                DuUdNet.Definition def = nameToDefinition.get(ve.getIR());
                 putDuUdChains(def, instructionCoordinates);
             });
         }

@@ -212,7 +212,12 @@ public class SSAFormBuilder {
                 List<Expression> indices = arrayGetElementExpression.getIndices().stream()
                         .map(x -> substituteExpression(x, varName))
                         .toList();
-                return arrayGetElementExpression.substituteExpressions(indices);
+                String name = arrayGetElementExpression.getName();
+                if (!name.equals(varName)) {
+                    return expression;
+                }
+                int version = varInfoToVersionStack.get(name).peek();
+                return arrayGetElementExpression.withCfgIndex(version).substituteExpressions(indices);
             } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
                 List<Expression> capacities = arrayWithCapacityCreationExpression.getCapacities().stream()
                         .map(x -> substituteExpression(x, varName))

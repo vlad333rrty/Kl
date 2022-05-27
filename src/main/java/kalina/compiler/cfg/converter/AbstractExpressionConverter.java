@@ -1,8 +1,8 @@
 package kalina.compiler.cfg.converter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 import java.util.function.Function;
 
 import kalina.compiler.ast.expression.ASTArithmeticExpression;
@@ -36,8 +36,8 @@ import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 import kalina.compiler.cfg.data.GetVariableOrField;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.OxmaFunctionInfo;
-import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
+import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.cfg.validator.Validator;
 import kalina.compiler.expressions.ArithmeticExpression;
@@ -67,7 +67,6 @@ public abstract class AbstractExpressionConverter {
 
     private final GetFunctionInfoProvider getFunctionInfoProvider;
     private final GetFieldInfoProvider getFieldInfoProvider;
-    private final Stack<Expression> expressionStack = new Stack<>();
 
     public AbstractExpressionConverter(
             GetFunctionInfoProvider getFunctionInfoProvider,
@@ -83,7 +82,6 @@ public abstract class AbstractExpressionConverter {
             OxmaFunctionInfoProvider functionInfoProvider,
             Function<String, Optional<OxmaFieldInfo>> fieldInfoProvider)
     {
-        expressionStack.clear();
         return convert(
                 astExpression,
                 new GetVariableOrField(localVariableTable, fieldInfoProvider),
@@ -102,7 +100,7 @@ public abstract class AbstractExpressionConverter {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
         }
         if (astExpression instanceof ASTVariableExpression variableExpression) {
-            return expressionStack.push(VariableOrFieldExpressionConverter.convert(getVariableOrField, variableExpression));
+            return VariableOrFieldExpressionConverter. convert(getVariableOrField, variableExpression);
         }
         if (astExpression instanceof ASTFactor factor) {
             Expression expression = convert(factor.expression(), getVariableOrField, functionInfoProvider, fieldInfoProvider);
@@ -130,29 +128,21 @@ public abstract class AbstractExpressionConverter {
             }
             OxmaFunctionInfo functionInfo = functionInfoO.get();
             validateStaticContext(functionInfo, funName);
-            var expr = new FunCallExpression(funName, arguments, functionInfo, functionInfo.isStatic() ? Optional.empty() : Optional.of(new ThisExpression()));
-            if (!expr.getType().equals(Type.VOID_TYPE)) {
-                expressionStack.push(expr);
-            }
-            return expr;
+            return new FunCallExpression(funName, arguments, functionInfo, functionInfo.isStatic() ? Optional.empty() : Optional.of(new ThisExpression()));
         }
         if (astExpression instanceof ASTObjectCreationExpression objectCreationExpression) {
             List<Expression> arguments = objectCreationExpression.arguments().stream()
                     .map(arg -> convert(arg, getVariableOrField, functionInfoProvider, fieldInfoProvider))
                     .toList();
-            return expressionStack.push(new ObjectCreationExpression(objectCreationExpression.className(), arguments));
+            return new ObjectCreationExpression(objectCreationExpression.className(), arguments);
         }
         if (astExpression instanceof ASTMethodCallExpression methodCallExpression) {
-            Expression methodExpr = MethodCallExpressionConverter.convert(
+            return MethodCallExpressionConverter.convert(
                     methodCallExpression,
                     getVariableOrField,
                     getFunctionInfoProvider,
                     (expr, funInfoProvider) -> convert(expr, getVariableOrField, funInfoProvider, fieldInfoProvider)
             );
-            if (!methodExpr.getType().equals(Type.VOID_TYPE)) {
-                expressionStack.push(methodExpr);
-            }
-            return methodExpr;
         }
         if (astExpression instanceof ASTArrayCreationExpression arrayCreationExpression) {
             List<Expression> capacities = arrayCreationExpression.getCapacities().stream()
@@ -169,21 +159,16 @@ public abstract class AbstractExpressionConverter {
                     arrayCreationExpression.getElementType());
         }
         if (astExpression instanceof ASTArrayGetElementExpression getElementExpression) {
-            return expressionStack.push(ArrayGetElementExpressionConverter.convert(
+            return ArrayGetElementExpressionConverter.convert(
                     getVariableOrField,
                     getElementExpression,
                     getElementExpression.getIndices().stream()
                             .map(expr -> convert(expr, getVariableOrField, functionInfoProvider, fieldInfoProvider))
                             .toList()
-            ));
+            );
         }
         if (astExpression instanceof ASTOtherFieldAccessExpression otherFieldAccessExpression) {
-            return expressionStack.push(OtherFieldExpressionsConverter.convert(otherFieldAccessExpression, getVariableOrField, getFieldInfoProvider));
-        }
-        if (astExpression instanceof ASTUnknownOwnerFieldExpression unknownOwnerFieldExpression) {
-            return expressionStack.push(UnknownOwnerFieldExpressionConverter.convert(
-                    unknownOwnerFieldExpression, expressionStack.peek().getType(), getFieldInfoProvider
-            ));
+            return OtherFieldExpressionsConverter.convert(otherFieldAccessExpression, getVariableOrField, getFieldInfoProvider);
         }
         if (astExpression instanceof ASTFieldAccessExpression fieldAccessExpression) {
             Optional<OxmaFieldInfo> fieldInfoO = fieldInfoProvider.apply(fieldAccessExpression.getFieldName());
@@ -191,33 +176,78 @@ public abstract class AbstractExpressionConverter {
                 throw new IllegalArgumentException("Cannot find declaration of " + fieldAccessExpression.getFieldName());
             }
             OxmaFieldInfo fieldInfo = fieldInfoO.get();
-            return expressionStack.push(new FieldAccessExpression(
+            return new FieldAccessExpression(
                     fieldInfo.type(),
                     fieldInfo.modifiers().contains(ClassEntryUtils.Modifier.STATIC),
                     fieldInfo.ownerClassName(),
                     fieldAccessExpression.getFieldName()
-            ));
-        }
-        if (astExpression instanceof ASTUnknownOwnerMethodCall unknownOwnerMethodCall) {
-            return expressionStack.push(UnknownOwnerMethodCallExpressionConverter.convert(
-                    unknownOwnerMethodCall,
-                    expressionStack.peek().getType(),
-                    getFunctionInfoProvider,
-                    (expr, funInfoProvider) -> convert(expr, getVariableOrField, funInfoProvider, fieldInfoProvider)));
-        }
-        if (astExpression instanceof ASTClassPropertyCallExpression propertyCallExpression) {
-            return new ClassPropertyCallExpression(
-                    propertyCallExpression.getExpressions().stream()
-                            .map(expr -> convert(expr, getVariableOrField, functionInfoProvider, fieldInfoProvider))
-                            .toList()
             );
         }
         if (astExpression instanceof ASTThisExpression) {
             return new ThisExpression();
         }
+        if (astExpression instanceof ASTClassPropertyCallExpression classPropertyCallExpression) {
+            return convertClassPropertyCallChainInstruction(
+                    classPropertyCallExpression,
+                    getVariableOrField,
+                    functionInfoProvider,
+                    fieldInfoProvider
+            );
+        }
 
         logger.error("Unknown expression {}", astExpression);
         throw new IllegalArgumentException("Unexpected expression type");
+    }
+
+    public ClassPropertyCallExpression convertClassPropertyCallChainInstruction(
+            ASTClassPropertyCallExpression classPropertyCallExpression,
+            GetVariableOrField getVariableOrField,
+            OxmaFunctionInfoProvider functionInfoProvider,
+            Function<String, Optional<OxmaFieldInfo>> fieldInfoProvider)
+    {
+        List<ASTExpression> expressionChain = classPropertyCallExpression.getExpressions();
+        if (expressionChain.isEmpty()) {
+            throw new IllegalArgumentException();
+        }
+        ASTExpression ownerExpression = classPropertyCallExpression.getExpressions().get(0);
+        Expression convertedOwnerExpression = convert(ownerExpression, getVariableOrField, functionInfoProvider, fieldInfoProvider);
+        Type currentOwnerType = convertedOwnerExpression.getType();
+        List<Expression> convertedExpressions = new ArrayList<>();
+        convertedExpressions.add(convertedOwnerExpression);
+        for (int i = 1; i < expressionChain.size(); i++) {
+            Expression expression = convertUnknownOwnerExpression(
+                    expressionChain.get(i),
+                    getVariableOrField,
+                    fieldInfoProvider,
+                    currentOwnerType);
+            currentOwnerType = expression.getType();
+            convertedExpressions.add(expression);
+        }
+        return new ClassPropertyCallExpression(convertedExpressions);
+    }
+
+    private Expression convertUnknownOwnerExpression(
+            ASTExpression astExpression,
+            GetVariableOrField getVariableOrField,
+            Function<String, Optional<OxmaFieldInfo>> fieldInfoProvider,
+            Type ownerType)
+    {
+        if (astExpression instanceof ASTUnknownOwnerMethodCall unknownOwnerMethodCall) {
+            return UnknownOwnerMethodCallExpressionConverter.convert(
+                    unknownOwnerMethodCall,
+                    ownerType,
+                    getFunctionInfoProvider,
+                    (expr, funInfoProvider) ->
+                            convert(expr, getVariableOrField, funInfoProvider, fieldInfoProvider));
+        }
+        if (astExpression instanceof ASTUnknownOwnerFieldExpression unknownOwnerFieldExpression) {
+            return UnknownOwnerFieldExpressionConverter.convert(
+                    unknownOwnerFieldExpression, ownerType, getFieldInfoProvider
+            );
+        }
+
+        logger.error("Unexpected expression: {}", astExpression);
+        throw new IllegalArgumentException();
     }
 
     private AbstractFunCallExpression tryToFindStdFun(String funName, List<Expression> arguments) {

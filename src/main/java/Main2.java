@@ -15,7 +15,7 @@ public class Main2 {
     {
         new OxmaMain(new OxmaCompiler.OxmaCompilerSettings(
                 true,
-                false,
+                true,
                 "cfg",
                 "",
                 true

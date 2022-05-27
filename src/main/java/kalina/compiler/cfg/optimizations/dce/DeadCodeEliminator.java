@@ -19,9 +19,9 @@ import kalina.compiler.cfg.optimizations.ExpressionUnwrapper;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.ClassPropertyCallChainInstruction;
 import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
@@ -53,7 +53,7 @@ public class DeadCodeEliminator {
                         FunCallInstruction.class, FunEndInstruction.class, IfCondInstruction.class,
                         IfThenEndInstruction.class, IfElseEndInstruction.class, DoBlockBeginInstruction.class,
                         DoBlockEndInstruction.class, ForCondInstruction.class, ForEntryEndInstruction.class,
-                        ArrayElementAssignInstruction.class
+                        ArrayElementAssignInstruction.class, ClassPropertyCallChainInstruction.class
                 )
         );
         List<DuUdNet.InstructionCoordinates> essentialInstructions = essentialInstructionsFinder
@@ -119,26 +119,6 @@ public class DeadCodeEliminator {
         }
     }
 
-    private void markEssentialAssignments(
-            ControlFlowGraph controlFlowGraph,
-            DuUdNet duUdNet,
-            Map<Integer, Set<Integer>> blockIdToEssentialInstructions)
-    {
-        for (var node : controlFlowGraph.nodes()) {
-            int offset = node.getBasicBlock().getPhiFunInstructions().size();
-            List<Instruction> instructions = node.getBasicBlock().getInstructions();
-            for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
-                Instruction instruction = instructions.get(i);
-                Set<Integer> usefulInstructions = blockIdToEssentialInstructions.get(node.getId());
-                if (usefulInstructions != null && usefulInstructions.contains(i + offset)
-                        && instruction instanceof AbstractAssignInstruction assignInstruction)
-                {
-
-                }
-            }
-        }
-    }
-
     private Instruction getInstruction(BasicBlock basicBlock, DuUdNet.InstructionCoordinates coordinates) {
         int offset = basicBlock.getPhiFunInstructions().size();
         int index = coordinates.instructionIndex() - offset;
@@ -192,7 +172,7 @@ public class DeadCodeEliminator {
     {
         ExpressionUnwrapper
                 .unwrapExpression(expression, ve -> {
-                    var use = new DuUdNet.Use(ve.getSsaVariableInfo().getIR(), coordinates.blockId(), coordinates.instructionIndex());
+                    var use = new DuUdNet.Use(ve.getIR(), coordinates.blockId(), coordinates.instructionIndex());
                     List<DuUdNet.InstructionCoordinates> defs = duUdNet.getUdChainProvider().apply(use);
                     for (var def : defs) {
                         if (blockIdToEssentialInstructions

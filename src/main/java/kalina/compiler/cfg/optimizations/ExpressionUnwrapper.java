@@ -2,6 +2,7 @@ package kalina.compiler.cfg.optimizations;
 
 import java.util.function.Consumer;
 
+import kalina.compiler.cfg.data.WithIR;
 import kalina.compiler.expressions.ArithmeticExpression;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
@@ -20,9 +21,9 @@ import org.apache.logging.log4j.Logger;
 public class ExpressionUnwrapper {
     private static final Logger logger = LogManager.getLogger(ExpressionUnwrapper.class);
 
-    public static void unwrapExpression(Expression expression, Consumer<VariableExpression> expressionConsumer) {
+    public static void unwrapExpression(Expression expression, Consumer<WithIR> expressionConsumer) {
         if (expression instanceof VariableExpression variableExpression) {
-            expressionConsumer.accept(variableExpression);
+            expressionConsumer.accept(variableExpression.getSsaVariableInfo());
         } else if (expression instanceof ArithmeticExpression arithmeticExpression) {
             arithmeticExpression.getTerms().forEach(x -> unwrapExpression(x, expressionConsumer));
         } else if (expression instanceof Term term) {
@@ -34,7 +35,7 @@ public class ExpressionUnwrapper {
         } else if (expression instanceof CondExpression condExpression) {
             condExpression.getExpressions().forEach(x -> unwrapExpression(x, expressionConsumer));
         } else if (expression instanceof ArrayGetElementExpression arrayGetElementExpression) {
-
+            expressionConsumer.accept(arrayGetElementExpression);
         } else if (expression instanceof ClassPropertyCallExpression propertyCallExpression) {
             propertyCallExpression.getExpressions().forEach(x -> unwrapExpression(x, expressionConsumer));
         }

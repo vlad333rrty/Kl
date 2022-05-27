@@ -2,6 +2,7 @@ package kalina.compiler.expressions.v2.array;
 
 import java.util.List;
 
+import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.cfg.data.WithIR;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
@@ -24,7 +25,7 @@ public class ArrayGetElementExpression extends Expression implements
     private final Type loweredType;
     private final Type initialType;
     private final Expression variableAccessExpression;
-    private final String varName;
+    private final SSAVariableInfo ssaVariableInfo;
 
     public ArrayGetElementExpression(
             List<Expression> indices,
@@ -39,7 +40,23 @@ public class ArrayGetElementExpression extends Expression implements
         this.loweredType = loweredType;
         this.initialType = initialType;
         this.variableAccessExpression = variableAccessExpression;
-        this.varName = varName;
+        this.ssaVariableInfo = new SSAVariableInfo(varName);
+    }
+
+    public ArrayGetElementExpression(
+            List<Expression> indices,
+            Type elementType,
+            Type loweredType,
+            Type initialType,
+            Expression variableAccessExpression,
+            SSAVariableInfo ssaVariableInfo)
+    {
+        this.indices = indices;
+        this.elementType = elementType;
+        this.loweredType = loweredType;
+        this.initialType = initialType;
+        this.variableAccessExpression = variableAccessExpression;
+        this.ssaVariableInfo = ssaVariableInfo;
     }
 
     @Override
@@ -68,7 +85,7 @@ public class ArrayGetElementExpression extends Expression implements
 
     @Override
     public String toString() {
-        return varName + "[" + PrintUtils.listToString(indices) + "]";
+        return getIR() + "[" + PrintUtils.listToString(indices) + "]";
     }
 
     @Override
@@ -80,12 +97,21 @@ public class ArrayGetElementExpression extends Expression implements
                 loweredType,
                 initialType,
                 variableAccessExpression,
-                varName
+                ssaVariableInfo
         );
+    }
+
+    public ArrayGetElementExpression withCfgIndex(int cfgIndex) {
+        ssaVariableInfo.setCfgIndex(cfgIndex);
+        return this;
     }
 
     @Override
     public String getIR() {
-        return null;
+        return ssaVariableInfo.getIR();
+    }
+
+    public String getName() {
+        return ssaVariableInfo.getName();
     }
 }

@@ -48,9 +48,10 @@ public class DominantTree {
 
         for (Vertex v : vertices) {
             if (v.getAncestors().size() > 1) {
+                Vertex iDomV = getIDom(v);
                 for (Vertex u : v.getAncestors()) {
                     Vertex runner = u;
-                    while (runner != getIDom(v)) {
+                    while (runner != iDomV) {
                         dominanceFrontier.get(runner.getBasicBlock().getId()).add(bbToNode.get(v.getBasicBlock().getId()));
                         runner = getIDom(runner);
                     }

@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 
 import kalina.compiler.ast.expression.ASTAbstractAssignInstruction;
 import kalina.compiler.ast.expression.ASTAssignInstruction;
+import kalina.compiler.ast.expression.ASTClassPropertyCallExpression;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTInitInstruction;
@@ -29,12 +30,14 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
 import kalina.compiler.expressions.ReturnValueInfo;
 import kalina.compiler.expressions.VariableNameAndIndex;
+import kalina.compiler.expressions.v2.ClassPropertyCallExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AbstractAssignInstruction;
 import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.ClassPropertyCallChainInstruction;
 import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import org.apache.logging.log4j.LogManager;
@@ -80,10 +83,21 @@ public class InstructionCFGBuilder {
             instruction = constructFunCallInstruction(funCallExpression, localVariableTable);
         } else if (expression instanceof ASTReturnInstruction returnInstruction) {
             instruction = constructFunEndBasicBlock(returnInstruction, localVariableTable);
+        } else if (expression instanceof ASTClassPropertyCallExpression classPropertyCallExpression) {
+            instruction = convertClassPropertyCallChainInstruction(classPropertyCallExpression, localVariableTable);
         } else {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException(expression.toString());
         }
         return instruction;
+    }
+
+    private ClassPropertyCallChainInstruction convertClassPropertyCallChainInstruction(
+            ASTClassPropertyCallExpression classPropertyCallExpression,
+            AbstractLocalVariableTable localVariableTable)
+    {
+        ClassPropertyCallExpression expression = (ClassPropertyCallExpression)expressionConverter
+                .convert(classPropertyCallExpression, localVariableTable, functionInfoProvider, fieldInfoProvider);
+        return new ClassPropertyCallChainInstruction(expression);
     }
 
     private Instruction constructFunCallInstruction(
