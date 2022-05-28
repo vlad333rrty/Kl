@@ -17,6 +17,7 @@ import kalina.compiler.cfg.optimizations.DuUdNet;
 import kalina.compiler.cfg.optimizations.DuUdNetBuilder;
 import kalina.compiler.cfg.optimizations.ExpressionUnwrapper;
 import kalina.compiler.expressions.Expression;
+import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
@@ -98,6 +99,11 @@ public class DeadCodeEliminator {
                         .forEach(expr -> checkDefinitionsForUse(expr, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
                 checkUsesForDefinition(phiFunInstruction.getLhsIR(), coordinates, duUdNet, idToBb, blockIdToEssentialInstructions, queue);
             }
+            if (instruction instanceof ArrayElementAssignInstruction arrayElementAssignInstruction) {
+                arrayElementAssignInstruction.getLhs().stream()
+                        .map(ArrayElementAssignExpression::new)
+                        .forEach(expression -> checkDefinitionsForUse(expression, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
+            }
         }
 
         logger.info(blockIdToEssentialInstructions);
@@ -140,7 +146,6 @@ public class DeadCodeEliminator {
         List<DuUdNet.InstructionCoordinates> uses = duUdNet.getDuChainProvider().apply(def);
         for (var use : uses) {
             BasicBlock basicBlock = idToBb.get(use.blockId());
-            final int index;
             final Instruction inst;
             if (use.instructionIndex() < basicBlock.getInstructions().size()) {
                 inst = basicBlock.getInstructions().get(use.instructionIndex());
@@ -170,18 +175,27 @@ public class DeadCodeEliminator {
             Map<Integer, Set<Integer>> blockIdToEssentialInstructions,
             Queue<DuUdNet.InstructionCoordinates> queue)
     {
-        ExpressionUnwrapper
-                .unwrapExpression(expression, ve -> {
-                    var use = new DuUdNet.Use(ve.getIR(), coordinates.blockId(), coordinates.instructionIndex());
-                    List<DuUdNet.InstructionCoordinates> defs = duUdNet.getUdChainProvider().apply(use);
-                    for (var def : defs) {
-                        if (blockIdToEssentialInstructions
-                                .computeIfAbsent(def.blockId(), k -> new HashSet<>())
-                                .add(def.instructionIndex()))
-                        {
-                            queue.add(def);
-                        }
-                    }
-                });
+        ExpressionUnwrapper.unwrapExpression(
+                expression,
+                ve -> saveEssentialDefinitions(ve, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
+    }
+
+    private void saveEssentialDefinitions(
+            WithIR withIR,
+            DuUdNet.InstructionCoordinates coordinates,
+            DuUdNet duUdNet,
+            Map<Integer, Set<Integer>> blockIdToEssentialInstructions,
+            Queue<DuUdNet.InstructionCoordinates> queue)
+    {
+        var use = new DuUdNet.Use(withIR.getIR(), coordinates.blockId(), coordinates.instructionIndex());
+        List<DuUdNet.InstructionCoordinates> defs = duUdNet.getUdChainProvider().apply(use);
+        for (var def : defs) {
+            if (blockIdToEssentialInstructions
+                    .computeIfAbsent(def.blockId(), k -> new HashSet<>())
+                    .add(def.instructionIndex()))
+            {
+                queue.add(def);
+            }
+        }
     }
 }

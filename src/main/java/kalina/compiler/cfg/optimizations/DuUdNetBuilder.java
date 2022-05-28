@@ -13,7 +13,9 @@ import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.expressions.Expression;
+import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.instructions.Instruction;
+import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
@@ -68,6 +70,11 @@ public class DuUdNetBuilder {
                         .forEach(x -> duUdChainEnricher.putForExpression(x, du));
             } else if (instruction instanceof WithCondition withCondition) {
                 duUdChainEnricher.putForExpression(withCondition.getCondExpression(), du);
+            }
+            if (instruction instanceof ArrayElementAssignInstruction arrayElementAssignInstruction) {
+                arrayElementAssignInstruction.getLhs().stream()
+                        .map(ArrayElementAssignExpression::new)
+                        .forEach(x -> duUdChainEnricher.putForExpression(x, du));
             }
         }
     }

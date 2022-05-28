@@ -38,7 +38,7 @@ public class ArrayElementAssignInstruction extends AbstractAssignInstruction imp
 
     @Override
     public String toString() {
-        return PrintUtils.complexExpressionToString(getLhs(), getRhs());
+        return PrintUtils.listToString(getLhs()) + " = " + PrintUtils.listToString(getRhs());
     }
 
     @Override

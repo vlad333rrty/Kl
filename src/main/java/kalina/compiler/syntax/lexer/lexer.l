@@ -79,7 +79,7 @@ RETURN   ret
 SHORT	short|int16
 INT	int|int32
 LONG	long|int64
-
+ARRAY_TYPE {IDENT}(\[\])+
 
 %%
 
@@ -246,7 +246,7 @@ final		{
 			yylval->ident = yytext;
 			return XOR_TAG;
 		}
-{IDENT}\[\]          {
+{ARRAY_TYPE}          {
                          yylval->ident=yytext;
                          return ARRAY_TYPE_TAG;
                      }
@@ -357,7 +357,7 @@ protected	    {
                         }
 %%
 
-#define SIZE 1<<10
+#define SIZE 1<<28
 
 int main(int argc, char **argv){
     logInfo("Starting lexer\n");
@@ -375,7 +375,7 @@ int main(int argc, char **argv){
         logError("Can not open the dest file\n");
         return ERROR_STATE;
     }
-    char buf[SIZE];
+    char *buf = malloc(SIZE);
     char c;
     int i=0;
     while ((c=fgetc(file))!=EOF && i < SIZE) {
@@ -401,6 +401,7 @@ int main(int argc, char **argv){
     do {
     	tag = yylex(&value,&coords);
     	if (tag == ERROR_STATE) {
+    		free(buf);
     		return ERROR_STATE;
     	}
         if (tag > 0){
@@ -409,6 +410,7 @@ int main(int argc, char **argv){
     } while(tag != 0);
 
     fclose(out);
+    free(buf);
     logInfo("No errors. Stopping lexer\n");
 
     return 0;

@@ -2,7 +2,6 @@ package kalina.compiler.cfg.builder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -142,12 +141,11 @@ public class InstructionCFGBuilder {
                     Optional<TypeAndIndex> variableInfoO = localVariableTable.findVariable(name);
                     if (variableInfoO.isEmpty()) {
                         logger.error("No info found for variable {}", name);
-                        return null;
+                        throw new IllegalArgumentException("Undeclared variable " + name);
                     }
                     TypeAndIndex variableInfo = variableInfoO.get();
                     return new VariableInfo(name, variableInfo.getIndex(), variableInfo.getType());
                 })
-                .filter(Objects::nonNull)
                 .toList();
 
         AssignInstruction instruction = new AssignInstruction(

@@ -13,9 +13,4 @@ public class LocalVariableTableFactory implements ILocalVariableTableFactory {
     public AbstractLocalVariableTable createLocalVariableTableForStatic() {
         return new LocalVariableTable(new SimpleIndexGenerator(0));
     }
-
-    @Override
-    public AbstractLocalVariableTable createChildLocalVariableTable(AbstractLocalVariableTable parent) {
-        return new LocalVariableTable(parent);
-    }
 }

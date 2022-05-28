@@ -100,7 +100,7 @@ public abstract class AbstractExpressionConverter {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
         }
         if (astExpression instanceof ASTVariableExpression variableExpression) {
-            return VariableOrFieldExpressionConverter. convert(getVariableOrField, variableExpression);
+            return VariableOrFieldExpressionConverter.convert(getVariableOrField, variableExpression);
         }
         if (astExpression instanceof ASTFactor factor) {
             Expression expression = convert(factor.expression(), getVariableOrField, functionInfoProvider, fieldInfoProvider);

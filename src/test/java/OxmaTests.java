@@ -23,4 +23,14 @@ public class OxmaTests extends OxmaTestBase {
     public void testForCycle() {
         runTestAndLogResult("for_cycle_test.ox");
     }
+
+    @Test
+    public void testArraysDecl() {
+        runTestWithoutLogging("arrays_test.ox");
+    }
+
+    @Test
+    public void testLinearSort() {
+        runTestAndLogResult("linear_sort.ox");
+    }
 }

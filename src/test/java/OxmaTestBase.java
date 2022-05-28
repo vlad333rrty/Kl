@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Assertions;
  */
 abstract class OxmaTestBase {
     private static final int LEXER_ERROR_CODE = 255;
-    private static final int TIME_TO_WAIT_SECONDS = 7;
+    private static final int TIME_TO_WAIT_SECONDS = 10;
     private static final OxmaMain compiler = new OxmaMain();
     private static final String ERROR_DURING_EXECUTION_MESSAGE_FORMAT = "Error during execution of the generated java program. Log:\n%s";
 

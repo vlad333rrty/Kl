@@ -9,8 +9,10 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.Factor;
 import kalina.compiler.expressions.Term;
 import kalina.compiler.expressions.VariableExpression;
+import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.expressions.v2.ClassPropertyCallExpression;
 import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
+import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,8 +38,14 @@ public class ExpressionUnwrapper {
             condExpression.getExpressions().forEach(x -> unwrapExpression(x, expressionConsumer));
         } else if (expression instanceof ArrayGetElementExpression arrayGetElementExpression) {
             expressionConsumer.accept(arrayGetElementExpression);
+            arrayGetElementExpression.getIndices().forEach(x -> unwrapExpression(x, expressionConsumer));
         } else if (expression instanceof ClassPropertyCallExpression propertyCallExpression) {
             propertyCallExpression.getExpressions().forEach(x -> unwrapExpression(x, expressionConsumer));
+        } else if (expression instanceof ArrayElementAssignExpression arrayElementAssignExpression) {
+            expressionConsumer.accept(arrayElementAssignExpression);
+        } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
+            arrayWithCapacityCreationExpression.getCapacities().
+                    forEach(x -> unwrapExpression(x, expressionConsumer));
         }
         else {
             logger.warn("No suitable expression found for further unwrapping {}", expression);

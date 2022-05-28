@@ -5,15 +5,10 @@
  */
 public class Main3 {
     public static void main(String[] args) {
-        int len = 1000;
-        T t = new T();
-        System.out.println(t.f());
+        int[] a = new int[3];
+        for (int i=0;i<3;i++) {
+            a[i] = i;
+        }
     }
 
-}
-
-class T {
-    public int f() {
-        return 1;
-    }
 }

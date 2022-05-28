@@ -6,5 +6,4 @@ package kalina.compiler.cfg.data;
 public interface ILocalVariableTableFactory {
     AbstractLocalVariableTable createLocalVariableTableForNonStatic();
     AbstractLocalVariableTable createLocalVariableTableForStatic();
-    AbstractLocalVariableTable createChildLocalVariableTable(AbstractLocalVariableTable parent);
 }

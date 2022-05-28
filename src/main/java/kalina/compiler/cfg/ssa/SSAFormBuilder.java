@@ -38,15 +38,11 @@ import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
 import kalina.compiler.instructions.v2.fake.PhiArgumentExpression;
 import kalina.compiler.instructions.v2.fake.PhiFunInstruction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 public class SSAFormBuilder {
-    private static final Logger logger = LogManager.getLogger(SSAFormBuilder.class);
-
     public void buildSSA(ControlFlowGraph controlFlowGraph) {
         AbstractCFGNode root = controlFlowGraph.root();
         List<AbstractCFGNode> nodes = controlFlowGraph.nodes();
@@ -214,10 +210,10 @@ public class SSAFormBuilder {
                         .toList();
                 String name = arrayGetElementExpression.getName();
                 if (!name.equals(varName)) {
-                    return expression;
+                    int version = varInfoToVersionStack.get(name).peek();
+                    return arrayGetElementExpression.withCfgIndex(version).substituteExpressions(indices);
                 }
-                int version = varInfoToVersionStack.get(name).peek();
-                return arrayGetElementExpression.withCfgIndex(version).substituteExpressions(indices);
+                return arrayGetElementExpression.substituteExpressions(indices);
             } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
                 List<Expression> capacities = arrayWithCapacityCreationExpression.getCapacities().stream()
                         .map(x -> substituteExpression(x, varName))
@@ -273,7 +269,7 @@ public class SSAFormBuilder {
                     PhiFunctionHolder phiFunctionHolder = blockIdToPhiFunHolder.get(frontierNode.getId());
                     Optional<PhiFunction> phiFunO = phiFunctionHolder.getForVar(varName);
                     if (phiFunO.isEmpty()) {
-                        int dim = calcPhiFunDimensionAndSetArgCorrespondance(frontierNode);
+                        int dim = calcPhiFunDimensionAndSetArgCorrespondence(frontierNode);
                         if (dim > 1) { // no need to make phi fun if there is no "chose" between variables in cfg
                             phiFunctionHolder.addPhiFun(varName, dim);
                         }
@@ -295,7 +291,7 @@ public class SSAFormBuilder {
             return false;
         }
 
-        private int calcPhiFunDimensionAndSetArgCorrespondance(AbstractCFGNode node) {
+        private int calcPhiFunDimensionAndSetArgCorrespondence(AbstractCFGNode node) {
             int dim = 0;
             PhiFunctionHolder phiFunHolder = blockIdToPhiFunHolder.get(node.getId());
             for (var ancestor : node.getAncestors()) {
@@ -304,22 +300,6 @@ public class SSAFormBuilder {
             }
 
             return dim;
-        }
-
-        private boolean hasPhiFunForVar(AbstractCFGNode ancestor, String varName) {
-            PhiFunctionHolder ancestorPhiFunHolder = blockIdToPhiFunHolder.get(ancestor.getId());
-            for (var entry : ancestorPhiFunHolder.getVarInfoToPhiFun().entrySet()) {
-                if (entry.getKey().getName().equals(varName)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private boolean hasAssign(List<Instruction> instructions, String varName) {
-            return instructions.stream()
-                    .anyMatch(instruction -> instruction instanceof WithLHS withLHS
-                            && withLHS.getVariableInfos().stream().anyMatch(x -> x.getName().equals(varName)));
         }
     }
 }
