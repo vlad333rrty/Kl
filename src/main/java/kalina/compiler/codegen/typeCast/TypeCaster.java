@@ -13,7 +13,7 @@ public class TypeCaster implements ITypeCaster {
         if (from.equals(to)) {
             return;
         }
-        if (!TypeCastOpcodesMapper.canCast(from, to)) {
+        if (!TypeCastValidator.canCast(from, to)) {
             throw new CodeGenException("Cannot cast " + from.getClassName() + " to " + to.getClassName());
         }
         mv.visitInsn(TypeCastOpcodesMapper.getCastOpcode(from, to).orElseThrow());

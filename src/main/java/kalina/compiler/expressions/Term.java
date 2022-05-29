@@ -77,4 +77,8 @@ public class Term extends Expression implements WithSubstitutableExpressions<Fac
         assert this.factors.size() == expressions.size();
         return new Term(expressions, operations);
     }
+
+    public List<ArithmeticOperation> getOperations() {
+        return operations;
+    }
 }

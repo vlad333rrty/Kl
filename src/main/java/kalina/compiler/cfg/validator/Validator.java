@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import kalina.compiler.cfg.data.TypeChecker;
-import kalina.compiler.codegen.typeCast.TypeCastOpcodesMapper;
+import kalina.compiler.codegen.typeCast.TypeCastValidator;
 import kalina.compiler.expressions.Expression;
 import org.objectweb.asm.Type;
 
@@ -21,9 +21,9 @@ public class Validator {
         boolean isValid =  from.equals(to)
                 || (TypeChecker.isPrimitiveNumber(from.getClassName())
                 && TypeChecker.isPrimitiveNumber(to.getClassName())
-                && TypeCastOpcodesMapper.canCast(from, to));
+                && TypeCastValidator.canCast(from, to));
         if (!isValid) {
-            throw new IncompatibleTypesException(String.format("Incompatible types: %s and %s", from.getClassName(), to.getClassName()));
+            throw new IncompatibleTypesException(String.format("Cannot cast: %s to %s", from.getClassName(), to.getClassName()));
         }
     }
 

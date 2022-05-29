@@ -23,7 +23,7 @@ public final class ExpressionValidator {
             return;
         }
         Optional<Type> maxType = TypesComparator.getMax(instruction.getRhs().stream().map(Expression::getType).toList());
-        Validator.validateTypesCompatible(instruction.getLhs().getType(), maxType.orElseThrow());
+        Validator.validateTypesCompatible(maxType.orElseThrow(), instruction.getLhs().getType());
     }
 
     public static void validateAssignExpression(AbstractAssignInstruction assignInstruction) throws IncompatibleTypesException {
@@ -41,14 +41,14 @@ public final class ExpressionValidator {
     private static void validateArrayAssignExpression(List<VariableInfo> lhs, List<Expression> rhs) throws IncompatibleTypesException {
         for (int i = 0, lhsSize = lhs.size(); i < lhsSize; i++) {
             VariableInfo variableInfo = lhs.get(i);
-            Validator.validateTypesCompatible(variableInfo.getArrayVariableInfoOrElseThrow().getLoweredType(), rhs.get(i).getType());
+            Validator.validateTypesCompatible(rhs.get(i).getType(), variableInfo.getArrayVariableInfoOrElseThrow().getLoweredType());
         }
     }
 
     private static void validateAssignExpression(List<VariableInfo> lhs, List<Expression> rhs) throws IncompatibleTypesException {
         for (int i = 0, lhsSize = lhs.size(); i < lhsSize; i++) {
             VariableInfo variableInfo = lhs.get(i);
-            Validator.validateTypesCompatible(variableInfo.getType(), rhs.get(i).getType());
+            Validator.validateTypesCompatible(rhs.get(i).getType(), variableInfo.getType());
         }
     }
 }

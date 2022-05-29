@@ -9,6 +9,7 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
+import kalina.compiler.instructions.v2.WithRHS;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -79,5 +80,16 @@ public class ForEntryEndInstruction extends ForExtremeInstructionBase implements
     @Override
     public Optional<Instruction> getInstruction() {
         return action;
+    }
+
+    @Override
+    public List<Expression> getRHS() {
+        if (action.isEmpty()) {
+            return List.of();
+        }
+        if (action.get() instanceof WithRHS withRHS) {
+            return withRHS.getRHS();
+        }
+        return List.of();
     }
 }

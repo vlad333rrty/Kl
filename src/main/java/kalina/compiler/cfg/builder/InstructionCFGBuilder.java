@@ -23,7 +23,6 @@ import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeAndIndex;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.data.VariableInfo;
-import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.LHS;
@@ -71,7 +70,7 @@ public class InstructionCFGBuilder {
 
     public Instruction constructInstruction(
             ASTExpression expression,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         final Instruction instruction;
         if (expression instanceof ASTInitInstruction initInstruction) {
@@ -195,12 +194,10 @@ public class InstructionCFGBuilder {
 
     private InitInstruction constructInitInstruction(
             ASTInitInstruction initInstruction,
-            AbstractLocalVariableTable localVariableTable) throws CFGConversionException, IncompatibleTypesException
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         Type type = initInstruction.lhs().type();
-        if (!Assert.assertIsValidDeclarationType(type, typeChecker)) {
-            throw new CFGConversionException("Wrong declaration type: " + type.getClassName());
-        }
+        Assert.assertIsValidDeclarationType(type, typeChecker);
         initInstruction.lhs()
                 .variableNames()
                 .forEach(name -> Assert.assertMultipleVariableDeclarations(name, localVariableTable));

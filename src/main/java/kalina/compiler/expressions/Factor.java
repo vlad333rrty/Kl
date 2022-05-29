@@ -50,4 +50,8 @@ public class Factor extends Expression {
     public Factor withExpression(Expression expression) {
         return new Factor(expression, shouldNegate);
     }
+
+    public boolean shouldNegate() {
+        return shouldNegate;
+    }
 }

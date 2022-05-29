@@ -7,6 +7,6 @@ import kalina.compiler.expressions.Expression;
 /**
  * @author vlad333rrty
  */
-public interface WithExpressions extends InstructionWithSubstitutableExpressions {
-    List<Expression> getExpressions();
+public interface WithRHS extends InstructionWithSubstitutableExpressions {
+    List<Expression> getRHS();
 }

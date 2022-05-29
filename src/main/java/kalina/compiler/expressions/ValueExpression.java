@@ -29,4 +29,8 @@ public class ValueExpression extends Expression {
     public String toString() {
         return value.toString();
     }
+
+    public Object getValue() {
+        return value;
+    }
 }

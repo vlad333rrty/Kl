@@ -13,7 +13,7 @@ import org.objectweb.asm.MethodVisitor;
 /**
  * @author vlad333rrty
  */
-public abstract class AbstractAssignInstruction extends Instruction implements WithExpressions {
+public abstract class AbstractAssignInstruction extends Instruction implements WithExpressions, WithRHS {
     private final List<VariableInfo> lhs;
     private final List<Expression> rhs;
 
@@ -56,6 +56,11 @@ public abstract class AbstractAssignInstruction extends Instruction implements W
 
     @Override
     public List<Expression> getExpressions() {
+        return rhs;
+    }
+
+    @Override
+    public List<Expression> getRHS() {
         return rhs;
     }
 }

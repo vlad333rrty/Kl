@@ -5,10 +5,12 @@
  */
 public class Main3 {
     public static void main(String[] args) {
-        int[] a = new int[3];
-        for (int i=0;i<3;i++) {
-            a[i] = i;
-        }
+
+    }
+
+    private static int f(int x) {
+        int a = 4*x/5/6;
+        return a;
     }
 
 }

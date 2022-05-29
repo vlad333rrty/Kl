@@ -11,7 +11,6 @@ import org.objectweb.asm.Type;
  */
 public final class TypeCastOpcodesMapper {
     private static final Map<Integer, Map<Integer, Integer>> opcodes = Map.of(
-            Type.SHORT, getS2Type(),
             Type.INT, getI2Type(),
             Type.LONG, getL2Type(),
             Type.FLOAT, getF2Type(),
@@ -26,17 +25,8 @@ public final class TypeCastOpcodesMapper {
         return getCastOpcode(from, to).isPresent();
     }
 
-    private static Map<Integer, Integer> getS2Type() {
-        return Map.of(
-                Type.LONG, Opcodes.I2L,
-                Type.FLOAT, Opcodes.I2F,
-                Type.DOUBLE, Opcodes.I2D
-        );
-    }
-
     private static Map<Integer, Integer> getI2Type() {
         return Map.of(
-                Type.SHORT, Opcodes.I2S,
                 Type.LONG, Opcodes.I2L,
                 Type.FLOAT, Opcodes.I2F,
                 Type.DOUBLE, Opcodes.I2D

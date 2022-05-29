@@ -23,7 +23,7 @@ import static guru.nidi.graphviz.model.Factory.mutNode;
  * @author vlad333rrty
  */
 public class CFGDotGraphConstructor {
-    private static final Logger logger = LogManager.getLogger(ASTDotGraphConstructor.class);
+    private static final Logger logger = LogManager.getLogger(CFGDotGraphConstructor.class);
 
     private static Set<Integer> traversedNodes;
 

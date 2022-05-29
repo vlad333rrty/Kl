@@ -12,12 +12,11 @@ import org.objectweb.asm.Type;
 public class Assert {
     private static final Logger logger = LogManager.getLogger(Assert.class);
 
-    public static boolean assertIsValidDeclarationType(Type type, TypeChecker typeChecker) {
+    public static void assertIsValidDeclarationType(Type type, TypeChecker typeChecker) {
         if (type.getSort() == Type.VOID || !typeChecker.hasType(type.getClassName())) {
             logger.error("Wrong declaration type {}", type.getClassName());
-            return false;
+            throw new IllegalArgumentException("Wrong declaration type " + type.getClassName());
         }
-        return true;
     }
 
     public static void assertMultipleVariableDeclarations(String varName, AbstractLocalVariableTable localVariableTable) {

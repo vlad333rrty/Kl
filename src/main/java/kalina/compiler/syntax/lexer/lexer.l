@@ -250,10 +250,6 @@ final		{
                          yylval->ident=yytext;
                          return ARRAY_TYPE_TAG;
                      }
-{SHORT}              {
-                         yylval->ident="short";
-                         return SHORT_TAG;
-                     }
 {INT}                {
                        yylval->ident="int";
                        return INT_TAG;

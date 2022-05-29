@@ -20,7 +20,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class InitInstruction extends Instruction implements WithExpressions, WithLHS {
+public class InitInstruction extends Instruction implements WithExpressions, WithLHS, WithRHS {
     private final LHS lhs;
     private final List<Expression> rhs;
 
@@ -83,11 +83,6 @@ public class InitInstruction extends Instruction implements WithExpressions, Wit
         return lhs.toString() + " = " + PrintUtils.listToString(rhs);
     }
 
-    public InitInstruction withRHS(List<Expression> expressions) {
-        assert this.rhs.size() == expressions.size();
-        return new InitInstruction(lhs, expressions);
-    }
-
     @Override
     public List<Expression> getExpressions() {
         return rhs;
@@ -101,5 +96,10 @@ public class InitInstruction extends Instruction implements WithExpressions, Wit
     @Override
     public List<SSAVariableInfo> getVariableInfos() {
         return lhs.getVars().stream().map(VariableNameAndIndex::getSsaVariableInfo).toList();
+    }
+
+    @Override
+    public List<Expression> getRHS() {
+        return rhs;
     }
 }

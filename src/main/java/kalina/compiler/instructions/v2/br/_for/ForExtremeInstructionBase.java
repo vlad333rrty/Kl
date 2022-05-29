@@ -9,11 +9,12 @@ import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithExpressions;
+import kalina.compiler.instructions.v2.WithRHS;
 
 /**
  * @author vlad333rrty
  */
-public abstract class ForExtremeInstructionBase extends Instruction implements WithExpressions {
+public abstract class ForExtremeInstructionBase extends Instruction implements WithExpressions, WithRHS {
     protected Instruction substituteInstruction(Instruction instruction, List<Expression> expressions) {
         return instruction instanceof WithExpressions withExpressions
                 ? withExpressions.substituteExpressions(expressions)

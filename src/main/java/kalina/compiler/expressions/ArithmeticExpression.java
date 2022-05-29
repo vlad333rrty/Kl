@@ -72,4 +72,8 @@ public class ArithmeticExpression extends Expression implements WithSubstitutabl
         assert this.terms.size() == expressions.size();
         return new ArithmeticExpression(expressions, operations);
     }
+
+    public List<ArithmeticOperation> getOperations() {
+        return operations;
+    }
 }
