@@ -10,6 +10,7 @@ import kalina.compiler.instructions.Instruction;
 import kalina.compiler.utils.PrintUtils;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
@@ -34,6 +35,14 @@ public class ArrayElementAssignInstruction extends AbstractAssignInstruction imp
     public AbstractAssignInstruction withRHS(List<Expression> rhs) {
         assert getRhs().size() == rhs.size();
         return new ArrayElementAssignInstruction(getLhs(), rhs);
+    }
+
+    @Override
+    protected void performCastIfNeeded(MethodVisitor mv, VariableInfo variableInfo, Type expressionType) throws CodeGenException {
+        Type lhsType = variableInfo.getArrayVariableInfoOrElseThrow().getLoweredType();
+        if (!lhsType.equals(expressionType)) {
+            expressionCodeGen.cast(expressionType, lhsType, mv);
+        }
     }
 
     @Override

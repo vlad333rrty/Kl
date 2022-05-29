@@ -9,6 +9,7 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
@@ -30,6 +31,7 @@ public abstract class AbstractAssignInstruction extends Instruction implements W
                 Expression expression = rhs.get(i);
                 visitBeforeRHS(methodVisitor, lhs.get(i));
                 expression.translateToBytecode(methodVisitor);
+                performCastIfNeeded(methodVisitor, lhs.get(i), expression.getType());
             }
             for (int i = lhs.size() - 1; i >= 0; i--) {
                 VariableInfo variableInfo = lhs.get(i);
@@ -53,6 +55,8 @@ public abstract class AbstractAssignInstruction extends Instruction implements W
     protected abstract void visitStore(MethodVisitor mv, VariableInfo variableInfo);
 
     public abstract AbstractAssignInstruction withRHS(List<Expression> rhs);
+
+    protected abstract void performCastIfNeeded(MethodVisitor mv, VariableInfo variableInfo, Type expressionType) throws CodeGenException;
 
     @Override
     public List<Expression> getExpressions() {
