@@ -4,15 +4,14 @@
  * @author vlad333rrty
  */
 public class Main3 {
-    public static void main(String[] args) {
+    private static int x;
+    private int s;
 
+    public static void main(String[] args) {
+        x = 4;
     }
 
-    protected double[] f(int len) {
-        double[] d = new double[len];
-        for (int i=0 ; i<len;i=i+1) {
-            d[i] = i;
-        }
-        return d;
+    public void f() {
+        s = 4;
     }
 }

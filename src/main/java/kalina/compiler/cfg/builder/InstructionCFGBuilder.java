@@ -18,6 +18,7 @@ import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
 import kalina.compiler.cfg.data.AssignArrayVariableInfo;
+import kalina.compiler.cfg.data.GetVariableOrField;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeAndIndex;
@@ -135,6 +136,7 @@ public class InstructionCFGBuilder {
             ASTAssignInstruction assignInstruction,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
+        GetVariableOrField getVariableOrField = new GetVariableOrField(localVariableTable, fieldInfoProvider);
         List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
                 .map(name -> {
                     Optional<TypeAndIndex> variableInfoO = localVariableTable.findVariable(name);

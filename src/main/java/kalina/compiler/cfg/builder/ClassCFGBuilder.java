@@ -68,7 +68,8 @@ public class ClassCFGBuilder {
                     node.getArgs(),
                     Optional.of(node.getReturnType()),
                     node.isStatic(),
-                    root);
+                    root,
+                    node.getAccessModifier());
             result.add(funBasicBlock);
         }
 

@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import kalina.compiler.bb.TypeAndName;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.codegen.CodeGenUtils;
+import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -22,25 +23,29 @@ public class FunBasicBlock {
     private final Optional<Type> returnType;
     private final boolean isStatic;
     private final AbstractCFGNode cfgRoot;
+    private final ClassEntryUtils.AccessModifier accessModifier;
 
     public FunBasicBlock(
             String name,
             List<TypeAndName> arguments,
             Optional<Type> returnType,
             boolean isStatic,
-            AbstractCFGNode cfgRoot)
+            AbstractCFGNode cfgRoot,
+            ClassEntryUtils.AccessModifier accessModifier)
     {
         this.name = name;
         this.arguments = arguments;
         this.returnType = returnType;
         this.isStatic = isStatic;
         this.cfgRoot = cfgRoot;
+        this.accessModifier = accessModifier;
     }
 
     public MethodVisitor getMethodVisitor(ClassWriter cw) {
         String descriptor = CodeGenUtils
                 .buildDescriptor(arguments.stream().map(TypeAndName::getType).collect(Collectors.toList()), returnType);
-        int access = isStatic ? Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC : Opcodes.ACC_PUBLIC; // all functions are public
+        int accessModifierOpcode = getAccessModifierOpcode();
+        int access = isStatic ? accessModifierOpcode | Opcodes.ACC_STATIC : accessModifierOpcode;
         MethodVisitor mv = cw.visitMethod(access, name, descriptor, null, null);
         int i = isStatic ? 0 : 1;
         mv.visitCode();
@@ -52,5 +57,13 @@ public class FunBasicBlock {
 
     public AbstractCFGNode getCfgRoot() {
         return cfgRoot;
+    }
+
+    private int getAccessModifierOpcode() {
+        return switch (accessModifier) {
+            case PUBLIC -> Opcodes.ACC_PUBLIC;
+            case PROTECTED -> Opcodes.ACC_PROTECTED;
+            case PRIVATE -> Opcodes.ACC_PRIVATE;
+        };
     }
 }
