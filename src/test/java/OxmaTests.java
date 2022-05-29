@@ -1,3 +1,4 @@
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -32,5 +33,10 @@ public class OxmaTests extends OxmaTestBase {
     @Test
     public void testLinearSort() {
         runTestAndLogResult("linear_sort.ox");
+    }
+
+    @Test
+    public void testPrivateMemberAccessThrowsException() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> runTestWithoutLogging("private_member_test.ox"));
     }
 }

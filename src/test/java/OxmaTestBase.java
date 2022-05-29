@@ -7,6 +7,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 
 import kalina.compiler.OxmaCompiler;
+import kalina.compiler.cfg.exceptions.CFGConversionException;
+import kalina.compiler.cfg.validator.IncompatibleTypesException;
+import kalina.compiler.codegen.CodeGenException;
+import kalina.compiler.syntax.parser2.ParseException;
 import kalina.compiler.utils.FileUtils;
 import org.junit.jupiter.api.Assertions;
 
@@ -74,7 +78,9 @@ abstract class OxmaTestBase {
             if (isLoggingEnabled) {
                 compareResults(sampleFile, resultFile);
             }
-        } catch (Exception e) {
+        } catch (CodeGenException | CFGConversionException | IncompatibleTypesException
+                | IOException | InterruptedException | TimeoutException | ParseException e)
+        {
             throw new RuntimeException(e);
         }
     }

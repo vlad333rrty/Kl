@@ -3,6 +3,7 @@ package kalina.compiler.cfg.data;
 import java.util.List;
 
 import kalina.compiler.bb.TypeAndName;
+import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
 import org.objectweb.asm.Type;
 
 /**
@@ -13,6 +14,7 @@ public record OxmaFunctionInfo(
         Type returnType,
         String ownerClassName,
         boolean isClosure,
-        boolean isStatic)
+        boolean isStatic,
+        ClassEntryUtils.AccessModifier accessModifier)
 {
 }

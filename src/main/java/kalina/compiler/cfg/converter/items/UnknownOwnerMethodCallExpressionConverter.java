@@ -12,6 +12,7 @@ import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.funCall.FunCallExpression;
+import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
@@ -41,7 +42,12 @@ public class UnknownOwnerMethodCallExpressionConverter {
             logger.error("No declaration found for method {}", funName);
             throw new IllegalArgumentException();
         }
+        OxmaFunctionInfo functionInfo = functionInfoO.get();
+        if (functionInfo.accessModifier() == ClassEntryUtils.AccessModifier.PRIVATE) {
+            throw new IllegalArgumentException("Cannot access private member " + funName
+                    + " of the class " + ownerType.getClassName());
+        }
 
-        return new FunCallExpression(funName, arguments, functionInfoO.get(), Optional.empty());
+        return new FunCallExpression(funName, arguments, functionInfo, Optional.empty());
     }
 }

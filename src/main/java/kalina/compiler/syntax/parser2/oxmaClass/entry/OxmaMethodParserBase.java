@@ -81,7 +81,7 @@ public abstract class OxmaMethodParserBase extends OxmaParserBase {
         } else {
             returnType = Type.VOID_TYPE;
         }
-        OxmaFunctionInfo functionInfo = new OxmaFunctionInfo(args, returnType, ownerClassName,false, isStatic);
+        OxmaFunctionInfo functionInfo = new OxmaFunctionInfo(args, returnType, ownerClassName,false, isStatic, accessModifier);
         functionTable.addFunction(name, functionInfo);
 
         ASTMethodNode methodNode = new ASTMethodNode(name, args, returnType, isStatic, accessModifier, modifiers);
