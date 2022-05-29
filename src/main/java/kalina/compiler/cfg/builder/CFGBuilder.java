@@ -12,6 +12,7 @@ import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTFieldNode;
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.v2.ClassBasicBlock;
+import kalina.compiler.bb.v2.FieldBasicBlock;
 import kalina.compiler.bb.v2.FunBasicBlock;
 import kalina.compiler.cfg.data.GetFieldInfoProvider;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
@@ -41,19 +42,22 @@ public class CFGBuilder {
         ILocalVariableTableFactory localVariableTableFactory = new LocalVariableTableFactory();
         GetFunctionInfoProvider getFunctionInfoProvider = createGetFunctionInfoProvider(root);
         GetFieldInfoProvider fieldInfoProvider = createFieldInfoProvider(root);
-        ClassCFGBuilder classCFGBuilder = new ClassCFGBuilder(
+        MethodCFGBuilder methodCFGBuilder = new MethodCFGBuilder(
                 localVariableTableFactory,
                 new TypeChecker(typeDictionary),
                 getFunctionInfoProvider,
                 fieldInfoProvider
         );
+        FieldCFGBuilder fieldCFGBuilder = new FieldCFGBuilder();
 
         List<ClassBasicBlock> classBasicBlocks = new ArrayList<>();
         for (ASTClassNode classNode : root.getClassNodes()) {
-            List<FunBasicBlock> funBasicBlocks = classCFGBuilder.traverse(classNode);
+            List<FieldBasicBlock> fieldBasicBlocks = fieldCFGBuilder.build(classNode);
+            List<FunBasicBlock> funBasicBlocks = methodCFGBuilder.build(classNode);
             ClassBasicBlock classBasicBlock = new ClassBasicBlock(
                     new DefaultConstructorInstruction(classNode.getClassName(), classNode.getParentClassName()),
-                    funBasicBlocks
+                    funBasicBlocks,
+                    fieldBasicBlocks
             );
             classBasicBlocks.add(classBasicBlock);
         }
@@ -72,7 +76,7 @@ public class CFGBuilder {
     private Function<String, Optional<OxmaFieldInfo>> getNameToFiledInfo(List<ASTFieldNode> fieldNodes, String ownerName) {
         Map<String, OxmaFieldInfo> infoMap = fieldNodes.stream().collect(Collectors.toMap(
                 ASTFieldNode::getName,
-                a -> new OxmaFieldInfo(a.getType(), a.getAccessModifier(), a.getModifiers(), ownerName)
+                a -> new OxmaFieldInfo(a.getType(), a.getAccessModifier(), a.getModifiers(), ownerName, a.getName())
         ));
         return name -> Optional.ofNullable(infoMap.get(name));
     }

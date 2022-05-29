@@ -14,6 +14,7 @@ import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTInitInstruction;
 import kalina.compiler.ast.expression.ASTReturnInstruction;
 import kalina.compiler.ast.expression.array.ASTArrayAssignInstruction;
+import kalina.compiler.ast.expression.array.ASTArrayLHS;
 import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
@@ -33,22 +34,20 @@ import kalina.compiler.expressions.v2.ClassPropertyCallExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
-import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.AbstractAssignInstruction;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.AssignInstruction;
 import kalina.compiler.instructions.v2.ClassPropertyCallChainInstruction;
+import kalina.compiler.instructions.v2.assign.FieldArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.FieldAssignInstruction;
 import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
  */
 public class InstructionCFGBuilder {
-    private static final Logger logger = LogManager.getLogger(MethodEntryCFGBuilder.class);
-
     private final AbstractExpressionConverter expressionConverter;
     private final TypeChecker typeChecker;
     private final Type returnType;
@@ -122,76 +121,181 @@ public class InstructionCFGBuilder {
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
         final AbstractAssignInstruction instruction;
+        var getVariableOrField  = new GetVariableOrField(localVariableTable, fieldInfoProvider);
         if (abstractAssignInstruction instanceof ASTAssignInstruction assignInstruction) {
-            instruction = constructAssignInstruction(assignInstruction, localVariableTable);
+            instruction = constructAssignInstruction(assignInstruction, getVariableOrField, localVariableTable);
         } else if (abstractAssignInstruction instanceof ASTArrayAssignInstruction assignInstruction) {
-            instruction = constructArrayAssignInstruction(assignInstruction, localVariableTable);
+            instruction = constructArrayAssignInstruction(assignInstruction, getVariableOrField, localVariableTable);
         } else {
             throw new IllegalArgumentException("Unexpected type " + abstractAssignInstruction);
         }
         return instruction;
     }
 
-    private AssignInstruction constructAssignInstruction(
+    private AbstractAssignInstruction constructAssignInstruction(
             ASTAssignInstruction assignInstruction,
+            GetVariableOrField getVariableOrField,
             AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
     {
-        GetVariableOrField getVariableOrField = new GetVariableOrField(localVariableTable, fieldInfoProvider);
-        List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
-                .map(name -> {
-                    Optional<TypeAndIndex> variableInfoO = localVariableTable.findVariable(name);
-                    if (variableInfoO.isEmpty()) {
-                        logger.error("No info found for variable {}", name);
-                        throw new IllegalArgumentException("Undeclared variable " + name);
-                    }
-                    TypeAndIndex variableInfo = variableInfoO.get();
-                    return new VariableInfo(name, variableInfo.getIndex(), variableInfo.getType());
-                })
+        List<GetVariableOrField.VariableOrFieldInfo> variableOrFieldInfos = assignInstruction.getLHS().stream()
+                .map(getVariableOrField::getVariableOrFieldInfoOrElseThrow)
                 .toList();
+        final AbstractAssignInstruction instruction;
+        if (variableOrFieldInfos.stream().allMatch(x -> x.fieldInfo.isPresent())) {
+            instruction = constructFieldAssignInstruction(
+                    assignInstruction,
+                    variableOrFieldInfos.stream()
+                            .map(x -> x.fieldInfo.get())
+                            .toList(),
+                    localVariableTable);
+        } else if (variableOrFieldInfos.stream().allMatch(x -> x.typeAndIndex.isPresent())) {
+            instruction = constructVariableAssignInstruction(
+                    assignInstruction,
+                    localVariableTable
+            );
+        } else {
+            throw new IllegalArgumentException("Variable and field assigns should be places");
+        }
 
-        AssignInstruction instruction = new AssignInstruction(
-                variableInfos,
-                assignInstruction.getRHS().stream()
-                        .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
-                        .toList()
-        );
         ExpressionValidator.validateAssignExpression(instruction);
         return instruction;
     }
 
-    private ArrayElementAssignInstruction constructArrayAssignInstruction(
-            ASTArrayAssignInstruction assignInstruction,
-            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
+    private AbstractAssignInstruction constructVariableAssignInstruction(
+            ASTAssignInstruction assignInstruction,
+            AbstractLocalVariableTable localVariableTable)
     {
         List<VariableInfo> variableInfos = assignInstruction.getLHS().stream()
-                .map(lhs -> {
-                    Optional<TypeAndIndex> variableInfoO = localVariableTable.findVariable(lhs.name());
-                    if (variableInfoO.isEmpty()) {
-                        logger.error("No info found for variable {}", lhs.name());
-                        throw new IllegalArgumentException();
-                    }
-                    TypeAndIndex variableInfo = variableInfoO.get();
-                    Assert.isArray(variableInfo.getType());
-                    AssignArrayVariableInfo arrayVariableInfo = new AssignArrayVariableInfo(
-                            lhs.indices().stream().map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider)).toList(),
-                            CFGUtils.getArrayElementType(variableInfo.getType()),
-                            CFGUtils.lowArrayDimension(variableInfo.getType(), lhs.indices().size()));
-                    return new VariableInfo(
-                            lhs.name(),
-                            variableInfo.getIndex(),
-                            variableInfo.getType(),
-                            arrayVariableInfo);
+                .map(name -> {
+                    TypeAndIndex variableInfo = localVariableTable.findVariableOrElseThrow(name);
+                    return new VariableInfo(name, variableInfo.getIndex(), variableInfo.getType());
                 })
                 .toList();
 
-        ArrayElementAssignInstruction instruction = new ArrayElementAssignInstruction(
+        return new AssignInstruction(
                 variableInfos,
                 assignInstruction.getRHS().stream()
                         .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
                         .toList()
         );
+    }
+
+    private AbstractAssignInstruction constructFieldAssignInstruction(
+            ASTAssignInstruction assignInstruction,
+            List<OxmaFieldInfo> oxmaFieldInfos,
+            AbstractLocalVariableTable localVariableTable)
+    {
+        List<VariableInfo> variableInfos = oxmaFieldInfos.stream()
+                .map(fieldInfo -> {
+                    if (fieldInfo.isFinal()) {
+                        throw new IllegalArgumentException("Cannot assign to final field " + fieldInfo.fieldName());
+                    }
+                    return new VariableInfo(
+                            fieldInfo.fieldName(),
+                            fieldInfo.type(),
+                            fieldInfo
+                    );
+                })
+                .toList();
+
+        return new FieldAssignInstruction(
+                variableInfos,
+                assignInstruction.getRHS().stream()
+                        .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
+                        .toList()
+        );
+    }
+
+    private AbstractAssignInstruction constructArrayAssignInstruction(
+            ASTArrayAssignInstruction assignInstruction,
+            GetVariableOrField getVariableOrField,
+            AbstractLocalVariableTable localVariableTable) throws IncompatibleTypesException
+    {
+        List<GetVariableOrField.VariableOrFieldInfo> variableOrFieldInfos = assignInstruction.getLHS().stream()
+                .map(lhs -> getVariableOrField.getVariableOrFieldInfoOrElseThrow(lhs.name()))
+                .toList();
+        final AbstractAssignInstruction instruction;
+        if (variableOrFieldInfos.stream().allMatch(x -> x.fieldInfo.isPresent())) {
+            instruction = constructFieldArrayAssign(
+                    assignInstruction,
+                    variableOrFieldInfos.stream().map(x -> x.fieldInfo.get()).toList(),
+                    localVariableTable);
+        } else if (variableOrFieldInfos.stream().allMatch(x -> x.typeAndIndex.isPresent())) {
+            instruction = constructVariableArrayAssign(
+                    assignInstruction,
+                    variableOrFieldInfos.stream().map(x -> x.typeAndIndex.get()).toList(),
+                    localVariableTable);
+        } else {
+            throw new IllegalArgumentException("Variable and field assigns should be places");
+        }
         ExpressionValidator.validateAssignExpression(instruction);
         return instruction;
+    }
+
+    private AbstractAssignInstruction constructVariableArrayAssign(
+            ASTArrayAssignInstruction assignInstruction,
+            List<TypeAndIndex> typeAndIndices,
+            AbstractLocalVariableTable localVariableTable)
+    {
+        List<VariableInfo> variableInfos = IntStream.range(0, assignInstruction.getLHS().size()).mapToObj(i -> {
+            ASTArrayLHS lhs = assignInstruction.getLHS().get(i);
+            TypeAndIndex typeAndIndex = typeAndIndices.get(i);
+            Assert.isArray(typeAndIndex.getType());
+            AssignArrayVariableInfo arrayVariableInfo = getAssignArrayVariableInfo(
+                    lhs,
+                    typeAndIndex.getType(),
+                    localVariableTable
+            );
+            return new VariableInfo(
+                    lhs.name(),
+                    typeAndIndex.getIndex(),
+                    typeAndIndex.getType(),
+                    arrayVariableInfo);
+        }).toList();
+
+        return new ArrayElementAssignInstruction(
+                variableInfos,
+                assignInstruction.getRHS().stream()
+                        .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
+                        .toList()
+        );
+    }
+
+    private AbstractAssignInstruction constructFieldArrayAssign(
+            ASTArrayAssignInstruction assignInstruction,
+            List<OxmaFieldInfo> oxmaFieldInfos,
+            AbstractLocalVariableTable localVariableTable)
+    {
+        List<VariableInfo> variableInfos = IntStream.range(0, assignInstruction.getLHS().size()).mapToObj(i -> {
+            ASTArrayLHS lhs = assignInstruction.getLHS().get(i);
+            OxmaFieldInfo fieldInfo = oxmaFieldInfos.get(i);
+            if (fieldInfo.isFinal()) {
+                throw new IllegalArgumentException("Cannot assign to final field " + lhs.name());
+            }
+            Assert.isArray(fieldInfo.type());
+            AssignArrayVariableInfo arrayVariableInfo = getAssignArrayVariableInfo(
+                    lhs,
+                    fieldInfo.type(),
+                    localVariableTable
+            );
+            return new VariableInfo(fieldInfo.fieldName(), fieldInfo.type(), arrayVariableInfo, fieldInfo);
+        }).toList();
+
+        return new FieldArrayElementAssignInstruction(
+                variableInfos,
+                assignInstruction.getRHS().stream()
+                        .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
+                        .toList()
+        );
+    }
+
+    private AssignArrayVariableInfo getAssignArrayVariableInfo(ASTArrayLHS lhs, Type type, AbstractLocalVariableTable localVariableTable) {
+        return new AssignArrayVariableInfo(
+                lhs.indices().stream()
+                        .map(expr -> expressionConverter.convert(expr, localVariableTable, functionInfoProvider, fieldInfoProvider))
+                        .toList(),
+                CFGUtils.getArrayElementType(type),
+                CFGUtils.lowArrayDimension(type, lhs.indices().size()));
     }
 
     private InitInstruction constructInitInstruction(

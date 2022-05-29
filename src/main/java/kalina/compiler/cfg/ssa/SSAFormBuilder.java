@@ -30,12 +30,14 @@ import kalina.compiler.expressions.Term;
 import kalina.compiler.expressions.VariableExpression;
 import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
 import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
+import kalina.compiler.expressions.v2.array.FieldArrayGetElementExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssign;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.fake.PhiArgumentExpression;
 import kalina.compiler.instructions.v2.fake.PhiFunInstruction;
 
@@ -153,6 +155,15 @@ public class SSAFormBuilder {
                                 info.getSsaVariableInfo().setCfgIndex(i);
                             });
                 }
+                if (instruction instanceof ArrayElementAssign arrayElementAssign) {
+                    arrayElementAssign.getAssignArrayVariableInfo()
+                            .forEach(arrayVariableInfo -> {
+                                List<Expression> substitutedIndices = arrayVariableInfo.getIndices().stream()
+                                        .map(index -> substituteExpression(index, varName))
+                                        .toList();
+                                arrayVariableInfo.setIndices(substitutedIndices);
+                            });
+                }
             }
             node.getBasicBlock().setInstructions(instructions);
             int nextVersion = stack.peek();
@@ -209,7 +220,7 @@ public class SSAFormBuilder {
                         .map(x -> substituteExpression(x, varName))
                         .toList();
                 String name = arrayGetElementExpression.getName();
-                if (!name.equals(varName)) {
+                if (name.equals(varName)) {
                     int version = varInfoToVersionStack.get(name).peek();
                     return arrayGetElementExpression.withCfgIndex(version).substituteExpressions(indices);
                 }
@@ -219,6 +230,11 @@ public class SSAFormBuilder {
                         .map(x -> substituteExpression(x, varName))
                         .toList();
                 return arrayWithCapacityCreationExpression.substituteExpressions(capacities);
+            } else if (expression instanceof FieldArrayGetElementExpression fieldArrayGetElementExpression) {
+                List<Expression> indices = fieldArrayGetElementExpression.getIndices().stream()
+                        .map(x -> substituteExpression(x, varName))
+                        .toList();
+                return fieldArrayGetElementExpression.substituteExpressions(indices);
             }
 
             return expression;

@@ -30,6 +30,9 @@ public class CodeGenerationManager {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         classBasicBlock.getInstruction().translateToBytecode(Optional.empty(), Optional.of(cw));
 
+        for (var field : classBasicBlock.getFieldBasicBlocks()) {
+            cfgByteCodeTranslator.translateFieldInitsToByteCode(field, cw);
+        }
         for (var fun : classBasicBlock.getEntry()) {
             MethodVisitor mv = fun.getMethodVisitor(cw);
             cfgByteCodeTranslator.translateCFGToByteCode(fun.getCfgRoot(), mv);

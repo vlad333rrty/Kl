@@ -2,6 +2,7 @@ package kalina.compiler.cfg.optimizations.dce;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.stream.Collectors;
 import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.cfg.data.AssignArrayVariableInfo;
 import kalina.compiler.cfg.data.WithIR;
 import kalina.compiler.cfg.optimizations.DuUdNet;
 import kalina.compiler.cfg.optimizations.DuUdNetBuilder;
@@ -20,13 +22,16 @@ import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.instructions.FunEndInstruction;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
-import kalina.compiler.instructions.v2.AssignInstruction;
 import kalina.compiler.instructions.v2.ClassPropertyCallChainInstruction;
 import kalina.compiler.instructions.v2.FunCallInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssign;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.FieldArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.FieldAssignInstruction;
 import kalina.compiler.instructions.v2.br.DoBlockBeginInstruction;
 import kalina.compiler.instructions.v2.br.DoBlockEndInstruction;
 import kalina.compiler.instructions.v2.br.IfCondInstruction;
@@ -54,7 +59,8 @@ public class DeadCodeEliminator {
                         FunCallInstruction.class, FunEndInstruction.class, IfCondInstruction.class,
                         IfThenEndInstruction.class, IfElseEndInstruction.class, DoBlockBeginInstruction.class,
                         DoBlockEndInstruction.class, ForCondInstruction.class, ForEntryEndInstruction.class,
-                        ArrayElementAssignInstruction.class, ClassPropertyCallChainInstruction.class
+                        ArrayElementAssignInstruction.class, ClassPropertyCallChainInstruction.class,
+                        FieldAssignInstruction.class, FieldArrayElementAssignInstruction.class
                 )
         );
         List<DuUdNet.InstructionCoordinates> essentialInstructions = essentialInstructionsFinder
@@ -102,6 +108,12 @@ public class DeadCodeEliminator {
             if (instruction instanceof ArrayElementAssignInstruction arrayElementAssignInstruction) {
                 arrayElementAssignInstruction.getLhs().stream()
                         .map(ArrayElementAssignExpression::new)
+                        .forEach(expression -> checkDefinitionsForUse(expression, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
+            }
+            if (instruction instanceof ArrayElementAssign arrayElementAssign) {
+                arrayElementAssign.getAssignArrayVariableInfo().stream()
+                        .map(AssignArrayVariableInfo::getIndices)
+                        .flatMap(Collection::stream)
                         .forEach(expression -> checkDefinitionsForUse(expression, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
             }
         }

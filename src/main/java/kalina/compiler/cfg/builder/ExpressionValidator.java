@@ -7,9 +7,11 @@ import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.cfg.validator.TypesComparator;
 import kalina.compiler.cfg.validator.Validator;
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.instructions.v2.AbstractAssignInstruction;
-import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
-import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.AbstractAssignInstruction;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.FieldArrayElementAssignInstruction;
+import kalina.compiler.instructions.v2.assign.FieldAssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.cfg.data.VariableInfo;
 import org.objectweb.asm.Type;
@@ -29,9 +31,9 @@ public final class ExpressionValidator {
     public static void validateAssignExpression(AbstractAssignInstruction assignInstruction) throws IncompatibleTypesException {
         List<VariableInfo> lhs = assignInstruction.getLhs();
         List<Expression> rhs = assignInstruction.getRhs();
-        if (assignInstruction instanceof AssignInstruction) {
+        if (assignInstruction instanceof AssignInstruction || assignInstruction instanceof FieldAssignInstruction) {
             validateAssignExpression(lhs, rhs);
-        } else if (assignInstruction instanceof ArrayElementAssignInstruction) {
+        } else if (assignInstruction instanceof ArrayElementAssignInstruction || assignInstruction instanceof FieldArrayElementAssignInstruction) {
             validateArrayAssignExpression(lhs, rhs);
         } else {
             throw new IllegalArgumentException("Unexpected expression " + assignInstruction);

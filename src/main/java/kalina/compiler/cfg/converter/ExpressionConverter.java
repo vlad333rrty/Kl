@@ -2,7 +2,6 @@ package kalina.compiler.cfg.converter;
 
 import kalina.compiler.cfg.data.GetFieldInfoProvider;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
-import kalina.compiler.cfg.data.OxmaFunctionInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,7 +16,7 @@ public class ExpressionConverter extends AbstractExpressionConverter {
     }
 
     @Override
-    protected void validateStaticContext(OxmaFunctionInfo functionInfo, String funName) {
+    protected void validateStaticContext(boolean isStatic, String memberName) {
         // do nothing
     }
 }

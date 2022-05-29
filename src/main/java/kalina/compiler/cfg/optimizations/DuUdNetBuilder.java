@@ -2,6 +2,7 @@ package kalina.compiler.cfg.optimizations;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,14 +12,16 @@ import java.util.stream.Collectors;
 
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
+import kalina.compiler.cfg.data.AssignArrayVariableInfo;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.ArrayElementAssignInstruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssign;
+import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
 
 /**
  * @author vlad333rrty
@@ -74,6 +77,12 @@ public class DuUdNetBuilder {
             if (instruction instanceof ArrayElementAssignInstruction arrayElementAssignInstruction) {
                 arrayElementAssignInstruction.getLhs().stream()
                         .map(ArrayElementAssignExpression::new)
+                        .forEach(x -> duUdChainEnricher.putForExpression(x, du));
+            }
+            if (instruction instanceof ArrayElementAssign arrayElementAssign) {
+                arrayElementAssign.getAssignArrayVariableInfo().stream()
+                        .map(AssignArrayVariableInfo::getIndices)
+                        .flatMap(Collection::stream)
                         .forEach(x -> duUdChainEnricher.putForExpression(x, du));
             }
         }

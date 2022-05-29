@@ -34,11 +34,23 @@ public class FieldAccessExpression extends Expression {
     @Override
     public void translateToBytecode(MethodVisitor mv) throws CodeGenException {
         int opcode = isStatic ? Opcodes.GETSTATIC : Opcodes.GETFIELD;
+        if (!isStatic) {
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+        }
         mv.visitFieldInsn(opcode, ownerClassName, fieldName, type.getDescriptor());
     }
 
     @Override
     public Type getType() {
         return type;
+    }
+
+    public boolean isStatic() {
+        return isStatic;
+    }
+
+    @Override
+    public String toString() {
+        return fieldName;
     }
 }

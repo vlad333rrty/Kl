@@ -2,12 +2,14 @@ package kalina.compiler.codegen.v2;
 
 import java.util.Optional;
 
+import kalina.compiler.bb.v2.FieldBasicBlock;
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.builder.nodes.CFGNode;
 import kalina.compiler.cfg.builder.nodes.CFGNodeWithBranch;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.instructions.Instruction;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 
 /**
@@ -32,5 +34,9 @@ public class CFGByteCodeTranslator {
         } else {
             throw new IllegalArgumentException("Unexpected cfg node: " + root);
         }
+    }
+
+    public void translateFieldInitsToByteCode(FieldBasicBlock fieldBasicBlock, ClassWriter cw) throws CodeGenException {
+        fieldBasicBlock.getFieldInitInstruction().translateToBytecode(Optional.empty(), Optional.of(cw));
     }
 }

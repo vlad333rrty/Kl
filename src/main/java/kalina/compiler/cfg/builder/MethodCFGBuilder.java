@@ -23,21 +23,17 @@ import kalina.compiler.cfg.data.OxmaFunctionInfoProvider;
 import kalina.compiler.cfg.data.TypeChecker;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
-public class ClassCFGBuilder {
-    private static final Logger logger = LogManager.getLogger(ClassCFGBuilder.class);
-
+public class MethodCFGBuilder {
     private final ILocalVariableTableFactory localVariableTableFactory;
     private final TypeChecker typeChecker;
     private final GetFunctionInfoProvider getFunctionInfoProvider;
     private final GetFieldInfoProvider getFieldInfoProvider;
 
-    public ClassCFGBuilder(
+    public MethodCFGBuilder(
             ILocalVariableTableFactory localVariableTableFactory,
             TypeChecker typeChecker,
             GetFunctionInfoProvider getFunctionInfoProvider,
@@ -49,7 +45,7 @@ public class ClassCFGBuilder {
         this.getFieldInfoProvider = getFieldInfoProvider;
     }
 
-    public List<FunBasicBlock> traverse(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
+    public List<FunBasicBlock> build(ASTClassNode classNode) throws CFGConversionException, IncompatibleTypesException {
         List<FunBasicBlock> result = new ArrayList<>();
         OxmaFunctionInfoProvider functionInfoProvider = getFunctionInfoProvider.getFunctionTable(classNode.getClassName()).orElseThrow();
         for (ASTMethodNode node : classNode.getMethodNodes()) {

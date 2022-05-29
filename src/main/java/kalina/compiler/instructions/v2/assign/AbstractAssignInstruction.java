@@ -1,4 +1,4 @@
-package kalina.compiler.instructions.v2;
+package kalina.compiler.instructions.v2.assign;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,6 +7,8 @@ import kalina.compiler.cfg.data.VariableInfo;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
+import kalina.compiler.instructions.v2.WithExpressions;
+import kalina.compiler.instructions.v2.WithRHS;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Type;

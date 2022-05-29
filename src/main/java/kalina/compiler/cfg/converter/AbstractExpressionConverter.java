@@ -100,7 +100,11 @@ public abstract class AbstractExpressionConverter {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
         }
         if (astExpression instanceof ASTVariableExpression variableExpression) {
-            return VariableOrFieldExpressionConverter.convert(getVariableOrField, variableExpression);
+            Expression expression = VariableOrFieldExpressionConverter.convert(getVariableOrField, variableExpression);
+            if (expression instanceof FieldAccessExpression fieldAccessExpression) {
+                validateStaticContext(fieldAccessExpression.isStatic(), variableExpression.name());
+            }
+            return expression;
         }
         if (astExpression instanceof ASTFactor factor) {
             Expression expression = convert(factor.expression(), getVariableOrField, functionInfoProvider, fieldInfoProvider);
@@ -127,7 +131,7 @@ public abstract class AbstractExpressionConverter {
                 return tryToFindStdFun(funName, arguments);
             }
             OxmaFunctionInfo functionInfo = functionInfoO.get();
-            validateStaticContext(functionInfo, funName);
+            validateStaticContext(functionInfo.isStatic(), funName);
             return new FunCallExpression(funName, arguments, functionInfo, functionInfo.isStatic() ? Optional.empty() : Optional.of(new ThisExpression()));
         }
         if (astExpression instanceof ASTObjectCreationExpression objectCreationExpression) {
@@ -295,5 +299,5 @@ public abstract class AbstractExpressionConverter {
         return new CondExpression(expressions, condExpression.operations());
     }
 
-    protected abstract void validateStaticContext(OxmaFunctionInfo functionInfo, String funName);
+    protected abstract void validateStaticContext(boolean isStatic, String memberName);
 }

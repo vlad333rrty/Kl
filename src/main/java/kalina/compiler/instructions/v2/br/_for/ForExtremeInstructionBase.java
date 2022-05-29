@@ -6,7 +6,7 @@ import java.util.Optional;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithRHS;

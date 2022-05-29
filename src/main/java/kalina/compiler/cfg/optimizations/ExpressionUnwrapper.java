@@ -13,16 +13,13 @@ import kalina.compiler.expressions.v2.ArrayElementAssignExpression;
 import kalina.compiler.expressions.v2.ClassPropertyCallExpression;
 import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
 import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
+import kalina.compiler.expressions.v2.array.FieldArrayGetElementExpression;
 import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 public class ExpressionUnwrapper {
-    private static final Logger logger = LogManager.getLogger(ExpressionUnwrapper.class);
-
     public static void unwrapExpression(Expression expression, Consumer<WithIR> expressionConsumer) {
         if (expression instanceof VariableExpression variableExpression) {
             expressionConsumer.accept(variableExpression.getSsaVariableInfo());
@@ -46,9 +43,8 @@ public class ExpressionUnwrapper {
         } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
             arrayWithCapacityCreationExpression.getCapacities().
                     forEach(x -> unwrapExpression(x, expressionConsumer));
-        }
-        else {
-            logger.warn("No suitable expression found for further unwrapping {}", expression);
+        } else if (expression instanceof FieldArrayGetElementExpression fieldArrayGetElementExpression) {
+            fieldArrayGetElementExpression.getIndices().forEach(x -> unwrapExpression(x, expressionConsumer));
         }
     }
 }

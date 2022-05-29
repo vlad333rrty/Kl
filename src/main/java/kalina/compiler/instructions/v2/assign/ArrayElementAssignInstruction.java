@@ -1,7 +1,8 @@
-package kalina.compiler.instructions.v2;
+package kalina.compiler.instructions.v2.assign;
 
 import java.util.List;
 
+import kalina.compiler.cfg.data.AssignArrayVariableInfo;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.v2.array.AbstractArrayExpression;
@@ -15,14 +16,14 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class ArrayElementAssignInstruction extends AbstractAssignInstruction implements AbstractArrayExpression {
+public class ArrayElementAssignInstruction extends AbstractAssignInstruction implements AbstractArrayExpression, ArrayElementAssign {
     public ArrayElementAssignInstruction(List<VariableInfo> lhs, List<Expression> rhs) {
         super(lhs, rhs);
     }
 
     @Override
     protected void visitBeforeRHS(MethodVisitor mv, VariableInfo variableInfo) throws CodeGenException {
-        expressionCodeGen.loadVariable(mv, variableInfo.getType().getOpcode(Opcodes.ILOAD), variableInfo.getIndex());
+        expressionCodeGen.loadVariable(mv, variableInfo.getType().getOpcode(Opcodes.ILOAD), variableInfo.getIndexOrElseThrow());
         translateElementsAccess(mv, variableInfo.getArrayVariableInfoOrElseThrow().getIndices());
     }
 
@@ -47,12 +48,27 @@ public class ArrayElementAssignInstruction extends AbstractAssignInstruction imp
 
     @Override
     public String toString() {
-        return PrintUtils.listToString(getLhs()) + " = " + PrintUtils.listToString(getRhs());
+        StringBuilder builder = new StringBuilder();
+        List<VariableInfo> lhs = getLhs();
+        for (VariableInfo variableInfo : lhs) {
+            AssignArrayVariableInfo arrayVariableInfo = variableInfo.getArrayVariableInfoOrElseThrow();
+            builder.append(variableInfo.getIR());
+            for (Expression e : arrayVariableInfo.getIndices()) {
+                builder.append("[").append(e).append("]");
+            }
+            builder.append(",");
+        }
+        return builder + " = " + PrintUtils.listToString(getRhs());
     }
 
     @Override
     public Instruction substituteExpressions(List<Expression> expressions) {
         assert getRhs().size() == expressions.size();
         return new ArrayElementAssignInstruction(getLhs(), expressions);
+    }
+
+    @Override
+    public List<AssignArrayVariableInfo> getAssignArrayVariableInfo() {
+        return getLhs().stream().map(VariableInfo::getArrayVariableInfoOrElseThrow).toList();
     }
 }

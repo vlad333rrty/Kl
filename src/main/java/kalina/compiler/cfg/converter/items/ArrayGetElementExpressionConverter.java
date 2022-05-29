@@ -10,7 +10,7 @@ import kalina.compiler.cfg.data.TypeAndIndex;
 import kalina.compiler.expressions.Expression;
 import kalina.compiler.expressions.VariableExpression;
 import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
-import kalina.compiler.expressions.v2.field.FieldAccessExpression;
+import kalina.compiler.expressions.v2.array.FieldArrayGetElementExpression;
 import org.objectweb.asm.Type;
 
 /**
@@ -40,13 +40,10 @@ public class ArrayGetElementExpressionConverter {
         } else {
             OxmaFieldInfo fieldInfo = variableInfo.fieldInfo.get();
             Type type = fieldInfo.type();
-            return new ArrayGetElementExpression(
+            return new FieldArrayGetElementExpression(
+                    fieldInfo,
                     convertedIndices,
-                    CFGUtils.getArrayElementType(type),
-                    CFGUtils.lowArrayDimension(type, getElementExpression.getIndices().size()),
-                    type,
-                    FieldAccessExpression.fromFieldInfoAndName(fieldInfo, name),
-                    name
+                    CFGUtils.lowArrayDimension(type, getElementExpression.getIndices().size())
             );
         }
     }

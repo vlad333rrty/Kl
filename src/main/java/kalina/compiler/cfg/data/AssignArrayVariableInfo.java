@@ -9,7 +9,7 @@ import org.objectweb.asm.Type;
  * @author vlad333rrty
  */
 public class AssignArrayVariableInfo {
-    private final List<Expression> indices;
+    private List<Expression> indices;
     private final Type elementType;
     private final Type loweredType;
 
@@ -29,5 +29,9 @@ public class AssignArrayVariableInfo {
 
     public Type getLoweredType() {
         return loweredType;
+    }
+
+    public void setIndices(List<Expression> indices) {
+        this.indices = indices;
     }
 }

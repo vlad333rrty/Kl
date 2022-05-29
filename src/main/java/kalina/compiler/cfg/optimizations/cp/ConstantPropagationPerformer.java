@@ -19,7 +19,7 @@ import kalina.compiler.cfg.optimizations.ConstantExpressionDetector;
 import kalina.compiler.cfg.optimizations.DuUdNet;
 import kalina.compiler.cfg.optimizations.DuUdNetBuilder;
 import kalina.compiler.instructions.Instruction;
-import kalina.compiler.instructions.v2.AssignInstruction;
+import kalina.compiler.instructions.v2.assign.AssignInstruction;
 import kalina.compiler.instructions.v2.InitInstruction;
 import kalina.compiler.instructions.v2.fake.FakeAssignInstruction;
 import kalina.compiler.instructions.v2.fake.PhiFunInstruction;

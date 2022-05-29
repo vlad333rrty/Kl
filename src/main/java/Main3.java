@@ -13,5 +13,6 @@ public class Main3 {
 
     public void f() {
         s = 4;
+        System.out.print(s);
     }
 }
