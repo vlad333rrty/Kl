@@ -8,6 +8,8 @@ import kalina.compiler.ast.ASTClassNode;
 import kalina.compiler.ast.ASTMethodNode;
 import kalina.compiler.bb.TypeAndName;
 import kalina.compiler.bb.v2.FunBasicBlock;
+import kalina.compiler.cfg.builder.instruction.AbstractInstructionCFGBuilder;
+import kalina.compiler.cfg.builder.instruction.InstructionCFGBuilderFactory;
 import kalina.compiler.cfg.builder.items.ASTDoProcessor;
 import kalina.compiler.cfg.builder.items.ASTForProcessor;
 import kalina.compiler.cfg.builder.items.ASTIfProcessor;
@@ -80,7 +82,8 @@ public class MethodCFGBuilder {
         AbstractExpressionConverter expressionConverter = ExpressionConverterFactory
                 .createExpressionConverter(getFunctionInfoProvider, getFieldInfoProvider, node.isStatic());
         var fieldInfoProvider = getFieldInfoProvider.getFieldInfoProvider(className).orElseThrow();
-        InstructionCFGBuilder instructionBuilder = new InstructionCFGBuilder(
+        AbstractInstructionCFGBuilder instructionBuilder = InstructionCFGBuilderFactory.createInstructionCFGBuilder(
+                node.isStatic(),
                 expressionConverter,
                 typeChecker,
                 node.getReturnType(),

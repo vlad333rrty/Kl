@@ -1,4 +1,4 @@
-package kalina.compiler.cfg.builder;
+package kalina.compiler.cfg.builder.instruction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,8 @@ import kalina.compiler.ast.expression.ASTInitInstruction;
 import kalina.compiler.ast.expression.ASTReturnInstruction;
 import kalina.compiler.ast.expression.array.ASTArrayAssignInstruction;
 import kalina.compiler.ast.expression.array.ASTArrayLHS;
+import kalina.compiler.cfg.builder.Assert;
+import kalina.compiler.cfg.builder.ExpressionValidator;
 import kalina.compiler.cfg.common.CFGUtils;
 import kalina.compiler.cfg.converter.AbstractExpressionConverter;
 import kalina.compiler.cfg.data.AbstractLocalVariableTable;
@@ -47,14 +49,14 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class InstructionCFGBuilder {
+public abstract class AbstractInstructionCFGBuilder {
     private final AbstractExpressionConverter expressionConverter;
     private final TypeChecker typeChecker;
     private final Type returnType;
     private final OxmaFunctionInfoProvider functionInfoProvider;
     private final Function<String, Optional<OxmaFieldInfo>> fieldInfoProvider;
 
-    public InstructionCFGBuilder(
+    public AbstractInstructionCFGBuilder(
             AbstractExpressionConverter expressionConverter,
             TypeChecker typeChecker,
             Type returnType,
@@ -190,6 +192,7 @@ public class InstructionCFGBuilder {
                     if (fieldInfo.isFinal()) {
                         throw new IllegalArgumentException("Cannot assign to final field " + fieldInfo.fieldName());
                     }
+                    validateStaticContext(fieldInfo.isStatic(), fieldInfo.fieldName());
                     return new VariableInfo(
                             fieldInfo.fieldName(),
                             fieldInfo.type(),
@@ -272,6 +275,7 @@ public class InstructionCFGBuilder {
             if (fieldInfo.isFinal()) {
                 throw new IllegalArgumentException("Cannot assign to final field " + lhs.name());
             }
+            validateStaticContext(fieldInfo.isStatic(), fieldInfo.fieldName());
             Assert.isArray(fieldInfo.type());
             AssignArrayVariableInfo arrayVariableInfo = getAssignArrayVariableInfo(
                     lhs,
@@ -327,4 +331,6 @@ public class InstructionCFGBuilder {
         ExpressionValidator.validateInitExpression(instruction);
         return instruction;
     }
+
+    protected abstract void validateStaticContext(boolean isStatic, String memberName);
 }

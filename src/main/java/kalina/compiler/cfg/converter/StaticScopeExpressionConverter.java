@@ -1,5 +1,6 @@
 package kalina.compiler.cfg.converter;
 
+import kalina.compiler.cfg.common.validation.StaticContextValidator;
 import kalina.compiler.cfg.data.GetFieldInfoProvider;
 import kalina.compiler.cfg.data.GetFunctionInfoProvider;
 
@@ -17,8 +18,6 @@ public class StaticScopeExpressionConverter extends AbstractExpressionConverter 
 
     @Override
     protected void validateStaticContext(boolean isStatic, String memberName) {
-        if (!isStatic) {
-            throw new IllegalArgumentException("Cannot access non static member from the static context: " + memberName);
-        }
+        StaticContextValidator.validateStaticContext(isStatic, memberName);
     }
 }

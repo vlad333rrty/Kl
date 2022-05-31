@@ -13,6 +13,7 @@ import kalina.compiler.ast.expression.ASTFunCallExpression;
 import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTTerm;
 import kalina.compiler.ast.expression.ASTThisExpression;
+import kalina.compiler.ast.expression.ASTVariableOrClassNameExpression;
 import kalina.compiler.ast.expression.method.ASTUnknownOwnerMethodCall;
 import kalina.compiler.ast.expression.ASTValueExpression;
 import kalina.compiler.ast.expression.ASTVariableExpression;
@@ -111,7 +112,9 @@ public class OxmaExpressionsParser extends OxmaParserBase {
                 List<ASTExpression> indices = parseArrayGetElement();
                 expression = new ASTArrayGetElementExpression(name, indices);
             } else {
-                expression = new ASTVariableExpression(name);
+                expression = peekNextToken().getTag() == TokenTag.DOT_TAG
+                        ? new ASTVariableOrClassNameExpression(name)
+                        : new ASTVariableExpression(name);
             }
             if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
                 getNextToken();

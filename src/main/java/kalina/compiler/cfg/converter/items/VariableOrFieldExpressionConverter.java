@@ -1,6 +1,7 @@
 package kalina.compiler.cfg.converter.items;
 
-import kalina.compiler.ast.expression.ASTVariableExpression;
+import java.util.Optional;
+
 import kalina.compiler.cfg.data.GetVariableOrField;
 import kalina.compiler.cfg.data.OxmaFieldInfo;
 import kalina.compiler.cfg.data.TypeAndIndex;
@@ -14,19 +15,23 @@ import kalina.compiler.syntax.parser2.data.ClassEntryUtils;
  */
 public class VariableOrFieldExpressionConverter {
 
-    public static Expression convert(GetVariableOrField getVariableOrField, ASTVariableExpression variableExpression) {
-        GetVariableOrField.VariableOrFieldInfo variableOrFieldInfo =
-                getVariableOrField.getVariableOrFieldInfoOrElseThrow(variableExpression.name());
+    public static Optional<Expression> convert(GetVariableOrField getVariableOrField, String varName) {
+        Optional<GetVariableOrField.VariableOrFieldInfo> variableOrFieldInfoO =
+                getVariableOrField.getVariableOrFieldInfo(varName);
+        if (variableOrFieldInfoO.isEmpty()) {
+            return Optional.empty();
+        }
+        GetVariableOrField.VariableOrFieldInfo variableOrFieldInfo = variableOrFieldInfoO.get();
         if (variableOrFieldInfo.typeAndIndex.isPresent()) {
             TypeAndIndex typeAndIndex = variableOrFieldInfo.typeAndIndex.get();
-            return new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType(), variableExpression.name());
+            return Optional.of(new VariableExpression(typeAndIndex.getIndex(), typeAndIndex.getType(), varName));
         }
         OxmaFieldInfo fieldInfo = variableOrFieldInfo.fieldInfo.get();
-        return new FieldAccessExpression(
+        return Optional.of(new FieldAccessExpression(
                 fieldInfo.type(),
                 fieldInfo.modifiers().contains(ClassEntryUtils.Modifier.STATIC),
                 fieldInfo.ownerClassName(),
-                variableExpression.name()
-        );
+                varName
+        ));
     }
 }

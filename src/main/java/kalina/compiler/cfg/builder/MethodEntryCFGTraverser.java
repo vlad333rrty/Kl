@@ -17,6 +17,7 @@ import kalina.compiler.ast.expression.ASTForInstruction;
 import kalina.compiler.ast.expression.ASTIfInstruction;
 import kalina.compiler.cfg.bb.BasicBlock;
 import kalina.compiler.cfg.bb.BasicBlockFactory;
+import kalina.compiler.cfg.builder.instruction.AbstractInstructionCFGBuilder;
 import kalina.compiler.cfg.builder.items.BranchExpressionConverter;
 import kalina.compiler.cfg.builder.items.ThenAndElseNodes;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
@@ -32,10 +33,10 @@ import kalina.compiler.instructions.v2.fake.FunArgsInitInstruction;
  * @author vlad333rrty
  */
 public class MethodEntryCFGTraverser {
-    private final InstructionCFGBuilder instructionBuilder;
+    private final AbstractInstructionCFGBuilder instructionBuilder;
     private final BranchExpressionConverter branchExpressionConverter;
 
-    public MethodEntryCFGTraverser(InstructionCFGBuilder instructionBuilder, BranchExpressionConverter branchExpressionConverter) {
+    public MethodEntryCFGTraverser(AbstractInstructionCFGBuilder instructionBuilder, BranchExpressionConverter branchExpressionConverter) {
         this.instructionBuilder = instructionBuilder;
         this.branchExpressionConverter = branchExpressionConverter;
     }

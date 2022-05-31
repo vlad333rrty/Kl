@@ -39,4 +39,19 @@ public class OxmaTests extends OxmaTestBase {
     public void testPrivateMemberAccessThrowsException() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> runTestWithoutLogging("private_member_test.ox"));
     }
+
+    @Test
+    public void testNonStaticMemberAccessInStaticContext() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> runTestWithoutLogging("static_context_test.ox"));
+    }
+
+    @Test
+    public void testNonStaticMemberAccessInStaticContext2() {
+        Assertions.assertThrows(IllegalArgumentException.class, () -> runTestWithoutLogging("static_context_test_1.ox"));
+    }
+
+    @Test
+    public void testConstantFolding() {
+        runTestAndLogResult("constant_folding_1.ox");
+    }
 }

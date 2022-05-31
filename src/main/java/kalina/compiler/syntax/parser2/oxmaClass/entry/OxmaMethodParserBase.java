@@ -13,7 +13,7 @@ import kalina.compiler.ast.expression.ASTInitInstruction;
 import kalina.compiler.ast.expression.ASTObjectCreationExpression;
 import kalina.compiler.ast.expression.ASTReturnInstruction;
 import kalina.compiler.ast.expression.ASTStandAloneFunCallExpression;
-import kalina.compiler.ast.expression.ASTVariableExpression;
+import kalina.compiler.ast.expression.ASTVariableOrClassNameExpression;
 import kalina.compiler.ast.expression.array.ASTArrayAssignInstruction;
 import kalina.compiler.ast.expression.array.ASTArrayLHS;
 import kalina.compiler.bb.TypeAndName;
@@ -140,7 +140,7 @@ public abstract class OxmaMethodParserBase extends OxmaParserBase {
                     expressionNode = parseVarDeclWithKnownType(token);
                 } else if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
                     getNextToken();
-                    expressionNode = expressionsParser.parsePropertyCall(new ASTVariableExpression(identName));
+                    expressionNode = expressionsParser.parsePropertyCall(new ASTVariableOrClassNameExpression(identName));
                 } else {
                     throw new IllegalArgumentException("Unexpected token: " + token.getValue());
                 }

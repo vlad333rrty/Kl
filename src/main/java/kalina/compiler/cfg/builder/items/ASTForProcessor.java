@@ -9,7 +9,7 @@ import java.util.function.Function;
 import kalina.compiler.ast.expression.ASTExpression;
 import kalina.compiler.ast.expression.ASTForInstruction;
 import kalina.compiler.cfg.bb.BasicBlockFactory;
-import kalina.compiler.cfg.builder.InstructionCFGBuilder;
+import kalina.compiler.cfg.builder.instruction.AbstractInstructionCFGBuilder;
 import kalina.compiler.cfg.builder.MethodEntryCFGTraverser;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.builder.nodes.CFGNodeWithBranch;
@@ -30,13 +30,13 @@ import org.objectweb.asm.Label;
  * @author vlad333rrty
  */
 public class ASTForProcessor extends AbstractBranchExpressionProcessor<ASTForInstruction> {
-    private final InstructionCFGBuilder instructionBuilder;
+    private final AbstractInstructionCFGBuilder instructionBuilder;
 
     public ASTForProcessor(
             AbstractExpressionConverter expressionConverter,
             OxmaFunctionInfoProvider functionInfoProvider,
             Function<String, Optional<OxmaFieldInfo>> fieldInfoProvider,
-            InstructionCFGBuilder instructionCFGBuilder)
+            AbstractInstructionCFGBuilder instructionCFGBuilder)
     {
         super(expressionConverter, functionInfoProvider, fieldInfoProvider);
         this.instructionBuilder = instructionCFGBuilder;

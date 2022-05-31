@@ -16,6 +16,7 @@ import kalina.compiler.ast.expression.ASTTerm;
 import kalina.compiler.ast.expression.ASTThisExpression;
 import kalina.compiler.ast.expression.ASTValueExpression;
 import kalina.compiler.ast.expression.ASTVariableExpression;
+import kalina.compiler.ast.expression.ASTVariableOrClassNameExpression;
 import kalina.compiler.ast.expression.array.ASTArrayCreationExpression;
 import kalina.compiler.ast.expression.array.ASTArrayGetElementExpression;
 import kalina.compiler.ast.expression.field.ASTFieldAccessExpression;
@@ -100,9 +101,12 @@ public abstract class AbstractExpressionConverter {
             return new ValueExpression(valueExpression.value(), valueExpression.type());
         }
         if (astExpression instanceof ASTVariableExpression variableExpression) {
-            Expression expression = VariableOrFieldExpressionConverter.convert(getVariableOrField, variableExpression);
+            String name = variableExpression.name();
+            Expression expression = VariableOrFieldExpressionConverter
+                    .convert(getVariableOrField, name)
+                    .orElseThrow(() -> new IllegalArgumentException("No declaration found for " + name));
             if (expression instanceof FieldAccessExpression fieldAccessExpression) {
-                validateStaticContext(fieldAccessExpression.isStatic(), variableExpression.name());
+                validateStaticContext(fieldAccessExpression.isStatic(), name);
             }
             return expression;
         }
@@ -214,10 +218,28 @@ public abstract class AbstractExpressionConverter {
             throw new IllegalArgumentException();
         }
         ASTExpression ownerExpression = classPropertyCallExpression.getExpressions().get(0);
-        Expression convertedOwnerExpression = convert(ownerExpression, getVariableOrField, functionInfoProvider, fieldInfoProvider);
-        Type currentOwnerType = convertedOwnerExpression.getType();
+        final Type ownerType;
         List<Expression> convertedExpressions = new ArrayList<>();
-        convertedExpressions.add(convertedOwnerExpression);
+        if (ownerExpression instanceof ASTVariableOrClassNameExpression variableOrClassNameExpression) {
+            String name = variableOrClassNameExpression.name();
+            Optional<Expression> expression = VariableOrFieldExpressionConverter.convert(getVariableOrField, name);
+            if (expression.isEmpty()) {
+                ownerType = Type.getObjectType(name);
+            } else {
+                Expression expr = expression.get();
+                if (expr instanceof FieldAccessExpression fieldAccessExpression) {
+                    validateStaticContext(fieldAccessExpression.isStatic(), name);
+                }
+                ownerType = expr.getType();
+                convertedExpressions.add(expr);
+            }
+        } else {
+            Expression convertedOwnerExpression =
+                    convert(ownerExpression, getVariableOrField, functionInfoProvider, fieldInfoProvider);
+            convertedExpressions.add(convertedOwnerExpression);
+            ownerType = convertedOwnerExpression.getType();
+        }
+        Type currentOwnerType = ownerType;
         for (int i = 1; i < expressionChain.size(); i++) {
             Expression expression = convertUnknownOwnerExpression(
                     expressionChain.get(i),
