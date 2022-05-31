@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.util.Arrays;
 
 import kalina.compiler.OxmaCompiler;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
@@ -13,6 +14,7 @@ public class Main2 {
     public static void main(String[] args)
             throws IOException, ParseException, CFGConversionException, CodeGenException, IncompatibleTypesException
     {
+        System.out.print(Arrays.toString(args));
         new OxmaMain(new OxmaCompiler.OxmaCompilerSettings(
                 true,
                 true,
