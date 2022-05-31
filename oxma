@@ -46,20 +46,13 @@ flags=()
 for i in "$@"
 do
 case "$i" in
-    -cff|--constant-folding)
-    flags+=('use_cf')
-    ;;
-    -dce|--dead-code-elimination)
-    flags+=('use_dce')
-    ;;
     --optimize)
-    flags+=('use_cf')
-    flags+=('use_dce')
+    flags+=('use_optimizations')
     ;;
     --outfile=*)
     flags+=("outfile=${i#*=}")
     ;;
-    *) # unknown option
+    *) echo "Unexpected argument $i"
     ;;
 esac
 done

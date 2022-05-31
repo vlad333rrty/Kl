@@ -15,12 +15,6 @@ public class Main2 {
             throws IOException, ParseException, CFGConversionException, CodeGenException, IncompatibleTypesException
     {
         System.out.print(Arrays.toString(args));
-        new OxmaMain(new OxmaCompiler.OxmaCompilerSettings(
-                true,
-                true,
-                "cfg",
-                "",
-                true
-        )).run("data/output.kl");
+        new OxmaMain(OxmaCompiler.SettingsParser.parseCommandLineArgs(args)).run("data/output.kl");
     }
 }
