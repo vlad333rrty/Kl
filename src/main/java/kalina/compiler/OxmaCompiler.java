@@ -58,7 +58,7 @@ public abstract class OxmaCompiler {
             List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
             for (CodeGenerationResult res : codeGenerationResults) {
                 FileUtils.writeToFile(
-                        settings.compiledClassesDestinationDirectory + res.getClassName() + ".class",
+                        settings.compiledClassesDestinationDirectory + "/" + res.getClassName() + ".class",
                         res.getByteCode()
                 );
             }
