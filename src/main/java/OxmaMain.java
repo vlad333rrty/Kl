@@ -12,7 +12,7 @@ public class OxmaMain extends OxmaCompiler {
     public OxmaMain() {
     }
 
-    public OxmaMain(OxmaCompilerSettings compilerSettings) {
+    public OxmaMain(Settings compilerSettings) {
         super(compilerSettings);
     }
 

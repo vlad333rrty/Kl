@@ -2,6 +2,8 @@ package kalina.compiler;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import kalina.compiler.ast.ASTRootNode;
 import kalina.compiler.bb.v2.ClassBasicBlock;
@@ -26,13 +28,13 @@ import org.apache.logging.log4j.Logger;
 public abstract class OxmaCompiler {
     private static final Logger logger = LogManager.getLogger(OxmaCompiler.class);
 
-    private final OxmaCompilerSettings settings;
+    protected final Settings settings;
 
     public OxmaCompiler() {
-        this.settings = OxmaCompilerSettings.defaultSettings();
+        this.settings = new Settings.Builder().build();
     }
 
-    public OxmaCompiler(OxmaCompilerSettings settings) {
+    public OxmaCompiler(Settings settings) {
         this.settings = settings;
     }
 
@@ -44,7 +46,7 @@ public abstract class OxmaCompiler {
         CFGBuilder cfgBuilder = new CFGBuilder();
         List<ClassBasicBlock> classBasicBlocks = cfgBuilder.build(result);
 
-        if (settings.shouldPerformOptimizations || settings.shouldBuildSSAForm) {
+        if (settings.shouldBuildSSAForm || settings.shouldPerformOptimizations) {
             performCodeTransformations(classBasicBlocks);
         }
         if (settings.shouldPlotCFGs) {
@@ -67,8 +69,10 @@ public abstract class OxmaCompiler {
         for (var classBb : classBasicBlocks) {
             for (var funBb : classBb.getEntry()) {
                 ControlFlowGraph controlFlowGraph = ControlFlowGraph.fromRoot(funBb.getCfgRoot());
-                logger.info("Starting building SSA form");
-                buildSSAForm(controlFlowGraph);
+                if (settings.shouldBuildSSAForm) {
+                    logger.info("Starting building SSA form");
+                    buildSSAForm(controlFlowGraph);
+                }
                 if (settings.shouldPerformOptimizations) {
                     logger.info("Starting applying optimizations");
                     performOptimizations(controlFlowGraph);
@@ -81,20 +85,84 @@ public abstract class OxmaCompiler {
 
     protected abstract void buildSSAForm(ControlFlowGraph controlFlowGraph);
 
-    public record OxmaCompilerSettings(
+    public record Settings(
             boolean shouldPlotCFGs,
-            boolean shouldPerformOptimizations,
             String cfgPictureRelativePathBase,
             String compiledClassesDestinationDirectory,
-            boolean shouldBuildSSAForm)
+            boolean shouldBuildSSAForm,
+            boolean shouldPerformOptimizations)
     {
-        public static OxmaCompilerSettings defaultSettings() {
-            return new OxmaCompilerSettings(
-                    true,
-                    true,
-                    "cfg",
-                    "",
-                    true);
+        public static class Builder {
+            private boolean shouldPlotCFGs;
+            private String cfgPictureRelativePathBase;
+            private String compiledClassesDestinationDirectory;
+            private boolean shouldBuildSSAForm;
+            private boolean shouldPerformOptimizations;
+
+            public Builder() {
+                this.shouldPlotCFGs = true;
+                this.cfgPictureRelativePathBase = "cfg";
+                this.compiledClassesDestinationDirectory = "";
+                this.shouldBuildSSAForm = true;
+                this.shouldPerformOptimizations = false;
+            }
+
+            public Builder setPlotCfg(boolean shouldPlotCFGs) {
+                this.shouldPlotCFGs = shouldPlotCFGs;
+                return this;
+            }
+
+            public Builder setCfgPictureRelativePathBase(String cfgPictureRelativePathBase) {
+                this.cfgPictureRelativePathBase = cfgPictureRelativePathBase;
+                return this;
+            }
+
+            public Builder setCompiledClassesDestinationDirectory(String compiledClassesDestinationDirectory) {
+                this.compiledClassesDestinationDirectory = compiledClassesDestinationDirectory;
+                return this;
+            }
+
+            public Builder setShouldBuildSSAForm(boolean shouldBuildSSAForm) {
+                this.shouldBuildSSAForm = shouldBuildSSAForm;
+                return this;
+            }
+
+            public Builder setShouldPerformOptimizations(boolean shouldPerformOptimizations) {
+                this.shouldPerformOptimizations = shouldPerformOptimizations;
+                return this;
+            }
+
+            public Settings build() {
+                return new Settings(
+                        shouldPlotCFGs,
+                        cfgPictureRelativePathBase,
+                        compiledClassesDestinationDirectory,
+                        shouldBuildSSAForm,
+                        shouldPerformOptimizations
+                );
+            }
+        }
+    }
+
+    public static class SettingsParser {
+
+        public static Settings parseCommandLineArgs(String[] args) {
+            Settings.Builder builder = new Settings.Builder();
+            for (String arg : args) {
+                if (arg.equals("use_optimizations")) {
+                    builder.setShouldPerformOptimizations(true);
+                } else {
+                    Pattern pattern = Pattern.compile("outfile=(.+)");
+                    Matcher matcher = pattern.matcher(arg);
+                    if (matcher.find()) {
+                        String outFile = matcher.group();
+                        builder.setCompiledClassesDestinationDirectory(outFile);
+                    } else {
+                        logger.warn("Unexpected flag: {}", arg);
+                    }
+                }
+            }
+            return builder.build();
         }
     }
 }

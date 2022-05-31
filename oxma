@@ -41,4 +41,20 @@ run_token_generator() {
 # run program token generator
 run_token_generator "$path_to_lexer"/TokenTag.h
 
-./gradlew run --args="$OUTPUT_FILE_PATH"
+flags=()
+
+for i in "$@"
+do
+case "$i" in
+    --optimize)
+    flags+=('use_optimizations')
+    ;;
+    --outfile=*)
+    flags+=("outfile=${i#*=}")
+    ;;
+    *) echo "Unexpected argument $i"
+    ;;
+esac
+done
+
+./gradlew run --args="$OUTPUT_FILE_PATH ${flags[*]}"
