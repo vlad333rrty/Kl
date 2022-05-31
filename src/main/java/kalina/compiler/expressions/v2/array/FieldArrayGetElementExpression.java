@@ -21,15 +21,18 @@ public class FieldArrayGetElementExpression extends Expression implements
     private final OxmaFieldInfo fieldInfo;
     private final List<Expression> indices;
     private final Type loweredType;
+    private final Type elementType;
 
     public FieldArrayGetElementExpression(
             OxmaFieldInfo fieldInfo,
             List<Expression> indices,
-            Type loweredType)
+            Type loweredType,
+            Type elementType)
     {
         this.fieldInfo = fieldInfo;
         this.indices = indices;
         this.loweredType = loweredType;
+        this.elementType = elementType;
     }
 
     @Override
@@ -40,6 +43,7 @@ public class FieldArrayGetElementExpression extends Expression implements
         }
         mv.visitFieldInsn(opcode, fieldInfo.ownerClassName(), fieldInfo.fieldName(), fieldInfo.type().getDescriptor());
         translateElementsAccess(mv, indices);
+        mv.visitInsn(elementType.getOpcode(Opcodes.IALOAD));
     }
 
     @Override
@@ -53,7 +57,8 @@ public class FieldArrayGetElementExpression extends Expression implements
         return new FieldArrayGetElementExpression(
                 fieldInfo,
                 expressions,
-                loweredType
+                loweredType,
+                elementType
         );
     }
 

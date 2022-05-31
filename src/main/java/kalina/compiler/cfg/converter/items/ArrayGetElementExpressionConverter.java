@@ -43,7 +43,8 @@ public class ArrayGetElementExpressionConverter {
             return new FieldArrayGetElementExpression(
                     fieldInfo,
                     convertedIndices,
-                    CFGUtils.lowArrayDimension(type, getElementExpression.getIndices().size())
+                    CFGUtils.lowArrayDimension(type, getElementExpression.getIndices().size()),
+                    CFGUtils.getArrayElementType(type)
             );
         }
     }
