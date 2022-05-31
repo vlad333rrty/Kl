@@ -1,4 +1,4 @@
-package kalina.compiler.cfg.ssa;
+package kalina.compiler.cfg.optimizations.ssa;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -22,16 +22,9 @@ import kalina.compiler.cfg.bb.PhiFunctionHolder;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.data.SSAVariableInfo;
 import kalina.compiler.cfg.dominantTree.DominantTree;
-import kalina.compiler.expressions.ArithmeticExpression;
+import kalina.compiler.cfg.optimizations.ExpressionSubstitutor;
 import kalina.compiler.expressions.CondExpression;
 import kalina.compiler.expressions.Expression;
-import kalina.compiler.expressions.Factor;
-import kalina.compiler.expressions.Term;
-import kalina.compiler.expressions.VariableExpression;
-import kalina.compiler.expressions.v2.array.ArrayGetElementExpression;
-import kalina.compiler.expressions.v2.array.ArrayWithCapacityCreationExpression;
-import kalina.compiler.expressions.v2.array.FieldArrayGetElementExpression;
-import kalina.compiler.expressions.v2.funCall.AbstractFunCallExpression;
 import kalina.compiler.instructions.Instruction;
 import kalina.compiler.instructions.v2.WithCondition;
 import kalina.compiler.instructions.v2.WithExpressions;
@@ -184,60 +177,21 @@ public class SSAFormBuilder {
         }
 
         private Expression substituteExpression(Expression expression, String varName) {
-            if (expression instanceof VariableExpression variableExpression) {
-                String name = variableExpression.getName();
-                if (!name.equals(varName)) {
-                    return expression;
-                }
-                int version = varInfoToVersionStack.get(name).peek();
-                return variableExpression.withCfgIndex(version);
-            } else if (expression instanceof ArithmeticExpression arithmeticExpression) {
-                List<Term> terms = arithmeticExpression.getTerms().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .map(x -> (Term) x)
-                        .toList();
-                return arithmeticExpression.withTerms(terms);
-            } else if (expression instanceof Term term) {
-                List<Factor> factors = term.getFactors().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .map(x -> (Factor) x)
-                        .toList();
-                return term.withFactors(factors);
-            } else if (expression instanceof Factor factor) {
-                return factor.withExpression(substituteExpression(factor.getExpression(), varName));
-            } else if (expression instanceof CondExpression condExpression) {
-                List<Expression> expressions = condExpression.getExpressions().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .toList();
-                return condExpression.substituteExpressions(expressions);
-            } else if (expression instanceof AbstractFunCallExpression funCallExpression) {
-                List<Expression> arguments = funCallExpression.getArguments().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .toList();
-                return funCallExpression.substituteArguments(arguments);
-            } else if (expression instanceof ArrayGetElementExpression arrayGetElementExpression) {
-                List<Expression> indices = arrayGetElementExpression.getIndices().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .toList();
-                String name = arrayGetElementExpression.getName();
-                if (name.equals(varName)) {
-                    int version = varInfoToVersionStack.get(name).peek();
-                    return arrayGetElementExpression.withCfgIndex(version).substituteExpressions(indices);
-                }
-                return arrayGetElementExpression.substituteExpressions(indices);
-            } else if (expression instanceof ArrayWithCapacityCreationExpression arrayWithCapacityCreationExpression) {
-                List<Expression> capacities = arrayWithCapacityCreationExpression.getCapacities().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .toList();
-                return arrayWithCapacityCreationExpression.substituteExpressions(capacities);
-            } else if (expression instanceof FieldArrayGetElementExpression fieldArrayGetElementExpression) {
-                List<Expression> indices = fieldArrayGetElementExpression.getIndices().stream()
-                        .map(x -> substituteExpression(x, varName))
-                        .toList();
-                return fieldArrayGetElementExpression.substituteExpressions(indices);
-            }
-
-            return expression;
+            return ExpressionSubstitutor.substituteExpression(
+                    expression,
+                    varName,
+                    ve -> {
+                        if (!varName.equals(ve.getName())) {
+                            return ve;
+                        }
+                        int version = varInfoToVersionStack.get(ve.getName()).peek();
+                        return ve.withCfgIndex(version);
+                    },
+                    arrayGetElementExpression -> {
+                        int version = varInfoToVersionStack.get(arrayGetElementExpression.getName()).peek();
+                        return arrayGetElementExpression.withCfgIndex(version);
+                    }
+            );
         }
 
         private void updateVersion(SSAVariableInfo varInfo) {

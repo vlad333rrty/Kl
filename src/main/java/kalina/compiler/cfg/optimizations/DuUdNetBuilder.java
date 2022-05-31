@@ -22,16 +22,21 @@ import kalina.compiler.instructions.v2.WithExpressions;
 import kalina.compiler.instructions.v2.WithLHS;
 import kalina.compiler.instructions.v2.assign.ArrayElementAssign;
 import kalina.compiler.instructions.v2.assign.ArrayElementAssignInstruction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 public class DuUdNetBuilder {
+    private static final Logger logger = LogManager.getLogger(DuUdNetBuilder.class);
+
     public static DuUdNet buildDuUdNet(AbstractCFGNode root) {
         Map<String, DuUdNet.Definition> nameToDefinition = DefinitionMetaProvider.getNameToDefinition(root);
         Map<DuUdNet.Definition, List<DuUdNet.InstructionCoordinates>> defToDuChain = new HashMap<>();
         for (var entry : nameToDefinition.entrySet()) {
             defToDuChain.put(entry.getValue(), new ArrayList<>());
+            logger.info("put for {}", entry.getValue());
         }
         Map<DuUdNet.Use, List<DuUdNet.InstructionCoordinates>> useToUdChain = new HashMap<>();
         DuUdChainEnricher enricher = new DuUdChainEnricher(nameToDefinition, defToDuChain, useToUdChain);
@@ -62,7 +67,7 @@ public class DuUdNetBuilder {
         int j = 0;
         for (var phiFunInstruction : node.getBasicBlock().getPhiFunInstructions()) {
             var du = new DuUdNet.InstructionCoordinates(node.getId(), j++);
-            phiFunInstruction.getArguments().forEach(x -> duUdChainEnricher.putForIR(x.getSsaVariableInfo(), du));
+            phiFunInstruction.filterAndGetArguments().forEach(x -> duUdChainEnricher.putForIR(x.getSsaVariableInfo(), du));
         }
         int offset = node.getBasicBlock().getPhiFunInstructions().size();
         for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {

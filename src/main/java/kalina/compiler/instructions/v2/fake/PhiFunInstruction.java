@@ -12,11 +12,11 @@ import org.objectweb.asm.MethodVisitor;
  * @author vlad333rrty
  */
 public class PhiFunInstruction extends FakeInstruction {
-    private final List<PhiArgumentExpression> arguments;
+    private final List<PhiArgument> arguments;
     private final String lhsIR;
 
     public PhiFunInstruction(List<PhiArgumentExpression> arguments, String lhsIR) {
-        this.arguments = arguments;
+        this.arguments = arguments.stream().map(x -> (PhiArgument)x).toList();
         this.lhsIR = lhsIR;
     }
 
@@ -25,7 +25,14 @@ public class PhiFunInstruction extends FakeInstruction {
         throw new UnsupportedOperationException();
     }
 
-    public List<PhiArgumentExpression> getArguments() {
+    public List<PhiArgumentExpression> filterAndGetArguments() {
+        return arguments.stream()
+                .filter(x -> x instanceof PhiArgumentExpression)
+                .map(x -> (PhiArgumentExpression)x)
+                .toList();
+    }
+
+    public List<PhiArgument> getAllArguments() {
         return arguments;
     }
 

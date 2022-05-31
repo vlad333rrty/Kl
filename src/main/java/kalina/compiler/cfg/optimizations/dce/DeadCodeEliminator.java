@@ -101,7 +101,7 @@ public class DeadCodeEliminator {
                         .forEach(v -> checkUsesForDefinition(v, coordinates, duUdNet, idToBb, blockIdToEssentialInstructions, queue));
             }
             if (instruction instanceof PhiFunInstruction phiFunInstruction) {
-                phiFunInstruction.getArguments()
+                phiFunInstruction.filterAndGetArguments()
                         .forEach(expr -> checkDefinitionsForUse(expr, coordinates, duUdNet, blockIdToEssentialInstructions, queue));
                 checkUsesForDefinition(phiFunInstruction.getLhsIR(), coordinates, duUdNet, idToBb, blockIdToEssentialInstructions, queue);
             }
@@ -122,12 +122,23 @@ public class DeadCodeEliminator {
         for (var node : controlFlowGraph.nodes()) {
             BasicBlock basicBlock = node.getBasicBlock();
             int id = basicBlock.getId();
+            Set<Integer> usefulInstructions = blockIdToEssentialInstructions.get(id);
             int offset = basicBlock.getPhiFunInstructions().size();
+
+            List<PhiFunInstruction> finalPhiInstructions = new ArrayList<>();
+            List<PhiFunInstruction> phiFunInstructions = basicBlock.getPhiFunInstructions();
+            for (int i = 0, phiFunInstructionsSize = phiFunInstructions.size(); i < phiFunInstructionsSize; i++) {
+                PhiFunInstruction phi = phiFunInstructions.get(i);
+                if (instructionsNotToBeDeleted.contains(phi.getClass())
+                        || (usefulInstructions != null && usefulInstructions.contains(i))) {
+                    finalPhiInstructions.add(phi);
+                }
+            }
+            basicBlock.setPhiFunInstructions(finalPhiInstructions);
             List<Instruction> finalInstructions = new ArrayList<>();
             List<Instruction> instructions = basicBlock.getInstructions();
             for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
                 Instruction instruction = instructions.get(i);
-                Set<Integer> usefulInstructions = blockIdToEssentialInstructions.get(id);
                 if (instructionsNotToBeDeleted.contains(instruction.getClass())
                         || (usefulInstructions != null && usefulInstructions.contains(i + offset))) {
                         finalInstructions.add(instruction);

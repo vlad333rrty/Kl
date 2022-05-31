@@ -2,7 +2,7 @@ import kalina.compiler.OxmaCompiler;
 import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.optimizations.OptimizationManager;
 import kalina.compiler.cfg.optimizations.OptimizationManagerFactory;
-import kalina.compiler.cfg.ssa.SSAFormBuilder;
+import kalina.compiler.cfg.optimizations.ssa.SSAFormBuilder;
 
 /**
  * @author vlad333rrty

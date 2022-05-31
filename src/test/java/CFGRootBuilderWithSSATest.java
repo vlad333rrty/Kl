@@ -7,7 +7,7 @@ import kalina.compiler.cfg.ControlFlowGraph;
 import kalina.compiler.cfg.builder.CFGBuilder;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.exceptions.CFGConversionException;
-import kalina.compiler.cfg.ssa.SSAFormBuilder;
+import kalina.compiler.cfg.optimizations.ssa.SSAFormBuilder;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.syntax.parser2.OxmaParser;
 import kalina.compiler.syntax.parser2.ParseException;
