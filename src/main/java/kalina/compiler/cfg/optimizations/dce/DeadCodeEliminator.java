@@ -122,19 +122,27 @@ public class DeadCodeEliminator {
         for (var node : controlFlowGraph.nodes()) {
             BasicBlock basicBlock = node.getBasicBlock();
             int id = basicBlock.getId();
+            Set<Integer> usefulInstructions = blockIdToEssentialInstructions.get(id);
             int offset = basicBlock.getPhiFunInstructions().size();
-            List<Instruction> finalInstructions = new ArrayList<>();
-            List<Instruction> instructions = basicBlock.getInstructions();
-            for (int i = 0, instructionsSize = instructions.size(); i < instructionsSize; i++) {
-                Instruction instruction = instructions.get(i);
-                Set<Integer> usefulInstructions = blockIdToEssentialInstructions.get(id);
-                if (instructionsNotToBeDeleted.contains(instruction.getClass())
-                        || (usefulInstructions != null && usefulInstructions.contains(i + offset))) {
-                        finalInstructions.add(instruction);
-                }
-            }
+            List<PhiFunInstruction> finalPhiInstructions =
+                    getFinalInstructions(basicBlock.getPhiFunInstructions(), usefulInstructions, 0);
+            basicBlock.setPhiFunInstructions(finalPhiInstructions);
+            List<Instruction> finalInstructions =
+                    getFinalInstructions(basicBlock.getInstructions(), usefulInstructions, offset);
             basicBlock.setInstructions(finalInstructions);
         }
+    }
+
+    private <T> List<T> getFinalInstructions(List<T> instructions, Set<Integer> usefulInstructions, int offset) {
+        List<T> result = new ArrayList<>();
+        for (int i = 0; i < instructions.size(); i++) {
+            T instruction = instructions.get(i);
+            if (instructionsNotToBeDeleted.contains(instruction.getClass())
+                    || (usefulInstructions != null && usefulInstructions.contains(i + offset))) {
+                result.add(instruction);
+            }
+        }
+        return result;
     }
 
     private Instruction getInstruction(BasicBlock basicBlock, DuUdNet.InstructionCoordinates coordinates) {
