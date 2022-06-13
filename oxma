@@ -52,7 +52,7 @@ case "$i" in
     --outfile=*)
     flags+=("outfile=${i#*=}")
     ;;
-    *) echo "Unexpected argument $i"
+    --*) echo "Unexpected argument $i"
     ;;
 esac
 done
