@@ -14,9 +14,10 @@ import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.codegen.CodeGenException;
 import kalina.compiler.codegen.CodeGenerationResult;
 import kalina.compiler.codegen.v2.CodeGenerationManager;
+import kalina.compiler.performance.PerformanceMeasurer;
 import kalina.compiler.syntax.parser2.OxmaParser;
 import kalina.compiler.syntax.parser2.ParseException;
-import kalina.compiler.syntax.scanner.Scanner;
+import kalina.compiler.syntax.scanner.Scanner2;
 import kalina.compiler.utils.FileUtils;
 import kalina.internal.CFGDotGraphConstructor;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,7 @@ public abstract class OxmaCompiler {
     private static final Logger logger = LogManager.getLogger(OxmaCompiler.class);
 
     protected final Settings settings;
+    private final PerformanceMeasurer performanceMeasurer = new PerformanceMeasurer();
 
     public OxmaCompiler() {
         this.settings = new Settings.Builder().build();
@@ -41,8 +43,15 @@ public abstract class OxmaCompiler {
     public final void run(String outputFilePath)
             throws IOException, ParseException, CFGConversionException, CodeGenException, IncompatibleTypesException
     {
-        OxmaParser parser = new OxmaParser(new Scanner(outputFilePath));
-        ASTRootNode result = parser.parse();
+        OxmaParser parser = new OxmaParser(Scanner2.fromLexerResult(outputFilePath));
+        ASTRootNode result = performanceMeasurer.measure(() -> {
+            try {
+                return parser.parse();
+            } catch (ParseException e) {
+                logger.error(e.getMessage());
+                throw new IllegalArgumentException(e);
+            }
+        }, "parse");
         CFGBuilder cfgBuilder = new CFGBuilder();
         List<ClassBasicBlock> classBasicBlocks = cfgBuilder.build(result);
 
@@ -53,6 +62,7 @@ public abstract class OxmaCompiler {
             CFGDotGraphConstructor.plotMany(classBasicBlocks, settings.cfgPictureRelativePathBase);
         }
 
+        logStatistics();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         for (ClassBasicBlock bb : classBasicBlocks) {
             List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
@@ -78,11 +88,11 @@ public abstract class OxmaCompiler {
                 ControlFlowGraph controlFlowGraph = ControlFlowGraph.fromRoot(funBb.getCfgRoot());
                 if (settings.shouldBuildSSAForm) {
                     logger.info("Starting building SSA form");
-                    buildSSAForm(controlFlowGraph);
+                    performanceMeasurer.measure(() -> buildSSAForm(controlFlowGraph), "buildSSAForm");
                 }
                 if (settings.shouldPerformOptimizations) {
                     logger.info("Starting applying optimizations");
-                    performOptimizations(controlFlowGraph);
+                    performanceMeasurer.measure(() -> performOptimizations(controlFlowGraph), "performOptimizations");
                 }
             }
         }
@@ -91,6 +101,16 @@ public abstract class OxmaCompiler {
     protected abstract void performOptimizations(ControlFlowGraph controlFlowGraph);
 
     protected abstract void buildSSAForm(ControlFlowGraph controlFlowGraph);
+
+    private void logStatistics() {
+        logger.info("Parsing time: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("parse")));
+        logger.info("SSA form construction: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("buildSSAForm")));
+        logger.info("Optimization performing: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("performOptimizations")));
+    }
+
+    private List<Double> nanoToSeconds(List<Long> nanoSeconds) {
+        return nanoSeconds.stream().map(x -> x / 1e9).toList();
+    }
 
     public record Settings(
             boolean shouldPlotCFGs,

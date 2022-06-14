@@ -322,7 +322,7 @@ public abstract class OxmaMethodParserBase extends OxmaParserBase {
     public ASTExpression parseArrayAssignOrArrayElementAccess(String arrayName) throws ParseException {
         List<ASTExpression> indices = expressionsParser.parseArrayGetElement();
         ASTArrayLHS lhs = new ASTArrayLHS(arrayName, indices);
-        if (peekNextToken().getTag() == TokenTag.DO_TAG) {
+        if (peekNextToken().getTag() == TokenTag.DOT_TAG) {
             throw new UnsupportedOperationException("Cannot call class method from array variable");
         } else if (peekNextToken().getTag() == TokenTag.COMMA_TAG) {
             return parseArrayLHS(lhs);
