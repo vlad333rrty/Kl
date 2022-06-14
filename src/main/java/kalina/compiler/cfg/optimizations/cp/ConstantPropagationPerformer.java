@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -33,12 +32,16 @@ import kalina.compiler.instructions.v2.assign.ArrayElementAssign;
 import kalina.compiler.instructions.v2.assign.AssignInstruction;
 import kalina.compiler.instructions.v2.fake.FakeAssignInstruction;
 import kalina.compiler.instructions.v2.fake.FakeValueExpression;
+import kalina.compiler.instructions.v2.fake.PhiArgument;
 import kalina.compiler.instructions.v2.fake.PhiFunInstruction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.objectweb.asm.Type;
 
 /**
  * @author vlad333rrty
+ *
+ * needs severe fixing
  */
 public class ConstantPropagationPerformer {
     private static final Logger logger = LogManager.getLogger(ConstantPropagationPerformer.class);
@@ -55,7 +58,7 @@ public class ConstantPropagationPerformer {
                         .flatMap(node -> {
                             int blockId = node.getId();
                             List<DuUdNet.InstructionCoordinates> result = new ArrayList<>();
-                            for (int i = 0;i < node.getBasicBlock().getInstructions().size(); i++) {
+                            for (int i = 0; i < node.getBasicBlock().getInstructions().size(); i++) {
                                 result.add(new DuUdNet.InstructionCoordinates(blockId, i));
                             }
                             return result.stream();
@@ -71,51 +74,73 @@ public class ConstantPropagationPerformer {
                 for (int i = 0; i < bound; i++) {
                     VariableInfo variableInfo = assignInstruction.getLhs().get(i);
                     Expression rhs = assignInstruction.getRHS().get(i);
-                    int finalI = i;
-                    visitInitOrAssign(variableInfo, rhs, nameToConstantValue, idToBB, coordinates, duUdNet, workList,
-                            expr -> assignInstruction.getRHS().set(finalI, expr));
+                    var expr =
+                            visitInitOrAssign(variableInfo, rhs, nameToConstantValue, idToBB, coordinates, duUdNet, workList);
+                    if (expr != null) {
+                        List<Expression> newRhs = new ArrayList<>(assignInstruction.getRHS());
+                        newRhs.set(i, expr);
+                        setInstruction(bb, coordinates, ((AssignInstruction) instruction).withRHS(newRhs));
+                    }
                 }
             }
             if (instruction instanceof InitInstruction initInstruction) {
-                for (int i=0;i<initInstruction.getLhs().size();i++) {
+                for (int i = 0; i < initInstruction.getLhs().size(); i++) {
                     VariableNameAndIndex variableInfo = initInstruction.getLhs().getVars().get(i);
                     Expression rhs = initInstruction.getRHS().get(i);
-                    int finalI = i;
-                    visitInitOrAssign(variableInfo, rhs, nameToConstantValue, idToBB, coordinates, duUdNet, workList,
-                            expr -> initInstruction.getRHS().set(finalI, expr));
+                    var expr =
+                            visitInitOrAssign(variableInfo, rhs, nameToConstantValue, idToBB, coordinates, duUdNet, workList);
+                    if (expr != null) {
+                        List<Expression> newRhs = new ArrayList<>(initInstruction.getRHS());
+                        newRhs.set(i, expr);
+                        setInstruction(bb, coordinates, ((InitInstruction) instruction).substituteExpressions(newRhs));
+                    }
                 }
             }
             if (instruction instanceof PhiFunInstruction phiFunInstruction) {
-                visitPhi(phiFunInstruction, nameToConstantValue);
+                var inst = visitPhi(phiFunInstruction, nameToConstantValue);
+                if (inst instanceof FakeAssignInstruction fakeAssignInstruction) {
+                    visitInitOrAssign(
+                            fakeAssignInstruction,
+                            new ValueExpression(fakeAssignInstruction.getValue(), getOriginType(nameToConstantValue, fakeAssignInstruction.getIR())),
+                            nameToConstantValue,
+                            idToBB,
+                            coordinates,
+                            duUdNet,
+                            workList);
+                }
             }
         }
+    }
+
+    private Type getOriginType(Map<String, ValueExpression> nameToConstantValue, String name) {
+        return nameToConstantValue.get(name.substring(0, name.lastIndexOf("_")) + "_0").getType();
     }
 
     private boolean isConstant(Expression expression) {
         return ConstantExpressionDetector.isNumberConstant(expression);
     }
 
-    private void visitInitOrAssign(
+    private Expression visitInitOrAssign(
             WithIR lhs,
             Expression rhs,
             Map<String, ValueExpression> nameToConstantValue,
             Map<Integer, BasicBlock> idToBB,
             DuUdNet.InstructionCoordinates coordinates,
             DuUdNet duUdNet,
-            Queue<DuUdNet.InstructionCoordinates> workList,
-            Consumer<Expression> setCalculatedRHS)
+            Queue<DuUdNet.InstructionCoordinates> workList)
     {
         String ir = lhs.getIR();
+        Expression expr = null;
         if (isConstant(rhs)) {
             if (rhs instanceof ValueExpression valueExpression) {
                 nameToConstantValue.computeIfAbsent(ir, k -> new ValueExpression(valueExpression.getValue(), valueExpression.getType()));
             } else {
                 Expression expression = CfArithmeticExpressionParser.parseExpression(rhs);
                 if (expression instanceof ValueExpression valueExpression) {
-                 //   setCalculatedRHS.accept(expression);
+                    expr = expression;
                     nameToConstantValue.computeIfAbsent(ir, k -> new ValueExpression(valueExpression.getValue(), valueExpression.getType()));
                 } else {
-                    return;
+                    return null;
                 }
             }
             DuUdNet.Definition definition =
@@ -130,16 +155,15 @@ public class ConstantPropagationPerformer {
                 workList.add(use);
             }
         }
+        return expr;
     }
 
     private void setInstruction(BasicBlock basicBlock, DuUdNet.InstructionCoordinates coordinates, Instruction instruction) {
-        if (coordinates.instructionIndex() < basicBlock.getInstructions().size()) {
-            basicBlock.getInstructions().set(coordinates.instructionIndex(), instruction);
+        if (coordinates.instructionIndex() < basicBlock.getPhiFunInstructions().size()) {
+            // nothing
         } else {
             int offset = basicBlock.getPhiFunInstructions().size();
-            if (coordinates.instructionIndex() >= offset) {
-                basicBlock.getInstructions().set(coordinates.instructionIndex() - offset, instruction);
-            }
+            basicBlock.getInstructions().set(coordinates.instructionIndex() - offset, instruction);
         }
     }
 
@@ -147,6 +171,7 @@ public class ConstantPropagationPerformer {
         if (instruction instanceof WithExpressions withExpressions) {
             List<Expression> expressions = withExpressions.getExpressions().stream()
                     .map(expr -> substituteExpression(expr, varName, nameToConstantValue))
+                    .map(this::reduceIfPossible)
                     .toList();
             return withExpressions.substituteExpressions(expressions);
         }
@@ -158,7 +183,9 @@ public class ConstantPropagationPerformer {
             for (int i = 1; i < phiFunInstruction.filterAndGetArguments().size(); i++) {
                 var phiArg = phiFunInstruction.filterAndGetArguments().get(i);
                 if (phiArg.getSsaVariableInfo().getIR().equals(varName)) {
-                    phiFunInstruction.getAllArguments().set(i, new FakeValueExpression(nameToConstantValue.get(varName)));
+                    List<PhiArgument> arguments = new ArrayList<>(phiFunInstruction.getAllArguments());
+                    arguments.set(i, new FakeValueExpression(nameToConstantValue.get(varName)));
+                    phiFunInstruction.setArguments(arguments);
                 }
             }
         }
@@ -167,6 +194,7 @@ public class ConstantPropagationPerformer {
                     .forEach(arrayVariableInfo -> {
                         List<Expression> substitutedIndices = arrayVariableInfo.getIndices().stream()
                                 .map(index -> substituteExpression(index, varName, nameToConstantValue))
+                                .map(this::reduceIfPossible)
                                 .toList();
                         arrayVariableInfo.setIndices(substitutedIndices);
                     });
@@ -174,11 +202,14 @@ public class ConstantPropagationPerformer {
         return instruction;
     }
 
+    private Expression reduceIfPossible(Expression expression) {
+        return isConstant(expression) ? CfArithmeticExpressionParser.parseExpression(expression) : expression;
+    }
+
     private Expression substituteExpression(
             Expression expression,
             String varName,
-            Map<String, ValueExpression> nameToConstantValue)
-    {
+            Map<String, ValueExpression> nameToConstantValue) {
         return ExpressionSubstitutor.substituteExpression(
                 expression,
                 varName,
@@ -199,11 +230,9 @@ public class ConstantPropagationPerformer {
 
     private Instruction visitPhi(
             PhiFunInstruction phiFunInstruction,
-            Map<String, ValueExpression> nameToValue)
-    {
+            Map<String, ValueExpression> nameToValue) {
         if (phiFunInstruction.filterAndGetArguments().stream()
-                .allMatch(x -> nameToValue.containsKey(x.getSsaVariableInfo().getIR())))
-        {
+                .allMatch(x -> nameToValue.containsKey(x.getSsaVariableInfo().getIR()))) {
             ValueExpression firstVal = nameToValue.get(phiFunInstruction.filterAndGetArguments().get(0).getSsaVariableInfo().getIR());
             for (int i = 1; i < phiFunInstruction.filterAndGetArguments().size(); i++) {
                 ValueExpression value = nameToValue.get(phiFunInstruction.filterAndGetArguments().get(i).getSsaVariableInfo().getIR());

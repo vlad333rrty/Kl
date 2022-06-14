@@ -62,10 +62,16 @@ public abstract class OxmaCompiler {
             CFGDotGraphConstructor.plotMany(classBasicBlocks, settings.cfgPictureRelativePathBase);
         }
 
-        logStatistics();
         CodeGenerationManager codeGenerationManager = new CodeGenerationManager();
         for (ClassBasicBlock bb : classBasicBlocks) {
-            List<CodeGenerationResult> codeGenerationResults = codeGenerationManager.generateByteCode(bb);
+            List<CodeGenerationResult> codeGenerationResults = performanceMeasurer
+                    .measure(() -> {
+                        try {
+                            return codeGenerationManager.generateByteCode(bb);
+                        } catch (CodeGenException e) {
+                            throw new IllegalArgumentException();
+                        }
+                    }, "codegen");
             for (CodeGenerationResult res : codeGenerationResults) {
                 FileUtils.writeToFile(
                         constructOutputPath(res.getClassName()),
@@ -73,6 +79,7 @@ public abstract class OxmaCompiler {
                 );
             }
         }
+        logStatistics();
     }
 
     private String constructOutputPath(String className) {
@@ -106,6 +113,7 @@ public abstract class OxmaCompiler {
         logger.info("Parsing time: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("parse")));
         logger.info("SSA form construction: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("buildSSAForm")));
         logger.info("Optimization performing: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("performOptimizations")));
+        logger.info("Codegen: {}", nanoToSeconds(performanceMeasurer.getMeasurementsForName("codegen")));
     }
 
     private List<Double> nanoToSeconds(List<Long> nanoSeconds) {

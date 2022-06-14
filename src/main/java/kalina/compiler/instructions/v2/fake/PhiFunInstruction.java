@@ -11,8 +11,8 @@ import org.objectweb.asm.MethodVisitor;
 /**
  * @author vlad333rrty
  */
-public class PhiFunInstruction extends FakeInstruction {
-    private final List<PhiArgument> arguments;
+public class PhiFunInstruction extends FakeInstruction implements PhiFunOrFakeAssignInstruction {
+    private List<PhiArgument> arguments;
     private final String lhsIR;
 
     public PhiFunInstruction(List<PhiArgumentExpression> arguments, String lhsIR) {
@@ -38,6 +38,10 @@ public class PhiFunInstruction extends FakeInstruction {
 
     public WithIR getLhsIR() {
         return () -> lhsIR;
+    }
+
+    public void setArguments(List<PhiArgument> arguments) {
+        this.arguments = arguments;
     }
 
     @Override

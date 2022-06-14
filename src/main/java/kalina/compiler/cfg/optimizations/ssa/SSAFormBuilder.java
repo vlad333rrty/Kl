@@ -3,7 +3,6 @@ package kalina.compiler.cfg.optimizations.ssa;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -77,7 +76,7 @@ public class SSAFormBuilder {
                     .toList();
             phiFunInstructions.add(new PhiFunInstruction(phiArgs, entry.getKey().getIR()));
         }
-        basicBlock.setPhiFunInstructions(Collections.unmodifiableList(phiFunInstructions));
+        basicBlock.setPhiFunInstructions(new ArrayList<>(phiFunInstructions));
     }
 
     private Set<String> getVariableNames(Instruction instruction) {

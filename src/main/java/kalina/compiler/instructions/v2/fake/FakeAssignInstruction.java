@@ -1,9 +1,11 @@
 package kalina.compiler.instructions.v2.fake;
 
+import kalina.compiler.cfg.data.WithIR;
+
 /**
  * @author vlad333rrty
  */
-public class FakeAssignInstruction extends FakeInstruction {
+public class FakeAssignInstruction extends FakeInstruction implements PhiFunOrFakeAssignInstruction, WithIR {
     private final String lhsIR;
     private final Object value;
 
@@ -18,5 +20,10 @@ public class FakeAssignInstruction extends FakeInstruction {
 
     public Object getValue() {
         return value;
+    }
+
+    @Override
+    public String getIR() {
+        return lhsIR;
     }
 }

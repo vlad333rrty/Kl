@@ -12,15 +12,11 @@ public class OptimizationsUtils {
     private static final Logger logger = LogManager.getLogger(OptimizationsUtils.class);
 
     public static Instruction getBBInstruction(BasicBlock basicBlock, DuUdNet.InstructionCoordinates coordinates) {
-        if (coordinates.instructionIndex() < basicBlock.getInstructions().size()) {
-            return basicBlock.getInstructions().get(coordinates.instructionIndex());
+        if (coordinates.instructionIndex() < basicBlock.getPhiFunInstructions().size()) {
+            return basicBlock.getPhiFunInstructions().get(coordinates.instructionIndex());
         } else {
             int offset = basicBlock.getPhiFunInstructions().size();
-            if (coordinates.instructionIndex() < offset) {
-                return basicBlock.getPhiFunInstructions().get(coordinates.instructionIndex());
-            } else {
-                return basicBlock.getInstructions().get(coordinates.instructionIndex() - offset);
-            }
+            return basicBlock.getInstructions().get(coordinates.instructionIndex() - offset);
         }
     }
 }
