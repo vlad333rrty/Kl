@@ -64,7 +64,7 @@ public class DuUdNetBuilderTest extends OxmaTestBase {
     private void compareDuUd(DuUdNet expected, String testFileName) throws IOException, InterruptedException, TimeoutException, CFGConversionException, IncompatibleTypesException, ParseException {
         runLexer(DIRECTORY_NAME + testFileName);
         AbstractCFGNode root =
-                cfgRootBuilderWithSSA.run("data/output.kl");
+                cfgRootBuilderWithSSA.run("output.kl");
         var res = DuUdNetBuilder.buildDuUdNet(root);
         checkMapEquals(res.getDu(), expected.getDu());
         checkMapEquals(res.getUd(), expected.getUd());

@@ -22,6 +22,7 @@ abstract class OxmaTestBase {
     private static final int TIME_TO_WAIT_SECONDS = 10;
     private static final OxmaMain compiler = new OxmaMain();
     private static final String ERROR_DURING_EXECUTION_MESSAGE_FORMAT = "Error during execution of the generated java program. Log:\n%s";
+    private static final String DEFAULT_OUTPUT_FILE_PATH = "output.kl";
 
     public void runLexer(String fileName) throws IOException, TimeoutException, InterruptedException {
         URL url = OxmaTests.class.getResource(fileName);
@@ -65,7 +66,7 @@ abstract class OxmaTestBase {
     private void runTest(String fileName, boolean isLoggingEnabled) { // todo refactor
         try {
             runLexer(fileName);
-            getCompiler().run("data/output.kl");
+            getCompiler().run(DEFAULT_OUTPUT_FILE_PATH);
             String fileNameWithoutExtension = fileName.substring(0, fileName.lastIndexOf("."));
             String resultFile = "results/" + fileNameWithoutExtension + ".txt";
             executeCommand(
@@ -88,7 +89,7 @@ abstract class OxmaTestBase {
     public String runTestAndGetResult(String fileName) {
         try {
             runLexer(fileName);
-            getCompiler().run("data/output.kl");
+            getCompiler().run(DEFAULT_OUTPUT_FILE_PATH);
             StringBuilder builder = new StringBuilder();
             executeCommand(
                     "java Test",

@@ -11,7 +11,7 @@ import kalina.compiler.cfg.optimizations.ssa.SSAFormBuilder;
 import kalina.compiler.cfg.validator.IncompatibleTypesException;
 import kalina.compiler.syntax.parser2.OxmaParser;
 import kalina.compiler.syntax.parser2.ParseException;
-import kalina.compiler.syntax.scanner.Scanner;
+import kalina.compiler.syntax.scanner.Scanner2;
 import kalina.internal.CFGDotGraphConstructor;
 
 /**
@@ -19,7 +19,7 @@ import kalina.internal.CFGDotGraphConstructor;
  */
 public class CFGRootBuilderWithSSATest {
     public AbstractCFGNode run(String outputFilePath) throws ParseException, IOException, CFGConversionException, IncompatibleTypesException {
-        OxmaParser parser = new OxmaParser(new Scanner(outputFilePath));
+        OxmaParser parser = new OxmaParser(Scanner2.fromLexerResult(outputFilePath));
         ASTRootNode result = parser.parse();
         CFGBuilder cfgBuilder = new CFGBuilder();
         List<ClassBasicBlock> bbs = cfgBuilder.build(result);

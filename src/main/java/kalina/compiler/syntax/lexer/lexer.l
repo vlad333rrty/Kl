@@ -14,8 +14,19 @@ struct Position{
 
 typedef struct Position Position;
 
-void printPos(Position *p){
-    printf("(%d, %d)",p->line, p->pos);
+int getNumLen(int num) {
+    int n = 0;
+    do {
+    	n++;
+    	num /= 10;
+    } while (num > 0);
+    return n;
+}
+
+char* getPos(Position *p){
+    char* buf = malloc(1 + getNumLen(p->line) + 2 + getNumLen(p->pos) + 1);
+    sprintf(buf, "(%d, %d)", p->line, p->pos);
+    return buf;
 }
 
 struct Fragment{
@@ -24,12 +35,6 @@ struct Fragment{
 
 typedef struct Fragment YYLTYPE;
 
-void printFragment(YYLTYPE *type){
-    printPos(&(type->start));
-    printf(" - ");
-    printPos(&(type->follow));
-}
-
 union Token{
     char *ident;
     long num;
@@ -37,6 +42,18 @@ union Token{
 };
 
 typedef union Token YYSTYPE;
+
+void logFragment(YYLTYPE *type, char* value){
+    char* message = "Unexpected token: ";
+    char* start = getPos(&(type->start));
+    char* follow = getPos(&(type->follow));
+    char* buf = malloc(strlen(message) + strlen(value) + 1 + strlen(start) + 3 + strlen(follow));
+    sprintf(buf, "%s%s %s - %s", message, value, start, follow);
+    logError(buf);
+    free(buf);
+    free(start);
+    free(follow);
+}
 
 int continued;
 Position curPos;
@@ -345,10 +362,7 @@ protected	    {
 				return STRING_LITERAL_TAG;
 			}
 .			{
-				char *message = "Unexpected token: ";
-				char *buf = (char*)malloc(strlen(message) + strlen(yytext));
-				sprintf(buf, "%s%s", message, yytext);
-				logError(buf);
+				yylval->ident = yytext;
 				return ERROR_STATE;
                         }
 %%
@@ -394,11 +408,12 @@ int main(int argc, char **argv){
 
     init(buf);
 
+    int error = 0;
     do {
     	tag = yylex(&value,&coords);
     	if (tag == ERROR_STATE) {
-    		free(buf);
-    		return ERROR_STATE;
+    		logFragment(&coords, value.ident);
+    		error = 1;
     	}
         if (tag > 0){
         	fprintf(out,"%d %s\n", tag - 1, value.ident);
@@ -407,6 +422,9 @@ int main(int argc, char **argv){
 
     fclose(out);
     free(buf);
+    if (error == 1) {
+    	return ERROR_STATE;
+    }
     logInfo("No errors. Stopping lexer\n");
 
     return 0;
