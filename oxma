@@ -52,6 +52,9 @@ case "$i" in
     --outfile=*)
     flags+=("outfile=${i#*=}")
     ;;
+    --plot-cfg)
+    flags+=('plot_cfg')
+    ;;
     --*) echo "Unexpected argument $i"
     ;;
 esac

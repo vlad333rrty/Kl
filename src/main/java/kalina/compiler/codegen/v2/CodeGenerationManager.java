@@ -27,7 +27,7 @@ public class CodeGenerationManager {
     }
 
     private void generateByteCodeInt(ClassBasicBlock classBasicBlock, List<CodeGenerationResult> result) throws CodeGenException {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        ClassWriter cw = new ClassWriter(0);
         classBasicBlock.getInstruction().translateToBytecode(Optional.empty(), Optional.of(cw));
 
         for (var field : classBasicBlock.getFieldBasicBlocks()) {

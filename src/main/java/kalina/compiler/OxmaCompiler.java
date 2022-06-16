@@ -43,6 +43,7 @@ public abstract class OxmaCompiler {
     public final void run(String outputFilePath)
             throws IOException, ParseException, CFGConversionException, CodeGenException, IncompatibleTypesException
     {
+        long start = System.nanoTime();
         OxmaParser parser = new OxmaParser(Scanner2.fromLexerResult(outputFilePath));
         ASTRootNode result = performanceMeasurer.measure(() -> {
             try {
@@ -73,6 +74,7 @@ public abstract class OxmaCompiler {
                 );
             }
         }
+        logger.info("Time passed {}", (System.nanoTime() - start) / 1e9);
     }
 
     private String constructOutputPath(String className) {
@@ -127,7 +129,7 @@ public abstract class OxmaCompiler {
             private boolean shouldPerformOptimizations;
 
             public Builder() {
-                this.shouldPlotCFGs = true;
+                this.shouldPlotCFGs = false;
                 this.cfgPictureRelativePathBase = "cfg";
                 this.compiledClassesDestinationDirectory = "";
                 this.shouldBuildSSAForm = true;
@@ -176,16 +178,19 @@ public abstract class OxmaCompiler {
         public static Settings parseCommandLineArgs(String[] args) {
             Settings.Builder builder = new Settings.Builder();
             for (String arg : args) {
-                if (arg.equals("use_optimizations")) {
-                    builder.setShouldPerformOptimizations(true);
-                } else {
-                    Pattern pattern = Pattern.compile("outfile=(.+)");
-                    Matcher matcher = pattern.matcher(arg);
-                    if (matcher.find()) {
-                        String outFile = matcher.group();
-                        builder.setCompiledClassesDestinationDirectory(outFile);
-                    } else {
-                        logger.warn("Unexpected flag: {}", arg);
+                switch (arg) {
+                    case "use_optimizations" -> builder.setShouldPerformOptimizations(true);
+                    case "plot_cfg" -> builder.setPlotCfg(true);
+                    default -> {
+                        Pattern pattern = Pattern.compile("outfile=(.+)");
+                        Matcher matcher = pattern.matcher(arg);
+                        if (matcher.find()) {
+                            String outFile = matcher.group(1);
+                            builder.setCompiledClassesDestinationDirectory(outFile);
+                            logger.info("Output directory: {}", outFile);
+                        } else {
+                            logger.warn("Unexpected flag: {}", arg);
+                        }
                     }
                 }
             }

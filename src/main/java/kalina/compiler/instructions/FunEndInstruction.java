@@ -39,7 +39,7 @@ public class FunEndInstruction extends Instruction implements WithExpressions {
             } else {
                 methodVisitor.visitInsn(Opcodes.RETURN);
             }
-            methodVisitor.visitMaxs(0, 0); // this just forces asm to recompute stack size, arguments are picked randomly
+            methodVisitor.visitMaxs(1000, 1000); // this just forces asm to recompute stack size, arguments are picked randomly
             methodVisitor.visitEnd();
         } else {
             throw new IllegalArgumentException();

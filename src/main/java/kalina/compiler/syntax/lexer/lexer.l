@@ -166,8 +166,7 @@ ARRAY_TYPE {IDENT}(\[\])+
                     yylval->ident=yytext;
                     return GREATER_TAG;
                 }
-\<=
-                {
+\<=		{
                     yylval->ident=yytext;
                     return LEQ_TAG;
                 }
