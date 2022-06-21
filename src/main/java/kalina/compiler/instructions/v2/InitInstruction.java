@@ -62,6 +62,7 @@ public class InitInstruction extends Instruction implements WithExpressions, Wit
         return lhs;
     }
 
+    @Deprecated
     public List<Expression> getRhs() {
         return rhs;
     }

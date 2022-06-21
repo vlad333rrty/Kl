@@ -20,7 +20,7 @@ import org.objectweb.asm.Type;
 /**
  * @author vlad333rrty
  */
-public class UnknownOwnerMethodCallExpressionConverter {
+public class UnknownOwnerMethodCallExpressionConverter extends UnknownOwnerExpressionConverterBase {
     private static final Logger logger = LogManager.getLogger(UnknownOwnerMethodCallExpressionConverter.class);
 
     public static Expression convert(
@@ -29,6 +29,7 @@ public class UnknownOwnerMethodCallExpressionConverter {
             GetFunctionInfoProvider getFunctionInfoProvider,
             BiFunction<ASTExpression, OxmaFunctionInfoProvider, Expression> convertFun)
     {
+        validateOwnerType(ownerType);
         OxmaFunctionInfoProvider functionInfoProvider =
                 getFunctionInfoProvider.getFunctionTable(ownerType.getClassName()).orElseThrow();
 

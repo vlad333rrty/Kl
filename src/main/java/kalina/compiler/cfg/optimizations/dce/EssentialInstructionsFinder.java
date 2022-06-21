@@ -9,11 +9,15 @@ import java.util.Stack;
 import kalina.compiler.cfg.builder.nodes.AbstractCFGNode;
 import kalina.compiler.cfg.optimizations.DuUdNet;
 import kalina.compiler.instructions.Instruction;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * @author vlad333rrty
  */
 class EssentialInstructionsFinder {
+    private static final Logger logger = LogManager.getLogger(EssentialInstructionsFinder.class);
+
     private final List<Class<? extends Instruction>> essentialInstructions;
 
     public EssentialInstructionsFinder(List<Class<? extends Instruction>> essentialInstructions) {
@@ -45,6 +49,9 @@ class EssentialInstructionsFinder {
             Instruction instruction = instructions.get(i);
             int finalI = i + offset;
             if (essentialInstructions.stream().anyMatch(x -> x.isInstance(instruction))) {
+                blockEssentialInstructions.add(new DuUdNet.InstructionCoordinates(nodeId, finalI));
+            } else if (DangerousInstructionsDetector.isDangerousInstruction(instruction)) {
+                logger.info("Instruction {} is dangerous", instruction);
                 blockEssentialInstructions.add(new DuUdNet.InstructionCoordinates(nodeId, finalI));
             }
         }

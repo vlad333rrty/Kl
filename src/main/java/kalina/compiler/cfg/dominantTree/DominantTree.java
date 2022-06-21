@@ -97,7 +97,9 @@ public class DominantTree {
             stack.push(w);
             for (Vertex v : w.getAncestors()) {
                 Vertex u = findMin(v);
-                if (u.getsDom().compareTo(w.getsDom()) > 0) w.setsDom(u.getsDom());
+                if (u.getsDom().compareTo(w.getsDom()) > 0) {
+                    w.setsDom(u.getsDom());
+                }
             }
             w.setAncestor(w.getParent());
             w.getsDom().getBucket().add(w);

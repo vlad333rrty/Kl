@@ -86,7 +86,7 @@ void init(char *program){
 
 LETTER   [a-zA-Z]
 DIGIT    [0-9]
-IDENT    {LETTER}({LETTER}|{DIGIT})*
+IDENT    ({LETTER}|_)({LETTER}|{DIGIT}|_)*
 NUMBER   {DIGIT}+
 FLOAT_NUMBER {DIGIT}+(f|\.{DIGIT}*f)
 DOUBLE_NUMBER {DIGIT}+(d|\.{DIGIT}*d?)

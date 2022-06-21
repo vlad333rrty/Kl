@@ -48,6 +48,7 @@ public abstract class AbstractAssignInstruction extends Instruction implements W
         return lhs;
     }
 
+    @Deprecated
     public List<Expression> getRhs() {
         return rhs;
     }

@@ -66,4 +66,8 @@ public class FunBasicBlock {
             case PRIVATE -> Opcodes.ACC_PRIVATE;
         };
     }
+
+    public String getName() {
+        return name;
+    }
 }
